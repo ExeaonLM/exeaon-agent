@@ -108,9 +108,12 @@ export function LlmSettingsLocalView() {
   const agentSchemaRef = useRef(agentSchema);
   agentSchemaRef.current = agentSchema;
 
-  // Provider connections are a local agent-server feature.
-  const { backend } = useActiveBackend();
-  const isLocal = backend.kind === "local";
+  // Provider connections are available on the local agent-server and on cloud
+  // when an org is bound (the org-scoped CRUD routes). A cloud backend without
+  // an org (legacy API keys) cannot address them.
+  const { backend, orgId } = useActiveBackend();
+  const supportsConnections =
+    backend.kind === "local" || (backend.kind === "cloud" && !!orgId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
@@ -289,7 +292,7 @@ export function LlmSettingsLocalView() {
     // A profile linked to a provider connection sources its credential from the
     // connection, so it never carries an inline api_key / base_url. The form
     // value is the source of truth: empty (or absent) means "not linked".
-    const connectionId = isLocal
+    const connectionId = supportsConnections
       ? String(saveControl.values[LLM_PROVIDER_CONNECTION_KEY] ?? "").trim()
       : "";
 
@@ -308,9 +311,9 @@ export function LlmSettingsLocalView() {
     } else {
       llmConfig.auth_type = LLM_AUTH_TYPE_API_KEY;
       llmConfig.subscription_vendor = null;
-      // Clear any prior link so unlinking sticks (only relevant on local; on
-      // cloud the field stays untouched below).
-      if (isLocal) llmConfig.provider_connection_id = null;
+      // Clear any prior link so unlinking sticks. Only relevant where provider
+      // connections exist; otherwise the field stays untouched below.
+      if (supportsConnections) llmConfig.provider_connection_id = null;
 
       // The Basic tab has no base_url field. Preserve an existing hidden value
       // when the model did not actually change; if the user chooses a new model,
@@ -410,7 +413,7 @@ export function LlmSettingsLocalView() {
   }, [
     saveControl,
     isNameValid,
-    isLocal,
+    supportsConnections,
     profileName,
     viewMode,
     editingProfile,
@@ -493,7 +496,7 @@ export function LlmSettingsLocalView() {
                 [LLM_SUBSCRIPTION_VENDOR_KEY]: OPENAI_SUBSCRIPTION_VENDOR,
               }
         }
-        showProviderConnection={isLocal}
+        showProviderConnection={supportsConnections}
         onSaveControlChange={handleSaveControlChange}
       />
 
