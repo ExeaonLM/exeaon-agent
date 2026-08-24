@@ -313,7 +313,7 @@ export function OnboardingModal({
           data-current-step={currentStep}
           data-preview={isPreview ? "true" : undefined}
           className={cn(
-            "flex flex-col gap-6 overflow-hidden rounded-2xl border border-white/10 bg-base-secondary shadow-2xl",
+            "flex flex-col gap-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0E0D0A] shadow-2xl",
             modalWidthClassName("lg"),
             MODAL_MAX_WIDTH_VIEWPORT,
             "max-h-[90vh]",

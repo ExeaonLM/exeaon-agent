@@ -20,38 +20,38 @@ export interface ColorThemeDefinition {
   tokens?: Record<string, string>;
 }
 
-// HSL channel strings for the neutral grey palette (H=0, S=0%, L=hex/255*100)
+// HSL channel strings for warm void-black palette
 // prettier-ignore
 const NEUTRAL_HSL = {
-  50:  "0 0% 96.86%", // #F7F7F7
-  100: "0 0% 92.55%", // #ECECEC
-  200: "0 0% 86.27%", // #DCDCDC
-  300: "0 0% 74.51%", // #BEBEBE
-  400: "0 0% 59.22%", // #979797
-  500: "0 0% 45.1%",  // #737373
-  600: "0 0% 33.73%", // #565656
-  700: "0 0% 25.1%",  // #404040
-  800: "0 0% 19.22%", // #313131
-  850: "0 0% 15.69%", // #282828
-  900: "0 0% 12.55%", // #202020
-  950: "0 0% 9.41%",  // #181818
-  975: "0 0% 6.27%",  // #101010
+  50:  "42 45% 95%",  // #F8F4EA
+  100: "41 33% 89%",  // #EDE7D8
+  200: "40 28% 82%",  // #DED6C4
+  300: "40 20% 67%",  // #BAB19C
+  400: "40 12% 53%",  // #968D79
+  500: "40 10% 41%",  // #746D5D
+  600: "40 15% 19%",  // #3A3528
+  700: "40 18% 13%",  // #26221A
+  800: "40 16% 9%",   // #1A1712
+  850: "40 16% 7%",   // #15130E
+  900: "40 15% 6%",   // #12100C
+  950: "40 18% 4%",   // #0A0907 (warm void-black)
+  975: "40 20% 2%",   // #050403 (purest void)
 };
 
 const NEUTRAL_SCALE = {
-  "--cool-grey-50": "#F7F7F7",
-  "--cool-grey-100": "#ECECEC",
-  "--cool-grey-200": "#DCDCDC",
-  "--cool-grey-300": "#BEBEBE",
-  "--cool-grey-400": "#979797",
-  "--cool-grey-500": "#737373",
-  "--cool-grey-600": "#565656",
-  "--cool-grey-700": "#404040",
-  "--cool-grey-800": "#313131",
-  "--cool-grey-900": "#282828",
-  "--cool-grey-925": "#202020",
-  "--cool-grey-950": "#181818",
-  "--cool-grey-975": "#101010",
+  "--cool-grey-50": "#F8F4EA",
+  "--cool-grey-100": "#EDE7D8",
+  "--cool-grey-200": "#DED6C4",
+  "--cool-grey-300": "#BAB19C",
+  "--cool-grey-400": "#968D79",
+  "--cool-grey-500": "#746D5D",
+  "--cool-grey-600": "#3A3528",
+  "--cool-grey-700": "#26221A",
+  "--cool-grey-800": "#1A1712",
+  "--cool-grey-900": "#12100C",
+  "--cool-grey-925": "#0D0C09",
+  "--cool-grey-950": "#080705",
+  "--cool-grey-975": "#030302",
 };
 
 const NEUTRAL_HEROUI = {

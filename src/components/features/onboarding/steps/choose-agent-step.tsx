@@ -153,7 +153,7 @@ export function ChooseAgentStep({
           data-testid="onboarding-agent-option-openhands"
           data-selected="true"
           onClick={() => onSelect("openhands")}
-          className="flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer border-white/45 bg-white/[0.09] shadow-none w-full max-w-sm"
+          className="flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer border-[#F3CE49]/40 bg-[#16140F] hover:border-[#F3CE49]/70 shadow-none w-full max-w-sm"
         >
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex min-w-0 items-center gap-2">
@@ -170,7 +170,7 @@ export function ChooseAgentStep({
             <Check
               width={18}
               height={18}
-              className="mt-1 shrink-0 text-white"
+              className="mt-1 shrink-0 text-[#F3CE49]"
               aria-hidden
             />
           </div>
@@ -179,7 +179,7 @@ export function ChooseAgentStep({
 
       <div
         className={cn(
-          "sticky bottom-0 flex items-center gap-2 bg-base-secondary pt-4 pb-7",
+          "sticky bottom-0 flex items-center gap-2 bg-[#0E0D0A] pt-4 pb-7",
           onBack ? "justify-between" : "justify-end",
         )}
       >
