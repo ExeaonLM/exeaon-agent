@@ -2,6 +2,9 @@ export const FREE_MODEL_BADGE_LABEL = "Exeaon";
 
 export const EXEAON_MODELS = {
   "openai/exeaon": "Exeaon 14B (Nunya)",
+  "openai/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
+  "openai/exeaon-27b": "Exeaon 27B",
+  "openai/exeaon-72b": "Exeaon 72B",
   "exeaon": "Exeaon 14B (Nunya)",
   "exeaon/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
   "exeaon/exeaon-27b": "Exeaon 27B",
