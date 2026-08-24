@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Globe, SquareChevronRight } from "lucide-react";
+import { Gauge, Globe, SquareChevronRight } from "lucide-react";
 import { LuFileDiff } from "react-icons/lu";
 import DocumentIcon from "#/icons/document.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
@@ -8,15 +8,16 @@ import { cn } from "#/utils/utils";
 import { ChatActionTooltip } from "../chat/chat-action-tooltip";
 import { useConversationStore, ConversationTab } from "#/stores/conversation-store";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { useSelectConversationTab } from "#/hooks/use-select-conversation-tab";
 import { useUnifiedVSCodeUrl } from "#/hooks/query/use-unified-vscode-url";
 import { useIsArchivedConversation } from "#/hooks/use-is-archived-conversation";
 import { setConversationState } from "#/utils/conversation-local-storage";
+import { UsageModal } from "./usage-modal";
 
 export function TopBarConversationTabs() {
   const { t } = useTranslation("openhands");
   const { conversationId } = useConversationId();
   const isArchived = useIsArchivedConversation();
+  const [isUsageModalOpen, setIsUsageModalOpen] = useState(false);
   const {
     isRightPanelShown,
     setIsRightPanelShown,
@@ -91,39 +92,67 @@ export function TopBarConversationTabs() {
   ];
 
   return (
-    <div className="flex items-center gap-0.5">
-      {tabs.map((tab) => (
-        <ChatActionTooltip key={tab.key} tooltip={tab.label} ariaLabel={tab.label}>
+    <>
+      <div className="flex items-center gap-0.5">
+        {tabs.map((tab) => (
+          <ChatActionTooltip key={tab.key} tooltip={tab.label} ariaLabel={tab.label}>
+            <button
+              type="button"
+              onClick={() => handleTabClick(tab.key)}
+              disabled={isArchived}
+              aria-label={tab.label}
+              aria-pressed={tab.isActive}
+              className={cn(
+                "inline-flex size-6 items-center justify-center rounded-md transition-colors duration-100 cursor-pointer",
+                tab.isActive
+                  ? "bg-[#241F14] text-[#FFD026]"
+                  : "text-[#8C8370] hover:bg-[#1C1811] hover:text-[#EDE7D8]",
+                isArchived && "cursor-not-allowed opacity-40 hover:bg-transparent",
+              )}
+            >
+              {tab.icon}
+            </button>
+          </ChatActionTooltip>
+        ))}
+
+        {/* Usage Dialog Trigger */}
+        <ChatActionTooltip tooltip="Usage & Limits" ariaLabel="Usage & Limits">
           <button
             type="button"
-            onClick={() => handleTabClick(tab.key)}
-            disabled={isArchived}
-            aria-label={tab.label}
-            aria-pressed={tab.isActive}
+            onClick={() => setIsUsageModalOpen(true)}
+            aria-label="Usage & Limits"
+            aria-pressed={isUsageModalOpen}
             className={cn(
               "inline-flex size-6 items-center justify-center rounded-md transition-colors duration-100 cursor-pointer",
-              tab.isActive
+              isUsageModalOpen
                 ? "bg-[#241F14] text-[#FFD026]"
                 : "text-[#8C8370] hover:bg-[#1C1811] hover:text-[#EDE7D8]",
-              isArchived && "cursor-not-allowed opacity-40 hover:bg-transparent",
             )}
           >
-            {tab.icon}
+            <Gauge className="size-3.5 shrink-0" />
           </button>
         </ChatActionTooltip>
-      ))}
 
-      {hasVSCode && (
-        <ChatActionTooltip tooltip="Open in VSCode" ariaLabel="Open in VSCode">
-          <button
-            type="button"
-            onClick={handleVSCodeClick}
-            className="inline-flex size-6 items-center justify-center rounded-md text-[#8C8370] hover:bg-[#1C1811] hover:text-[#EDE7D8] transition-colors duration-100 cursor-pointer"
-          >
-            <VSCodeIcon className="size-3.5 shrink-0 text-[#3880F6]" />
-          </button>
-        </ChatActionTooltip>
+        {hasVSCode && (
+          <ChatActionTooltip tooltip="Open in VSCode" ariaLabel="Open in VSCode">
+            <button
+              type="button"
+              onClick={handleVSCodeClick}
+              className="inline-flex size-6 items-center justify-center rounded-md text-[#8C8370] hover:bg-[#1C1811] hover:text-[#EDE7D8] transition-colors duration-100 cursor-pointer"
+            >
+              <VSCodeIcon className="size-3.5 shrink-0 text-[#3880F6]" />
+            </button>
+          </ChatActionTooltip>
+        )}
+      </div>
+
+      {isUsageModalOpen && (
+        <UsageModal
+          isOpen={isUsageModalOpen}
+          onClose={() => setIsUsageModalOpen(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
+
