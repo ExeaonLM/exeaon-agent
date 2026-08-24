@@ -144,14 +144,14 @@ function isValidHostUrl(host: string): boolean {
   }
 }
 
-const DEFAULT_OPENHANDS_CLOUD_HOST = "https://app.all-hands.dev";
+const DEFAULT_OPENHANDS_CLOUD_HOST = "https://cloud.exeaon.dev";
 const LOCAL_BACKEND_COMMAND = "agent-canvas --backend-only --port 8001";
 const LOCAL_AGENT_SERVER_DOCS_URL =
-  "https://github.com/OpenHands/OpenHands/blob/main/docs/DEVELOPMENT.md#alternative-development-workflows";
+  "https://docs.exeaon.dev/development/workflows";
 const REMOTE_AGENT_SERVER_DOCS_URL =
-  "https://github.com/OpenHands/OpenHands/blob/main/docs/SELF_HOSTING.md";
+  "https://docs.exeaon.dev/self-hosting";
 const DEPLOYMENT_OPTIONS_URL =
-  "https://docs.openhands.dev/overview/introduction";
+  "https://docs.exeaon.dev/overview/introduction";
 export type BackendConnectionMethod = "manual" | "cloud_login";
 
 export type BackendAddedSource = CloudConnectionSource;
@@ -766,24 +766,30 @@ export function BackendConnectionOptions({
   return (
     <div
       data-testid={`${testIdRoot}-connection-options`}
-      className="flex flex-col gap-6 md:flex-row"
+      className="flex flex-col gap-6 md:flex-row items-stretch"
     >
-      <div className="flex-1 min-w-0">
-        <ManualConnectionColumn
-          onConnected={onConnected}
-          testIdRoot={testIdRoot}
-          initialBackend={initialManualBackend}
-          requireApiKey={requireManualApiKey}
-          submitLabel={manualSubmitLabel ?? t(I18nKey.BACKEND$CONNECT)}
-          submittingLabel={
-            manualSubmittingLabel ??
-            t(I18nKey.ONBOARDING$BACKEND_STATUS_CHECKING)
-          }
-          submitTestId={manualSubmitTestId}
-        />
+      <div className="flex-1 min-w-0 rounded-2xl border border-white/10 bg-[#12110D] p-5 shadow-lg flex flex-col justify-between">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 mb-1">
+            <ServerIcon className="size-5 text-[#FFD026]" aria-hidden />
+            <h3 className="text-base font-medium text-white">Manual Agent Server</h3>
+          </div>
+          <ManualConnectionColumn
+            onConnected={onConnected}
+            testIdRoot={testIdRoot}
+            initialBackend={initialManualBackend}
+            requireApiKey={requireManualApiKey}
+            submitLabel={manualSubmitLabel ?? t(I18nKey.BACKEND$CONNECT)}
+            submittingLabel={
+              manualSubmittingLabel ??
+              t(I18nKey.ONBOARDING$BACKEND_STATUS_CHECKING)
+            }
+            submitTestId={manualSubmitTestId}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 rounded-2xl border border-white/10 bg-[#12110D] p-5 shadow-lg flex flex-col justify-center">
         <CloudLoginColumn
           onConnected={onConnected}
           testIdRoot={testIdRoot}
