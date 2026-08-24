@@ -1,3 +1,4 @@
+import { BRAND } from "./exeaon/brand";
 import {
   Links,
   LinksFunction,
@@ -222,8 +223,8 @@ export const links: LinksFunction = () => [
 ];
 
 export const meta: MetaFunction = () => [
-  { title: "OpenHands" },
-  { name: "description", content: "Let's Start Building!" },
+  { title: BRAND.name },
+  { name: "description", content: BRAND.tagline },
 ];
 
 export default function App() {
