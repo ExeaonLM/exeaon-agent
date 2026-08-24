@@ -14,7 +14,7 @@ import { ServerStatusContextMenu } from "../controls/server-status-context-menu"
 import { ConversationName } from "./conversation-name";
 import { ConversationGitActionsToggle } from "./conversation-git-actions-toggle";
 import { ConversationOverviewToggle } from "./conversation-overview-toggle";
-import { RightPanelToggle } from "./right-panel-toggle";
+import { TopBarConversationTabs } from "./top-bar-conversation-tabs";
 import {
   isExecutionActive,
   isExecutionErrored,
@@ -146,10 +146,10 @@ export function ConversationNameWithStatus() {
         </div>
         <ConversationName />
       </div>
-      <div className="mr-2 flex shrink-0 items-center gap-1">
+      <div className="mr-2 flex shrink-0 items-center gap-1.5">
+        <TopBarConversationTabs />
         <ConversationGitActionsToggle />
         <ConversationOverviewToggle />
-        <RightPanelToggle />
       </div>
     </div>
   );
