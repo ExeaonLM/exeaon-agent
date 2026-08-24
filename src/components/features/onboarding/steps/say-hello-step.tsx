@@ -77,7 +77,7 @@ export function SayHelloStep({
       data-testid="onboarding-step-say-hello"
       className="flex max-h-[calc(90vh-7rem)] flex-col"
     >
-      <header className="flex shrink-0 flex-col gap-2">
+      <header className="flex shrink-0 flex-col items-center text-center gap-2">
         <h2 className="text-2xl font-medium text-white">
           {t(I18nKey.ONBOARDING$HELLO_TITLE)}
         </h2>
@@ -89,7 +89,7 @@ export function SayHelloStep({
       <form
         onSubmit={handleSubmit}
         data-testid="onboarding-hello-input-form"
-        className="mt-6 box-border flex w-full shrink-0 flex-col items-start justify-center rounded-[15px] border border-[var(--oh-border)] bg-surface-raised p-4"
+        className="mt-6 box-border flex w-full shrink-0 flex-col items-start justify-center rounded-2xl border border-white/10 bg-[#12110D] focus-within:border-[#FFD026]/50 p-4 shadow-lg transition-colors"
       >
         <div className="relative w-full">
           <div className="box-border flex w-full shrink-0 flex-row items-end justify-between gap-2 p-0 pb-[18px]">
@@ -145,7 +145,7 @@ export function SayHelloStep({
         </>
       ) : null}
 
-      <div className="flex shrink-0 items-center justify-between gap-2 bg-base-secondary pt-7 pb-7">
+      <div className="flex shrink-0 items-center justify-between gap-2 bg-[#0E0D0A] pt-7 pb-7">
         <BrandButton
           testId="onboarding-hello-back"
           type="button"

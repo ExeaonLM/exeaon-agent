@@ -235,53 +235,58 @@ function AutomationCardGrid({
             !findInstalledEntryMatch(entry, installedServers),
         ).length;
 
+        // Sanitize copy from @openhands -> @Exeaon
+        const name = automation.name
+          .replace(/@OpenHands/gi, "@Exeaon")
+          .replace(/OpenHands/gi, "Exeaon");
+        const description = automation.description
+          .replace(/@OpenHands/gi, "@Exeaon")
+          .replace(/OpenHands/gi, "Exeaon");
+
         return (
           <button
             key={automation.id}
             type="button"
             data-testid={`recommended-automation-card-${automation.id}`}
             onClick={() => onSelect(automation)}
-            className={cn(
-              "flex min-w-0 overflow-hidden p-4 text-left",
-              extensionModuleCardSurfaceClassName,
-              extensionModuleCardInteractiveClassName,
-            )}
+            className="group flex min-w-0 flex-col justify-between rounded-2xl border border-white/10 bg-[#12110D] hover:border-[#FFD026]/50 hover:bg-[#16140F] p-4 text-left transition-all duration-200 shadow-md hover:shadow-[0_0_15px_rgba(255,208,38,0.12)] cursor-pointer"
           >
-            <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="flex w-full items-start gap-3">
               <AutomationCardIcon
                 automation={automation}
                 integrations={integrations}
                 size="md"
                 testId={`recommended-automation-icon-${automation.id}`}
               />
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
-                <header className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-semibold text-white">
-                      {automation.name}
-                    </h3>
-                    <p className="mt-0.5 truncate text-xs text-tertiary-alt">
-                      {automation.category}
-                    </p>
-                  </div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="truncate text-sm font-semibold text-white group-hover:text-[#FFD026] transition-colors">
+                    {name}
+                  </h3>
                   <CirclePlusBadge
                     testId={`recommended-automation-plus-${automation.id}`}
                   />
-                </header>
-                <p className="line-clamp-2 text-xs leading-relaxed text-tertiary-light">
-                  {automation.description}
-                </p>
-
-                <SkillCardPillRow
-                  pills={buildRecommendedAutomationPills(
-                    integrations,
-                    installedServers,
-                    missingCount,
-                    translate,
-                  )}
-                  testId={`recommended-automation-pills-${automation.id}`}
-                />
+                </div>
+                <span className="text-[11px] font-medium text-[var(--oh-muted)]">
+                  {automation.category}
+                </span>
               </div>
+            </div>
+
+            <p className="mt-2.5 line-clamp-2 text-xs leading-relaxed text-[var(--oh-text-secondary)]">
+              {description}
+            </p>
+
+            <div className="mt-3 pt-2 border-t border-white/5 w-full">
+              <SkillCardPillRow
+                pills={buildRecommendedAutomationPills(
+                  integrations,
+                  installedServers,
+                  missingCount,
+                  translate,
+                )}
+                testId={`recommended-automation-pills-${automation.id}`}
+              />
             </div>
           </button>
         );
