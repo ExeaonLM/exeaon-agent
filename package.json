@@ -72,6 +72,8 @@
     "zustand": "5.0.14"
   },
   "scripts": {
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "dev": "node --env-file-if-exists=.env scripts/dev-with-automation.mjs",
     "dev:static": "node --env-file-if-exists=.env scripts/dev-static.mjs",
     "dev:extra-backend": "node --env-file-if-exists=.env scripts/dev-extra-backend.mjs",
@@ -135,6 +137,8 @@
     "@stryker-mutator/vitest-runner": "9.6.1",
     "@tailwindcss/typography": "0.5.20",
     "@tanstack/eslint-plugin-query": "5.101.4",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.4",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
