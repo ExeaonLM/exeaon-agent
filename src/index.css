@@ -25,19 +25,19 @@
   background-color: var(--oh-color-base) !important;
 
   /* ── Cool Grey Scale (13 shades + 2 pure anchors: white / black) ──────── */
-  --cool-grey-50:  #F7F9FC;
-  --cool-grey-100: #EEF2F7;
-  --cool-grey-200: #DCE3EE;
-  --cool-grey-300: #C3CDDC;
-  --cool-grey-400: #A3B0C4;
-  --cool-grey-500: #7E8A9E;
-  --cool-grey-600: #626D82;
-  --cool-grey-700: #4B5468;
-  --cool-grey-800: #383F50;
-  --cool-grey-900: #2C313F;
-  --cool-grey-925: #21252F;
-  --cool-grey-950: #0B0E14; /* intentional override: preserves original app-shell depth */
-  --cool-grey-975: #05070A;
+  --cool-grey-50:  #F8F4EA;
+  --cool-grey-100: #EDE7D8;
+  --cool-grey-200: #DED6C4;
+  --cool-grey-300: #BAB19C;
+  --cool-grey-400: #968D79;
+  --cool-grey-500: #746D5D;
+  --cool-grey-600: #565043;
+  --cool-grey-700: #3D392F;
+  --cool-grey-800: #2B2921;
+  --cool-grey-900: #1C1913;
+  --cool-grey-925: #131109;
+  --cool-grey-950: #0B0A08; /* intentional override: preserves original app-shell depth */
+  --cool-grey-975: #050403;
   /* ─────────────────────────────────────────────────────────────────────── */
 }
 
