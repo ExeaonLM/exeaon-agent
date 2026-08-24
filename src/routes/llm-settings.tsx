@@ -103,15 +103,13 @@ interface OpenHandsApiKeyHelpProps {
 }
 
 function OpenHandsApiKeyHelp({ testId }: OpenHandsApiKeyHelpProps) {
-  const { t } = useTranslation("openhands");
-
   return (
     <HelpLink
       testId={testId}
-      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-      href="https://app.all-hands.dev/settings/api-keys"
-      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
+      text="You can find your Exeaon API Key in the"
+      linkText="API Keys"
+      href="https://cloud.exeaon.dev/settings/api-keys"
+      suffix=" tab of Exeaon Cloud."
     />
   );
 }
