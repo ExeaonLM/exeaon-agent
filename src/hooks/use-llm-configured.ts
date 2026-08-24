@@ -136,8 +136,24 @@ export function useLlmConfigured(): LlmConfiguredResult {
   // The raw settings key can be a stale copy left behind by a deleted profile
   // (settings are not cleared on delete), so we don't count it here. Cloud
   // backends don't use profiles and keep the settings-key signal.
+  // A profile pointing at a custom endpoint (a self-hosted OpenAI-compatible
+  // server such as the Exeaon runtime) needs no API key -- the endpoint does
+  // not authenticate -- so a base URL is itself a "usable LLM" signal.
+  // Without this, a working custom-endpoint profile reads as unconfigured and
+  // the "LLM isn't set up" banner blocks a composer that would run fine.
+  const activeProfileConfig = activeProfileDetail?.config as
+    | Record<string, unknown>
+    | undefined;
+  const hasActiveProfileBaseUrl =
+    shouldLoadActiveProfileDetail &&
+    typeof (activeProfileConfig?.base_url ?? activeProfileConfig?.api_base) ===
+      "string" &&
+    ((activeProfileConfig?.base_url ?? activeProfileConfig?.api_base) as string)
+      .length > 0;
   const hasUsableActiveProfile =
-    hasActiveProfileApiKey || hasActiveProfileSubscription;
+    hasActiveProfileApiKey ||
+    hasActiveProfileSubscription ||
+    hasActiveProfileBaseUrl;
   const hasUsableLlm = isLocal ? hasUsableActiveProfile : hasApiKey;
 
   // Treat a fetch failure as indeterminate (same as loading) only when it
