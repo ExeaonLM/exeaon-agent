@@ -30,6 +30,8 @@ import { Divider } from "#/ui/divider";
 import { NEW_CONVERSATION_DROPDOWN_SURFACE } from "./new-conversation-dropdown-styles";
 import { usePopoverFixedPlacement } from "#/hooks/use-popover-fixed-placement";
 
+import { Folder, FolderPlus, FolderCog, FolderX } from "lucide-react";
+
 export type LocalNewConversationMenuTriggerProps = {
   onClick: () => void;
   "aria-expanded": boolean;
@@ -131,7 +133,10 @@ export function LocalNewConversationMenu({
     );
   };
 
-  const itemClass = dropdownMenuRowClassName;
+  const itemClass = cn(
+    dropdownMenuRowClassName,
+    "hover:bg-[#1A1610] text-[#EDE7D8] hover:text-[#FFF4B8]",
+  );
 
   const keepPopoverOpenOnMouseDown = React.useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -170,9 +175,10 @@ export function LocalNewConversationMenu({
         if (workspaceActionsDisabled) return;
         setBrowserOpen(true);
       }}
-      className={itemClass}
+      className={cn(itemClass, "text-[#FFD026] hover:text-[#FFF4B8] font-medium")}
     >
-      {t(I18nKey.HOME$ADD_WORKSPACES)}
+      <FolderPlus className="size-3.5 shrink-0 text-[#FFD026]" />
+      <span>{t(I18nKey.HOME$ADD_WORKSPACES)}</span>
     </button>
   );
 
@@ -204,13 +210,13 @@ export function LocalNewConversationMenu({
           className={cn(
             NEW_CONVERSATION_DROPDOWN_SURFACE,
             !useFixedPlacement &&
-              cn("absolute top-full mt-0", popoverClassName),
+              cn("absolute top-full mt-1", popoverClassName),
           )}
           style={fixedStyle}
         >
           <ul
             className={cn(
-              "max-h-[40vh] overflow-y-auto sm:max-h-[280px]",
+              "max-h-[40vh] overflow-y-auto sm:max-h-[280px] custom-scrollbar divide-y divide-[#1A1610]/40",
               dropdownMenuListClassName,
             )}
           >
@@ -222,7 +228,8 @@ export function LocalNewConversationMenu({
                 onClick={() => launch()}
                 className={itemClass}
               >
-                <span className="text-[var(--oh-muted)]">
+                <FolderX className="size-3.5 shrink-0 text-[#8C8370]" />
+                <span className="text-[#8C8370]">
                   {t(I18nKey.HOME$NO_WORKSPACE_OPTION)}
                 </span>
               </button>
@@ -237,12 +244,7 @@ export function LocalNewConversationMenu({
                   onClick={() => launch(w.path)}
                   className={itemClass}
                 >
-                  <span
-                    className={dropdownMenuRowIconWrapperClassName}
-                    aria-hidden
-                  >
-                    <RepoIcon width={14} height={14} />
-                  </span>
+                  <Folder className="size-3.5 shrink-0 text-[#FFD026]" />
                   <span className="truncate">{w.name}</span>
                 </button>
               </li>
@@ -250,13 +252,9 @@ export function LocalNewConversationMenu({
           </ul>
 
           <div
-            className={cn("flex flex-col", dropdownMenuListClassName)}
+            className={cn("flex flex-col pt-1 border-t border-[#201B12]", dropdownMenuListClassName)}
             data-testid="new-conversation-menu-footer"
           >
-            <Divider
-              inset="menu"
-              testId="new-conversation-menu-footer-divider"
-            />
             {addWorkspacesControl}
             {(workspaces.length > 0 || workspaceParents.length > 0) && (
               <button
@@ -268,9 +266,10 @@ export function LocalNewConversationMenu({
                   event.stopPropagation();
                   setManageOpen(true);
                 }}
-                className={itemClass}
+                className={cn(itemClass, "text-[#A89F8D] hover:text-[#EDE7D8]")}
               >
-                {t(I18nKey.HOME$MANAGE_WORKSPACES)}
+                <FolderCog className="size-3.5 shrink-0 text-[#A89F8D]" />
+                <span>{t(I18nKey.HOME$MANAGE_WORKSPACES)}</span>
               </button>
             )}
           </div>

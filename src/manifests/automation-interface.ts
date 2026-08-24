@@ -155,16 +155,25 @@ export interface InterfaceCopy {
 
 export function getInterfaceCopy(): InterfaceCopy {
   const manifest = requireInterface();
+  const formatFlows = (text: string) =>
+    text
+      .replace(/\bAutomations\b/g, "Flows")
+      .replace(/\bAutomation\b/g, "Flow")
+      .replace(/\bautomations\b/g, "flows")
+      .replace(/\bautomation\b/g, "flow");
+
   return {
-    // Exeaon brand: the feature is "Flows", not "Automate".
+    // Exeaon brand: the feature is "Flows", not "Automations".
     sidebarLabel: "Flows",
     commandMenuTitle: "Flows",
-    commandMenuDescription: manifest.navigation.commandMenu.description,
+    commandMenuDescription: formatFlows(
+      manifest.navigation.commandMenu.description ?? "",
+    ),
     commandMenuKeywords: manifest.navigation.commandMenu.keywords,
-    listTitle: manifest.pages.list.title,
-    listSubtitle: manifest.pages.list.subtitle,
-    detailBackLabel: manifest.pages.detail.backLabel,
-    editTitle: manifest.pages.edit.title,
+    listTitle: formatFlows(manifest.pages.list.title),
+    listSubtitle: formatFlows(manifest.pages.list.subtitle),
+    detailBackLabel: formatFlows(manifest.pages.detail.backLabel),
+    editTitle: formatFlows(manifest.pages.edit.title),
   };
 }
 

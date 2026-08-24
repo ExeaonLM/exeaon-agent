@@ -207,7 +207,7 @@ export function ConversationPanelFilterMenu({
           data-testid="older-conversations-filter-menu"
           onKeyDown={handleMenuKeyDown}
           className={cn(
-            "absolute right-0 top-full z-50 mt-0 w-64 rounded-md border border-[var(--oh-border-subtle)] bg-tertiary px-1 py-1 text-[var(--oh-foreground)] shadow-lg",
+            "absolute right-0 top-full z-50 mt-1 w-64 rounded-xl border border-[#2B2316] bg-[#0E0C09]/95 backdrop-blur-md p-1.5 text-[#EDE7D8] shadow-2xl custom-scrollbar",
             dropdownMenuListClassName,
             dropdownMenuViewportScrollClassName,
           )}

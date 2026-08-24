@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Search,
   Server,
   Settings,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
 import { BackendSelector } from "#/components/features/backends/backend-selector";
 import { BackendStatusDot } from "#/components/features/backends/backend-status-dot";
 import { CommandMenuTrigger } from "#/components/features/command-menu/command-menu-trigger";
+import { useCommandMenuStore } from "#/stores/command-menu-store";
 import { AgentCanvasVersionTile } from "#/components/features/settings/agent-canvas-version-tile";
 import { SidebarConversationList } from "./sidebar-conversation-list";
 // Getting Started checklist removed -- onboarding auto-configures everything.
@@ -85,6 +87,7 @@ export function SidebarRailBody({
 }: SidebarRailBodyProps) {
   const { t } = useTranslation("openhands");
   const backendCloseTimerRef = collapsedBackendCloseTimer;
+  const openCommandMenu = useCommandMenuStore((state) => state.open);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -129,41 +132,58 @@ export function SidebarRailBody({
             </button>
           ) : null}
         </div>
-        {!collapsed && showCollapseToggle ? (
-          <button
-            type="button"
-            data-testid="sidebar-collapse-toggle"
-            aria-pressed={collapsed}
-            aria-label={collapseToggleLabel}
-            onClick={onCollapse}
-            className={cn(
-              "hidden md:inline-flex ml-auto",
-              SIDEBAR_ICON_BUTTON_CLASS,
-              "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)]",
-            )}
-          >
-            <ChevronLeft width={14} height={14} />
-          </button>
-        ) : null}
-        {!collapsed && showMobileCloseButton ? (
-          <button
-            type="button"
-            data-testid="sidebar-mobile-drawer-close"
-            onClick={onCloseMobile}
-            aria-label={t(I18nKey.SIDEBAR$CLOSE_MENU)}
-            className={cn(
-              "inline-flex ml-auto",
-              SIDEBAR_ICON_BUTTON_CLASS,
-              "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)]",
-            )}
-          >
-            <ChevronLeft width={14} height={14} />
-          </button>
-        ) : null}
+
+        <div className="flex items-center gap-1 ml-auto">
+          {!collapsed && (
+            <button
+              type="button"
+              data-testid="sidebar-header-search-button"
+              aria-label={t(I18nKey.COMMAND_MENU$OPEN_LABEL)}
+              onClick={openCommandMenu}
+              className={cn(
+                SIDEBAR_ICON_BUTTON_CLASS,
+                "text-[var(--oh-muted)] hover:text-[#FFD026] hover:bg-[#1C1812] transition-colors cursor-pointer",
+              )}
+            >
+              <Search width={14} height={14} />
+            </button>
+          )}
+          {!collapsed && showCollapseToggle ? (
+            <button
+              type="button"
+              data-testid="sidebar-collapse-toggle"
+              aria-pressed={collapsed}
+              aria-label={collapseToggleLabel}
+              onClick={onCollapse}
+              className={cn(
+                "hidden md:inline-flex",
+                SIDEBAR_ICON_BUTTON_CLASS,
+                "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)]",
+              )}
+            >
+              <ChevronLeft width={14} height={14} />
+            </button>
+          ) : null}
+          {!collapsed && showMobileCloseButton ? (
+            <button
+              type="button"
+              data-testid="sidebar-mobile-drawer-close"
+              onClick={onCloseMobile}
+              aria-label={t(I18nKey.SIDEBAR$CLOSE_MENU)}
+              className={cn(
+                "inline-flex",
+                SIDEBAR_ICON_BUTTON_CLASS,
+                "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)]",
+              )}
+            >
+              <ChevronLeft width={14} height={14} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <nav className={sidebarNavListClassName(collapsed)}>
-        <CommandMenuTrigger collapsed={collapsed} />
+        {collapsed ? <CommandMenuTrigger collapsed={collapsed} /> : null}
         <SidebarNavLink
           to="/conversations"
           end
