@@ -9,7 +9,7 @@
 export const BRAND = {
   name: "Exeaon Agent",
   tagline: "Sovereign AI coding agent, on your hardware.",
-  logo: "/exeaon-logo-512.jpg",
+  logo: "/exeaon-logo-512.png",
 
   /**
    * The default model the agent talks to: our published Exeaon model served by

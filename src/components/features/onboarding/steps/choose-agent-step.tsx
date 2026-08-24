@@ -46,8 +46,8 @@ export function AgentOptionIcon({ id, muted }: { id: string; muted: boolean }) {
     return (
       <AgentBrandIcon
         kind="openhands"
-        size={16}
-        className={cn("text-white", muted && "opacity-55")}
+        size={20}
+        className={cn(muted && "opacity-55")}
         data-testid="onboarding-agent-icon-openhands"
       />
     );
@@ -71,13 +71,12 @@ interface AgentOption {
 
 // Onboarding tile list is *derived* from the ACP registry so adding a
 // new provider (or changing a display name) only needs one edit in
-// ``acp-providers.ts``. The OpenHands tile is the only synthetic
-// entry — it isn't an ACP provider, just the canonical default.
+// ``acp-providers.ts``. The Exeaon tile is the primary default entry.
 function getAgentOptions(): AgentOption[] {
   return [
     {
       id: "openhands",
-      label: "OpenHands",
+      label: "Exeaon",
       descriptionKey: I18nKey.ONBOARDING$AGENT_OPENHANDS_DESCRIPTION,
     },
     ...ACP_PROVIDERS.map<AgentOption>((provider) => ({
