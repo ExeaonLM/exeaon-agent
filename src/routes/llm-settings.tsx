@@ -56,6 +56,10 @@ const LLM_EXCLUDED_KEYS = new Set([
 
 const buildModelId = (provider: string | null, model: string | null) => {
   if (!provider || !model) return null;
+  // LiteLLM requires openhands/ prefix for Exeaon Cloud / custom proxy routing
+  if (provider === "exeaon") {
+    return `openhands/${model}`;
+  }
   return `${provider}/${model}`;
 };
 

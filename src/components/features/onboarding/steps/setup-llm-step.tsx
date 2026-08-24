@@ -25,7 +25,7 @@ interface SetupLlmStepProps {
  * explicit override marks the model dirty so the Next button persists the
  * suggested default immediately.
  */
-export const ONBOARDING_DEFAULT_LLM_MODEL = "exeaon/exeaon1-nunya-14b";
+export const ONBOARDING_DEFAULT_LLM_MODEL = "openhands/exeaon1-nunya-14b";
 
 /**
  * Step 2: embed the LLM settings form. The screen runs in `embedded`
