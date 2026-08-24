@@ -89,8 +89,20 @@ function isAbortLike(error: unknown): boolean {
 
 class ProfilesService {
   static async listProfiles(): Promise<ProfileListResponse> {
-    if (isCloudBackend()) return fetchCloudProfiles();
-    return new ProfilesClient(getAgentServerClientOptions()).listProfiles();
+    const raw = isCloudBackend()
+      ? await fetchCloudProfiles()
+      : await new ProfilesClient(getAgentServerClientOptions()).listProfiles();
+
+    const profiles = (raw.profiles ?? []).filter(
+      (p) =>
+        !p.name.toLowerCase().includes("kimi") &&
+        !p.model?.toLowerCase().includes("kimi"),
+    );
+
+    return {
+      ...raw,
+      profiles,
+    };
   }
 
   static async getProfile(

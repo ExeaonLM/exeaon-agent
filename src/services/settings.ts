@@ -3,7 +3,7 @@ import { Settings } from "#/types/settings";
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  llm_model: "openhands/kimi-k3",
+  llm_model: "openhands/exeaon1-nunya-14b",
   llm_base_url: "",
   agent: "CodeActAgent",
   language: "en",
@@ -28,8 +28,8 @@ export const DEFAULT_SETTINGS: Settings = {
   max_budget_per_task: null,
   email: "",
   email_verified: true,
-  git_user_name: "openhands",
-  git_user_email: "openhands@all-hands.dev",
+  git_user_name: "exeaon",
+  git_user_email: "support@exeaon.dev",
   title_llm_profile: null,
   agent_settings_schema: null,
   agent_settings: {
@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
     agent_kind: "openhands",
     agent: "CodeActAgent",
     llm: {
-      model: "openhands/kimi-k3",
+      model: "openhands/exeaon1-nunya-14b",
     },
     condenser: {
       enabled: true,

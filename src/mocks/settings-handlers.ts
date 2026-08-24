@@ -591,12 +591,9 @@ const MOCK_MODELS = [
   "openai/gpt-5.5",
   "openai/gpt-4o",
   "openai/gpt-4o-mini",
-  "openhands/claude-sonnet-4-20250514",
-  "openhands/claude-sonnet-4-5-20250929",
-  "openhands/claude-haiku-4-5-20251001",
-  "openhands/claude-opus-4-5-20251101",
-  "openhands/kimi-k3",
-  "openhands/glm-5.2",
+  "openhands/exeaon1-nunya-14b",
+  "openhands/exeaon-27b",
+  "openhands/exeaon-72b",
   "sambanova/Meta-Llama-3.1-8B-Instruct",
 ];
 
@@ -607,10 +604,9 @@ const MOCK_VERIFIED_MODELS = new Set([
   "anthropic/claude-opus-4-8",
   "anthropic/claude-sonnet-4-5-20250929",
   "openai/gpt-5.5",
-  "openhands/claude-opus-4-5-20251101",
-  "openhands/claude-sonnet-4-5-20250929",
-  "openhands/kimi-k3",
-  "openhands/glm-5.2",
+  "openhands/exeaon1-nunya-14b",
+  "openhands/exeaon-27b",
+  "openhands/exeaon-72b",
 ]);
 
 const MOCK_VERIFIED_PROVIDERS = [
@@ -735,7 +731,7 @@ export const SETTINGS_HANDLERS = [
         "claude-sonnet-4-5-20250929",
       ],
       verified_providers: MOCK_VERIFIED_PROVIDERS,
-      default_model: "openhands/kimi-k3",
+      default_model: "openhands/exeaon1-nunya-14b",
     }),
   ),
 
