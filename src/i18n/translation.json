@@ -5338,7 +5338,7 @@
     "ca": "GitLab"
   },
   "SETTINGS$NAV_CONDENSER": {
-    "en": "Condenser",
+    "en": "Compactor",
     "ja": "コンデンサー",
     "zh-CN": "压缩器",
     "zh-TW": "壓縮器",
@@ -12359,7 +12359,7 @@
     "ca": "Privat"
   },
   "AUTOMATIONS$ADD_AUTOMATION": {
-    "en": "Add Automation",
+    "en": "Add Flow",
     "ja": "オートメーションを追加",
     "zh-CN": "添加自动化",
     "zh-TW": "新增自動化",
@@ -12597,7 +12597,7 @@
     "ca": "El fitxer seleccionat no és un JSON vàlid."
   },
   "AUTOMATIONS$EMPTY": {
-    "en": "No automations configured",
+    "en": "No flows configured",
     "ja": "オートメーションが設定されていません",
     "zh-CN": "未配置自动化",
     "zh-TW": "未設定自動化",
@@ -12631,7 +12631,7 @@
     "ca": "Tria'n una de les recomanacions de sota per començar."
   },
   "AUTOMATIONS$EMPTY_HOW_TO_CREATE_TITLE": {
-    "en": "How to create an automation",
+    "en": "How to create a flow",
     "ja": "オートメーションの作成方法",
     "zh-CN": "如何创建自动化",
     "zh-TW": "如何建立自動化",
@@ -12716,7 +12716,7 @@
     "ca": "Ús d'Exeaon Cloud"
   },
   "AUTOMATIONS$EMPTY_OPTION_CONVERSATION_DESC": {
-    "en": "Start a new conversation and tell Exeaon to <example><cmd>Create an automation</cmd><punct>.</punct></example>",
+    "en": "Create a flow",
     "ja": "新しい会話を開始し、Exeaon に <example><cmd>オートメーションを作成してください</cmd></example> と伝えてください。",
     "zh-CN": "开始新对话，告诉 Exeaon <example><cmd>创建一个自动化</cmd><punct>。</punct></example>",
     "zh-TW": "開始新對話，告訴 Exeaon <example><cmd>建立一個自動化</cmd><punct>。</punct></example>",
@@ -12767,7 +12767,7 @@
     "ca": "Inicia una conversa"
   },
   "AUTOMATIONS$CREATE_AUTOMATION_BUTTON": {
-    "en": "Create Automation",
+    "en": "Create Flow",
     "ja": "オートメーションを作成",
     "zh-CN": "创建自动化",
     "zh-TW": "建立自動化",
@@ -12784,7 +12784,7 @@
     "ca": "Crea una automatització"
   },
   "AUTOMATIONS$CREATE_AUTOMATION_PROMPT": {
-    "en": "Create an automation",
+    "en": "Create a flow",
     "ja": "オートメーションを作成してください",
     "zh-CN": "创建一个自动化",
     "zh-TW": "建立一個自動化",
@@ -12818,7 +12818,7 @@
     "ca": "Més informació a la documentació"
   },
   "AUTOMATIONS$SEARCH_PLACEHOLDER": {
-    "en": "Search automations...",
+    "en": "Search flows...",
     "ja": "オートメーションを検索...",
     "zh-CN": "搜索自动化...",
     "zh-TW": "搜尋自動化...",
@@ -12835,7 +12835,7 @@
     "ca": "Cerca automatitzacions..."
   },
   "AUTOMATIONS$NO_FILTER_MATCHES": {
-    "en": "No automations match these filters",
+    "en": "No flows match these filters",
     "ja": "これらのフィルターに一致するオートメーションはありません",
     "zh-CN": "没有符合这些筛选条件的自动化",
     "zh-TW": "沒有符合這些篩選條件的自動化",
@@ -33252,7 +33252,7 @@
     "ca": "{{count}} resultats"
   },
   "RECOMMENDED_AUTOMATIONS$SECTION_LABEL": {
-    "en": "Recommended automations",
+    "en": "Recommended flows",
     "ja": "おすすめの自動化",
     "zh-CN": "推荐的自动化",
     "zh-TW": "推薦的自動化",
@@ -35139,7 +35139,7 @@
     "ca": "S'està iniciant…"
   },
   "FEATURED_AUTOMATIONS$SECTION_TITLE": {
-    "en": "Automations",
+    "en": "Flows",
     "ja": "オートメーション",
     "zh-CN": "自动化",
     "zh-TW": "自動化",
@@ -35156,7 +35156,7 @@
     "ca": "Automatitzacions"
   },
   "FEATURED_AUTOMATIONS$CHIP_GROUP_LABEL": {
-    "en": "Open automations",
+    "en": "Open flows",
     "ja": "稼働中のオートメーション",
     "zh-CN": "已启用的自动化",
     "zh-TW": "已啟用的自動化",
@@ -35190,7 +35190,7 @@
     "ca": "Destacades"
   },
   "FEATURED_AUTOMATIONS$MANAGE": {
-    "en": "Add or manage automations",
+    "en": "Add or manage flows",
     "ja": "オートメーションを追加または管理",
     "zh-CN": "添加或管理自动化",
     "zh-TW": "新增或管理自動化",
@@ -35224,7 +35224,7 @@
     "ca": "Obre la conversa més recent"
   },
   "FEATURED_AUTOMATIONS$VIEW_DETAILS": {
-    "en": "View automation details",
+    "en": "View flow details",
     "ja": "オートメーションの詳細を表示",
     "zh-CN": "查看自动化详情",
     "zh-TW": "檢視自動化詳細資訊",
