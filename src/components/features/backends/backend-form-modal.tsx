@@ -904,7 +904,7 @@ function ManualConnectionColumn({
           setConnectionError(null);
         }}
         // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
-        placeholder="http://localhost:8000"
+        placeholder="http://127.0.0.1:18000"
         className="w-full"
       />
 
