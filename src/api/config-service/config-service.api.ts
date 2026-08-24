@@ -69,15 +69,15 @@ class ConfigService {
     const active = getActiveBackend();
 
     if (active.backend.kind === "cloud") {
-      // Return our curated Exeaon Cloud model list instead of calling the upstream
-      // cloud registry, which returns unrelated Claude/OpenAI models.
+      // Return our curated Exeaon model list regardless of cloud/local.
+      // Both Exeaon and Exeaon Cloud serve the same real Exeaon model roster.
       const provider = params.provider__eq ?? null;
-      const cloudNames: string[] = [];
-      if (provider === "openhands") {
-        cloudNames.push("glm-5.2", "kimi-k3", "deepseek-v4-flash", "minimax-m2.7");
-      } else if (provider === "exeaon" || provider === "openai") {
-        cloudNames.push("exeaon1-nunya-14b", "exeaon-27b", "exeaon-72b");
-      }
+      const cloudNames: string[] =
+        provider === "exeaon" ||
+        provider === "openhands" ||
+        provider === "openai"
+          ? ["exeaon1-nunya-14b", "exeaon-27b", "exeaon-72b"]
+          : [];
       const items: LLMModel[] = cloudNames.map((name) => ({
         provider,
         name,
@@ -98,15 +98,15 @@ class ConfigService {
 
     const provider = params.provider__eq ?? null;
     const verifiedNames = new Set<string>();
-    if (provider === "exeaon" || provider === "openai") {
+    // Both Exeaon and Exeaon Cloud serve real Exeaon models
+    if (
+      provider === "exeaon" ||
+      provider === "openhands" ||
+      provider === "openai"
+    ) {
       verifiedNames.add("exeaon1-nunya-14b");
       verifiedNames.add("exeaon-27b");
       verifiedNames.add("exeaon-72b");
-    } else if (provider === "openhands") {
-      verifiedNames.add("glm-5.2");
-      verifiedNames.add("kimi-k3");
-      verifiedNames.add("deepseek-v4-flash");
-      verifiedNames.add("minimax-m2.7");
     }
     const verifiedItems: LLMModel[] = [...verifiedNames].map((name) => ({
       provider,

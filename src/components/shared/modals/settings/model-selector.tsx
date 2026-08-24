@@ -227,7 +227,7 @@ export function ModelSelector({
             testId="openhands-account-help"
             text="Need an Exeaon Cloud Account:"
             linkText={t(I18nKey.SETTINGS$CLICK_HERE)}
-            href="https://exeaon.dev"
+            href="https://cloud.exeaon.dev"
             size="settings"
             linkColor="white"
           />

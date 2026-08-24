@@ -38,12 +38,12 @@ describe("formatNativeModelName", () => {
     expect(isFreeOpenHandsModel("openai/glm-5.2")).toBe(false);
   });
 
-  it("keeps free OpenHands labels on native conversation chips", () => {
-    expect(formatNativeModelName("openhands/glm-5.2")).toBe(
-      FREE_OPENHANDS_MODELS["openhands/glm-5.2"],
+  it("keeps free Exeaon labels on native conversation chips", () => {
+    expect(formatNativeModelName("openhands/exeaon1-nunya-14b")).toBe(
+      FREE_OPENHANDS_MODELS["openhands/exeaon1-nunya-14b"],
     );
-    expect(formatNativeModelName("openhands/deepseek-v4-flash")).toBe(
-      FREE_OPENHANDS_MODELS["openhands/deepseek-v4-flash"],
+    expect(formatNativeModelName("openhands/exeaon-27b")).toBe(
+      FREE_OPENHANDS_MODELS["openhands/exeaon-27b"],
     );
   });
 
