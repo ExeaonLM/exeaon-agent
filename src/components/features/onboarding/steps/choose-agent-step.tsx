@@ -163,7 +163,7 @@ export function ChooseAgentStep({
               </span>
             </div>
             <span className="text-xs text-[var(--oh-muted)]">
-              {t(I18nKey.ONBOARDING$AGENT_OPENHANDS_DESCRIPTION)}
+              Exeaon agent. For coding, research and discoveries.
             </span>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">

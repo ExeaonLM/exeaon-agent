@@ -30430,7 +30430,7 @@
     "uk": "Виберіть агента, який вестиме ваші розмови. Це можна змінити пізніше."
   },
   "ONBOARDING$AGENT_OPENHANDS_DESCRIPTION": {
-    "en": "The default Exeaon agent. Best for general-purpose coding and exploration.",
+    "en": "Exeaon agent. For coding, research and discoveries.",
     "ja": "デフォルトの Exeaon エージェント。汎用的なコーディングや探索に最適です。",
     "zh-CN": "默认的 Exeaon 智能体。最适合通用的编码和探索。",
     "zh-TW": "預設的 Exeaon 代理。最適合通用程式設計與探索。",
@@ -40664,3 +40664,4 @@
     "zh-TW": "已更新連線「{{name}}」"
   }
 }
+
