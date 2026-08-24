@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
+import { Folder, ChevronLeft, HardDrive, Star, FolderPlus, Check } from "lucide-react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { ModalCloseButton } from "#/components/shared/modals/modal-close-button";
 import {
   MODAL_MAX_WIDTH_VIEWPORT,
   modalWidthClassName,
 } from "#/components/shared/modals/modal-body";
-import { BrandButton } from "#/components/features/settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { LocalWorkspace, LocalWorkspaceParent } from "#/types/workspace";
 import {
@@ -17,9 +16,6 @@ import {
 } from "#/hooks/query/use-search-subdirs";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { cn } from "#/utils/utils";
-import { modalTitleSmClassName } from "#/utils/modal-classes";
-import FolderIcon from "#/icons/folder.svg?react";
-import ChevronLeft from "#/icons/chevron-left-small.svg?react";
 
 const PROJECTS_PATH = "/projects";
 
@@ -37,6 +33,7 @@ interface SidebarEntry {
 
 interface SidebarSectionProps {
   label: string;
+  icon?: React.ReactNode;
   entries: SidebarEntry[];
   currentPath: string | null;
   onPick: (path: string) => void;
@@ -44,17 +41,19 @@ interface SidebarSectionProps {
 
 function SidebarSection({
   label,
+  icon,
   entries,
   currentPath,
   onPick,
 }: SidebarSectionProps) {
   if (entries.length === 0) return null;
   return (
-    <div className="px-2 pb-3">
-      <div className="px-2 pb-1 text-[11px] uppercase tracking-wide text-[var(--oh-muted)] font-semibold">
+    <div className="px-3 pb-4">
+      <div className="flex items-center gap-1.5 px-2 pb-1.5 text-[10px] uppercase tracking-wider text-[#8C8370] font-bold">
+        {icon}
         {label}
       </div>
-      <ul>
+      <ul className="space-y-0.5">
         {entries.map((entry) => {
           const isActive = currentPath === entry.path;
           return (
@@ -64,13 +63,13 @@ function SidebarSection({
                 onClick={() => onPick(entry.path)}
                 data-testid={`folder-browser-sidebar-${entry.label.toLowerCase()}`}
                 className={cn(
-                  "flex items-center gap-2 w-full px-2 py-1 rounded text-sm cursor-pointer",
+                  "flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-lg text-xs transition-all duration-100 cursor-pointer text-left truncate",
                   isActive
-                    ? "bg-tertiary text-white"
-                    : "text-[var(--oh-text-tertiary)] hover:bg-[var(--oh-surface-raised)]",
+                    ? "bg-[#241F14] text-[#FFD026] font-semibold border border-[#FFD026]/30 shadow-sm shadow-[#FFD026]/10"
+                    : "text-[#B8AF9E] hover:bg-[#1C1811] hover:text-[#EDE7D8] border border-transparent",
                 )}
               >
-                <FolderIcon width={14} height={14} className="shrink-0" />
+                <Folder className={cn("size-3.5 shrink-0", isActive ? "text-[#FFD026]" : "text-[#8C8370]")} />
                 <span className="truncate">{entry.label}</span>
               </button>
             </li>
@@ -102,18 +101,10 @@ function isWindowsDriveRoot(path: string): boolean {
 }
 
 function trimTrailingSeparators(path: string): string {
-  const trimmed = path.replace(/[\\/]+$/, "");
-  if (/^[A-Za-z]:$/.test(trimmed)) {
-    const separator = path.includes("/") && !path.includes("\\") ? "/" : "\\";
-    return `${trimmed}${separator}`;
+  if (isWindowsDriveRoot(path)) {
+    return path;
   }
-  return trimmed;
-}
-
-function shouldDefaultToProjectsPath(
-  homeData: HomeDirectoryResponse | undefined,
-): boolean {
-  return homeData?.home === "/home/openhands";
+  return path.replace(/[/\\]+$/, "");
 }
 
 export function FolderBrowserModal({
@@ -123,80 +114,79 @@ export function FolderBrowserModal({
   onAddParent,
 }: FolderBrowserModalProps) {
   const { t } = useTranslation("openhands");
-  const [currentPath, setCurrentPath] = useState<string | null>(null);
-  const active = useActiveBackend();
+  const { backend } = useActiveBackend();
+  const isHostWorkspace = backend.kind === "local";
 
   const { data: homeData } = useHomeDirectory();
 
-  // Initialize / reset to home each time the modal is opened
+  const defaultPath = useMemo(() => {
+    if (homeData?.home) return homeData.home;
+    if (homeData?.locations && homeData.locations.length > 0) return homeData.locations[0].path;
+    return isHostWorkspace ? "/" : PROJECTS_PATH;
+  }, [homeData, isHostWorkspace]);
+
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
+
   useEffect(() => {
-    if (isOpen && homeData?.home && currentPath === null) {
-      setCurrentPath(
-        shouldDefaultToProjectsPath(homeData) ? PROJECTS_PATH : homeData.home,
-      );
+    if (isOpen) {
+      if (homeData?.home && (currentPath === null || currentPath === PROJECTS_PATH)) {
+        setCurrentPath(homeData.home);
+      } else if (currentPath === null && defaultPath) {
+        setCurrentPath(defaultPath);
+      }
     }
+  }, [isOpen, defaultPath, homeData?.home, currentPath]);
+
+  useEffect(() => {
     if (!isOpen) {
       setCurrentPath(null);
     }
-  }, [isOpen, homeData?.home, currentPath]);
-
-  // A backend switch invalidates the previous path — clear it so the
-  // open/close effect can re-seed from the new backend's homeData.home.
-  useEffect(() => {
-    setCurrentPath(null);
-  }, [active.backend.id, active.orgId]);
+  }, [isOpen]);
 
   const {
-    data: listing,
+    data: subdirsData,
     isLoading,
     isError,
     error,
-  } = useSearchSubdirs(isOpen ? currentPath : null);
+  } = useSearchSubdirs(currentPath);
 
-  const favorites: SidebarEntry[] = useMemo(() => {
-    if (!homeData?.home) return [];
-    const trimmed = trimTrailingSeparators(homeData.home) || homeData.home;
-    const backendFavorites = [
-      { label: "Home", path: trimmed },
-      ...(homeData.favorites ?? []),
-    ];
-    if (
-      shouldDefaultToProjectsPath(homeData) &&
-      !backendFavorites.some((entry) => entry.path === PROJECTS_PATH)
-    ) {
-      backendFavorites.push({
-        label: PROJECTS_PATH,
-        path: PROJECTS_PATH,
-      });
+  const subdirs = useMemo(() => {
+    if (!subdirsData) return [];
+    if (Array.isArray(subdirsData)) return subdirsData;
+    if (Array.isArray((subdirsData as any).items)) return (subdirsData as any).items;
+    return [];
+  }, [subdirsData]);
+
+  const favorites = useMemo<SidebarEntry[]>(() => {
+    if (homeData?.favorites && homeData.favorites.length > 0) {
+      return homeData.favorites;
     }
-
-    return backendFavorites;
+    const list: SidebarEntry[] = [];
+    if (homeData?.home) {
+      list.push({ label: "Home", path: homeData.home });
+    }
+    return list;
   }, [homeData]);
 
-  const locations: SidebarEntry[] = homeData?.locations ?? [];
+  const locations = useMemo<SidebarEntry[]>(() => {
+    if (homeData?.locations && homeData.locations.length > 0) {
+      return homeData.locations;
+    }
+    const list: SidebarEntry[] = [];
+    if (!isHostWorkspace) {
+      list.push({ label: "projects", path: PROJECTS_PATH });
+    }
+    return list;
+  }, [homeData, isHostWorkspace]);
 
   if (!isOpen) return null;
 
-  const subdirs = listing?.items ?? [];
   const parent = currentPath ? getParentPath(currentPath) : null;
-
-  // Signal that we're inside a container environment without the host
-  // home mounted: the agent server reports `/home/openhands` as home and
-  // returns no favorites (the only contents are hidden credential dirs).
-  // In that case there's nothing useful for the user to browse, so we
-  // surface a hint instead of the generic empty state.
-  const showHostHomeHint =
-    homeData?.home === "/home/openhands" &&
-    (homeData?.favorites?.length ?? 0) === 0 &&
-    currentPath === homeData?.home &&
-    !isLoading &&
-    !isError &&
-    subdirs.length === 0;
+  const isAtProjectsRoot = !isHostWorkspace && currentPath === PROJECTS_PATH;
+  const showHostHomeHint = isAtProjectsRoot && subdirs.length === 0;
 
   const getBasename = (path: string): string => {
     const trimmed = trimTrailingSeparators(path);
-    if (!trimmed) return "/";
-    if (trimmed === "/" || isWindowsDriveRoot(trimmed)) return trimmed;
     const idx = Math.max(trimmed.lastIndexOf("/"), trimmed.lastIndexOf("\\"));
     return idx >= 0 ? trimmed.slice(idx + 1) || trimmed : trimmed;
   };
@@ -232,18 +222,29 @@ export function FolderBrowserModal({
       <div
         data-testid="folder-browser-modal"
         className={cn(
-          "flex flex-col bg-[var(--oh-surface)] border border-[var(--oh-border-input)] rounded-xl",
+          "flex flex-col bg-[#0D0B08] text-[#EDE7D8] border border-[#2B2316] rounded-2xl shadow-2xl overflow-hidden",
           modalWidthClassName("xl"),
           MODAL_MAX_WIDTH_VIEWPORT,
-          "h-[480px]",
+          "h-[520px] max-h-[90vh]",
+          "animate-in fade-in zoom-in-95 duration-150 select-none",
         )}
       >
         {/* Title bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--oh-border-input)]">
-          <BaseModalTitle
-            className={modalTitleSmClassName}
-            title={t(I18nKey.HOME$ADD_WORKSPACES_TITLE)}
-          />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#241F16] bg-[#14110C] backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-[#241F14] border border-[#FFD026]/40 text-[#FFD026] shadow-sm shadow-[#FFD026]/10">
+              <FolderPlus className="size-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold tracking-tight text-white">
+                {t(I18nKey.HOME$ADD_WORKSPACES_TITLE)}
+              </h2>
+              <p className="text-[11px] text-[#8C8370]">
+                Select local directory to attach as workspace
+              </p>
+            </div>
+          </div>
+          <ModalCloseButton onClose={onClose} />
         </div>
 
         {/* Body: sidebar + main */}
@@ -251,63 +252,66 @@ export function FolderBrowserModal({
           {/* Sidebar */}
           <aside
             data-testid="folder-browser-sidebar"
-            className="w-[180px] shrink-0 border-r border-[var(--oh-border-input)] bg-[var(--oh-surface)] py-3 overflow-y-auto"
+            className="w-[200px] shrink-0 border-r border-[#241F16] bg-[#100E0A] py-3.5 overflow-y-auto custom-scrollbar"
           >
             <SidebarSection
               label={t(I18nKey.HOME$FAVORITES)}
+              icon={<Star className="size-3 text-[#FFD026]" />}
               entries={favorites}
               currentPath={currentPath}
               onPick={setCurrentPath}
             />
             <SidebarSection
               label={t(I18nKey.HOME$LOCATIONS)}
+              icon={<HardDrive className="size-3 text-[#3880F6]" />}
               entries={locations}
               currentPath={currentPath}
               onPick={setCurrentPath}
             />
           </aside>
 
-          {/* Main */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Nav row */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--oh-border-input)]">
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[#0D0B08]">
+            {/* Nav row / Breadcrumb */}
+            <div className="flex items-center gap-2.5 px-5 py-2.5 border-b border-[#241F16] bg-[#13100B]">
               <button
                 type="button"
                 data-testid="folder-browser-up"
                 onClick={() => parent && setCurrentPath(parent)}
                 disabled={!parent}
                 aria-label={t(I18nKey.COMMON$UP)}
-                className="p-1 rounded hover:bg-[var(--oh-interactive-hover)] text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="flex size-7 items-center justify-center rounded-lg border border-[#2B2316] bg-[#18140E] text-[#EDE7D8] hover:border-[#FFD026]/40 hover:bg-[#241F14] hover:text-[#FFD026] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
-                <ChevronLeft width={16} height={16} />
+                <ChevronLeft className="size-4" />
               </button>
-              <span
-                className="text-xs text-[var(--oh-muted)] truncate"
+              <div
+                className="flex-1 min-w-0 font-mono text-xs text-[#A89F8D] bg-[#0A0907] px-3 py-1.5 rounded-lg border border-[#201B12] truncate"
                 data-testid="folder-browser-current-path"
               >
                 {currentPath ?? ""}
-              </span>
+              </div>
             </div>
 
             {/* Column headers */}
-            <div className="grid grid-cols-[1fr_120px] px-4 py-1 border-b border-[var(--oh-border-input)] text-xs text-[var(--oh-text-secondary)] font-semibold">
+            <div className="grid grid-cols-[1fr_100px] px-5 py-2 border-b border-[#241F16] bg-[#110F0A] text-[10px] text-[#8C8370] font-bold uppercase tracking-wider">
               <span>{t(I18nKey.HOME$NAME)}</span>
               <span>{t(I18nKey.HOME$KIND)}</span>
             </div>
 
-            {/* List */}
+            {/* Folder List */}
             <ul
-              className="flex-1 overflow-auto custom-scrollbar-always"
+              className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#1A1610]/40"
               data-testid="folder-browser-list"
             >
               {isLoading && (
-                <li className="px-4 py-2 text-sm text-[var(--oh-text-secondary)]">
+                <li className="px-5 py-6 text-center text-xs text-[#8C8370]">
+                  <span className="inline-block size-4 border-2 border-[#FFD026] border-t-transparent rounded-full animate-spin mr-2 align-middle" />
                   {t(I18nKey.HOME$LOADING)}
                 </li>
               )}
               {isError && (
                 <li
-                  className="px-4 py-2 text-sm text-red-400"
+                  className="px-5 py-4 text-xs text-red-400 bg-red-950/20"
                   data-testid="folder-browser-error"
                 >
                   {(error as Error | undefined)?.message ??
@@ -316,7 +320,7 @@ export function FolderBrowserModal({
               )}
               {!isLoading && !isError && subdirs.length === 0 && (
                 <li
-                  className="px-4 py-2 text-sm text-[var(--oh-text-secondary)]"
+                  className="px-5 py-8 text-center text-xs text-[#8C8370]"
                   data-testid={
                     showHostHomeHint
                       ? "folder-browser-host-home-hint"
@@ -328,19 +332,19 @@ export function FolderBrowserModal({
                     : t(I18nKey.HOME$NO_WORKSPACES)}
                 </li>
               )}
-              {subdirs.map((entry) => (
+              {subdirs.map((entry: { name: string; path: string }) => (
                 <li key={entry.path}>
                   <button
                     type="button"
                     onClick={() => setCurrentPath(entry.path)}
-                    className="grid grid-cols-[1fr_120px] items-center w-full text-left px-4 py-1.5 text-sm text-white hover:bg-[var(--oh-interactive-hover)] cursor-pointer"
+                    className="grid grid-cols-[1fr_100px] items-center w-full text-left px-5 py-2 text-xs text-[#EDE7D8] hover:bg-[#1A1610] hover:text-[#FFF4B8] transition-colors cursor-pointer group"
                     data-testid={`folder-browser-entry-${entry.name}`}
                   >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <FolderIcon width={16} height={16} className="shrink-0" />
-                      <span className="truncate">{entry.name}</span>
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <Folder className="size-4 shrink-0 text-[#FFD026] group-hover:scale-110 transition-transform" />
+                      <span className="truncate font-medium">{entry.name}</span>
                     </span>
-                    <span className="text-[var(--oh-text-secondary)] text-xs">
+                    <span className="text-[#736A58] group-hover:text-[#A89F8D] font-mono text-[11px]">
                       {t(I18nKey.HOME$FOLDER)}
                     </span>
                   </button>
@@ -351,35 +355,35 @@ export function FolderBrowserModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--oh-border-input)]">
-          <BrandButton
+        <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 border-t border-[#241F16] bg-[#14110C]">
+          <button
             type="button"
-            variant="secondary"
             onClick={onClose}
-            testId="folder-browser-cancel"
+            data-testid="folder-browser-cancel"
+            className="px-4 py-2 rounded-xl text-xs font-medium border border-[#2E281F] bg-[#18140E] text-[#B8AF9E] hover:border-[#FFD026]/40 hover:bg-[#201C15] hover:text-[#EDE7D8] transition-all cursor-pointer"
           >
             {t(I18nKey.HOME$CANCEL)}
-          </BrandButton>
+          </button>
           {onAddParent && (
-            <BrandButton
+            <button
               type="button"
-              variant="secondary"
               onClick={handleAddAllSubdirectories}
-              isDisabled={!currentPath || isLoading}
-              testId="folder-browser-add-all-subdirs"
+              disabled={!currentPath || isLoading}
+              data-testid="folder-browser-add-all-subdirs"
+              className="px-4 py-2 rounded-xl text-xs font-medium border border-[#2E281F] bg-[#18140E] text-[#EDE7D8] hover:border-[#FFD026]/40 hover:bg-[#201C15] hover:text-[#FFF4B8] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {t(I18nKey.HOME$ADD_ALL_SUBDIRECTORIES)}
-            </BrandButton>
+            </button>
           )}
-          <BrandButton
+          <button
             type="button"
-            variant="primary"
             onClick={handleAddDirectory}
-            isDisabled={!currentPath || isLoading}
-            testId="folder-browser-use"
+            disabled={!currentPath || isLoading}
+            data-testid="folder-browser-use"
+            className="px-5 py-2 rounded-xl text-xs font-bold bg-[#FFD026] text-black hover:bg-[#FFE066] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-[#FFD026]/20 cursor-pointer"
           >
             {t(I18nKey.HOME$ADD_THIS_DIRECTORY)}
-          </BrandButton>
+          </button>
         </div>
       </div>
     </ModalBackdrop>

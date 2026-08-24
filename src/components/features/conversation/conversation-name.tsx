@@ -15,6 +15,7 @@ import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
 import { TranscriptExportModal } from "./transcript-export-modal";
 import { sanitizeConversationTitle } from "#/utils/sanitize-conversation-title";
+import { UsageModal } from "./usage-modal";
 
 export function ConversationName() {
   const { t } = useTranslation("openhands");
@@ -43,6 +44,8 @@ export function ConversationName() {
     shareUrl,
     handleConfirmDelete,
     handleConfirmStop,
+    usageModalVisible,
+    setUsageModalVisible,
     systemModalVisible,
     setSystemModalVisible,
     skillsModalVisible,
@@ -250,6 +253,14 @@ export function ConversationName() {
         <ConfirmStopModal
           onConfirm={handleConfirmStop}
           onCancel={() => setConfirmStopModalVisible(false)}
+        />
+      )}
+
+      {/* Usage & Cost Modal */}
+      {usageModalVisible && (
+        <UsageModal
+          isOpen={usageModalVisible}
+          onClose={() => setUsageModalVisible(false)}
         />
       )}
     </>
