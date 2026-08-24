@@ -64,8 +64,8 @@
 
 :root {
   color-scheme: dark;
-  --oh-color-primary: #F3CE49;
-  --oh-color-logo: #F3CE49;
+  --oh-color-primary: #FFD026;
+  --oh-color-logo: #FFD026;
   --oh-color-base: var(--cool-grey-950);
   --oh-color-base-secondary: var(--cool-grey-925);
   --oh-color-danger: #e76a5e;
@@ -97,11 +97,11 @@
   --oh-scrollbar-hover: color-mix(in srgb, var(--cool-grey-400) 50%, transparent);
   --oh-default: var(--cool-grey-800);
   --oh-default-foreground: var(--cool-grey-100);
-  --oh-accent: #F3CE49;
+  --oh-accent: #FFD026;
   --oh-accent-foreground: var(--cool-grey-950);
   --oh-success: #a5e75e;
   --oh-success-foreground: var(--cool-grey-950);
-  --oh-warning: #F3CE49;
+  --oh-warning: #FFD026;
   --oh-warning-foreground: var(--cool-grey-950);
   --oh-danger: #e76a5e;
   --oh-danger-foreground: var(--cool-grey-50);
@@ -645,3 +645,67 @@ button.extension-module-card-interactive {
     0px 4px 6px -4px rgba(0, 0, 0, 0.1),
     0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
+
+/* ── EXO Flowing Multi-Color Halo (Radiant Gold + Solar Amber + Pure Warm Light) ── */
+@property --exo-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes exo-flow-spin {
+  0% {
+    --exo-angle: 0deg;
+  }
+  100% {
+    --exo-angle: 360deg;
+  }
+}
+
+.exo-flow-card {
+  position: relative;
+  background: #15130E;
+  border-radius: 0.75rem;
+  z-index: 1;
+}
+
+.exo-flow-card::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--exo-angle, 0deg),
+    #FFD026 0%,
+    #FF7A00 25%,
+    #FFF4B8 50%,
+    #FF7A00 75%,
+    #FFD026 100%
+  );
+  -webkit-mask: 
+     linear-gradient(#fff 0 0) content-box, 
+     linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: exo-flow-spin 3.5s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Luminous radiant gold button with subtle flowing aura */
+.exo-btn-primary {
+  background: linear-gradient(135deg, #FFD026 0%, #FFA700 100%) !important;
+  color: #0A0805 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 16px rgba(255, 208, 38, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.exo-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FFE066 0%, #FFB700 100%) !important;
+  box-shadow: 0 0 24px rgba(255, 208, 38, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.65) !important;
+  transform: translateY(-0.5px);
+}
+

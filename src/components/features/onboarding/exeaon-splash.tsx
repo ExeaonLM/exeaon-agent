@@ -76,10 +76,17 @@ export function ExeaonSplash({ onDone, loop = false }: ExeaonSplashProps) {
           className="absolute"
           aria-hidden
         >
+          <defs>
+            <linearGradient id="exo-infinity-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFD026" />
+              <stop offset="50%" stopColor="#FFF4B8" />
+              <stop offset="100%" stopColor="#FF7A00" />
+            </linearGradient>
+          </defs>
           <path
             d="M0,0 C0,-40 60,-40 60,0 C60,40 20,40 0,0 C-20,-40 -60,-40 -60,0 C-60,40 0,40 0,0Z"
             fill="none"
-            stroke="#F3CE49"
+            stroke="url(#exo-infinity-grad)"
             strokeWidth="3.5"
             strokeLinecap="round"
             className={

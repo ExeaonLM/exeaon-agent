@@ -153,7 +153,7 @@ export function ChooseAgentStep({
           data-testid="onboarding-agent-option-openhands"
           data-selected="true"
           onClick={() => onSelect("openhands")}
-          className="flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer border-[#F3CE49]/40 bg-[#16140F] hover:border-[#F3CE49]/70 shadow-none w-full max-w-sm"
+          className="exo-flow-card flex items-start justify-between gap-4 px-4 py-3.5 text-left transition-all cursor-pointer w-full max-w-sm"
         >
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex min-w-0 items-center gap-2">
@@ -170,7 +170,7 @@ export function ChooseAgentStep({
             <Check
               width={18}
               height={18}
-              className="mt-1 shrink-0 text-[#F3CE49]"
+              className="mt-1 shrink-0 text-[#FFD026]"
               aria-hidden
             />
           </div>

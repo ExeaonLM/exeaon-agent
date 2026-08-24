@@ -18,32 +18,31 @@ export function OnboardingProgressBar({
   totalSteps,
   className,
 }: OnboardingProgressBarProps) {
+  const percentage = Math.min(
+    100,
+    Math.max(0, Math.round(((currentStep + 1) / totalSteps) * 100)),
+  );
+
   return (
     <div
       role="progressbar"
-      aria-valuemin={1}
-      aria-valuemax={totalSteps}
-      aria-valuenow={currentStep + 1}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percentage}
       data-testid="onboarding-progress-bar"
-      className={cn("flex w-full items-center gap-2", className)}
+      className={cn("flex w-full flex-col gap-1.5", className)}
     >
-      {Array.from({ length: totalSteps }, (_, index) => {
-        const isCompleted = index < currentStep;
-        const isCurrent = index === currentStep;
-        return (
-          <div
-            key={index}
-            data-testid={`onboarding-progress-step-${index}`}
-            data-state={
-              isCompleted ? "completed" : isCurrent ? "current" : "upcoming"
-            }
-            className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors duration-300",
-              isCompleted || isCurrent ? "bg-[#F3CE49]" : "bg-white/10",
-            )}
-          />
-        );
-      })}
+      <div className="flex items-center justify-between text-xs font-mono text-[var(--oh-muted)]">
+        <span>STEP {currentStep + 1} OF {totalSteps}</span>
+        <span className="font-semibold text-[#FFD026]">{percentage}%</span>
+      </div>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div
+          data-testid="onboarding-progress-fill"
+          className="h-full rounded-full bg-gradient-to-r from-[#FF7A00] via-[#FFD026] to-[#FFF4B8] transition-all duration-500 ease-out shadow-[0_0_10px_rgba(255,208,38,0.5)]"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
     </div>
   );
 }
