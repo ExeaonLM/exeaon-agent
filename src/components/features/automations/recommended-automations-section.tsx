@@ -222,7 +222,7 @@ function AutomationCardGrid({
   translate,
 }: AutomationCardGridProps) {
   return (
-    <div className={cn("mt-3", extensionModuleCardGridClassName)}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-3.5">
       {automations.map((automation) => {
         const integrations = getIntegrationEntries(automation);
         // "N MCPs to connect" only counts entries the install flow can
@@ -249,43 +249,45 @@ function AutomationCardGrid({
             type="button"
             data-testid={`recommended-automation-card-${automation.id}`}
             onClick={() => onSelect(automation)}
-            className="group flex min-w-0 flex-col justify-between rounded-2xl border border-white/10 bg-[#12110D] hover:border-[#FFD026]/50 hover:bg-[#16140F] p-4 text-left transition-all duration-200 shadow-md hover:shadow-[0_0_15px_rgba(255,208,38,0.12)] cursor-pointer"
+            className="group flex min-h-[170px] min-w-0 flex-col justify-between rounded-2xl border border-white/10 bg-[#12110D] hover:border-[#FFD026] hover:bg-[#181610] p-4 text-left transition-all duration-200 shadow-md hover:shadow-[0_0_20px_rgba(255,208,38,0.18)] cursor-pointer"
           >
-            <div className="flex w-full items-start gap-3">
-              <AutomationCardIcon
-                automation={automation}
-                integrations={integrations}
-                size="md"
-                testId={`recommended-automation-icon-${automation.id}`}
-              />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="truncate text-sm font-semibold text-white group-hover:text-[#FFD026] transition-colors">
-                    {name}
-                  </h3>
-                  <CirclePlusBadge
-                    testId={`recommended-automation-plus-${automation.id}`}
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-[var(--oh-muted)]">
+            <div className="flex w-full flex-col gap-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <AutomationCardIcon
+                  automation={automation}
+                  integrations={integrations}
+                  size="md"
+                  testId={`recommended-automation-icon-${automation.id}`}
+                />
+                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-[var(--oh-muted)]">
                   {automation.category}
                 </span>
               </div>
+
+              <div>
+                <h3 className="line-clamp-1 text-sm font-semibold text-white group-hover:text-[#FFD026] transition-colors">
+                  {name}
+                </h3>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--oh-text-secondary)]">
+                  {description}
+                </p>
+              </div>
             </div>
 
-            <p className="mt-2.5 line-clamp-2 text-xs leading-relaxed text-[var(--oh-text-secondary)]">
-              {description}
-            </p>
-
-            <div className="mt-3 pt-2 border-t border-white/5 w-full">
-              <SkillCardPillRow
-                pills={buildRecommendedAutomationPills(
-                  integrations,
-                  installedServers,
-                  missingCount,
-                  translate,
-                )}
-                testId={`recommended-automation-pills-${automation.id}`}
+            <div className="mt-3 pt-2.5 border-t border-white/5 w-full flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <SkillCardPillRow
+                  pills={buildRecommendedAutomationPills(
+                    integrations,
+                    installedServers,
+                    missingCount,
+                    translate,
+                  )}
+                  testId={`recommended-automation-pills-${automation.id}`}
+                />
+              </div>
+              <CirclePlusBadge
+                testId={`recommended-automation-plus-${automation.id}`}
               />
             </div>
           </button>

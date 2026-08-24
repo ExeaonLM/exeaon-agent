@@ -75,7 +75,7 @@ export function SayHelloStep({
   return (
     <div
       data-testid="onboarding-step-say-hello"
-      className="flex max-h-[calc(90vh-7rem)] flex-col"
+      className="flex flex-col gap-6"
     >
       <header className="flex shrink-0 flex-col items-center text-center gap-2">
         <h2 className="text-2xl font-medium text-white">
@@ -135,11 +135,10 @@ export function SayHelloStep({
 
           <div
             data-testid="onboarding-recommended-automations"
-            className="flex min-h-0 flex-1 flex-col"
+            className="flex flex-col"
           >
             <RecommendedAutomationsLauncher
               onLaunched={onLaunched}
-              scrollableGrid
             />
           </div>
         </>
