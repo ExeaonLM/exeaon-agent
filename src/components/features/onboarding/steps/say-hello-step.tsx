@@ -1,10 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ChatSendButton } from "#/components/features/chat/chat-send-button";
-import { RecommendedAutomationsLauncher } from "#/components/features/automations/recommended-automations-launcher";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { ExeaonSplash } from "#/components/features/onboarding/exeaon-splash";
 import { useNavigation } from "#/context/navigation-context";
-import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { I18nKey } from "#/i18n/declaration";
@@ -19,7 +18,7 @@ interface SayHelloStepProps {
 }
 
 /**
- * Step 3: a simple text input pre-filled with "hello OpenHands!" that
+ * Step 3: a simple text input pre-filled with "Create a basic webpage explaining what Exeaon can do."
  * launches a brand-new conversation with no workspace and navigates
  * to it. Completing this step finishes the onboarding flow.
  */
@@ -30,8 +29,6 @@ export function SayHelloStep({
 }: SayHelloStepProps) {
   const { t } = useTranslation("openhands");
   const { navigate } = useNavigation();
-  const { backend } = useActiveBackend();
-  const showRecommendedAutomations = backend.kind !== "cloud";
   const defaultMessage = t(I18nKey.ONBOARDING$HELLO_DEFAULT_MESSAGE);
   const [message, setMessage] = React.useState(defaultMessage);
 
@@ -71,6 +68,10 @@ export function SayHelloStep({
     event.preventDefault();
     launchConversation();
   };
+
+  if (isLaunching) {
+    return <ExeaonSplash loop />;
+  }
 
   return (
     <div
@@ -119,30 +120,6 @@ export function SayHelloStep({
           />
         </div>
       </form>
-
-      {showRecommendedAutomations ? (
-        <>
-          <div
-            data-testid="onboarding-hello-or-separator"
-            className="mt-6 flex w-full items-center gap-3"
-          >
-            <div className="h-px flex-1 bg-[var(--oh-border)]" />
-            <span className="text-xs uppercase text-[var(--oh-muted)]">
-              {t(I18nKey.LANDING$OR)}
-            </span>
-            <div className="h-px flex-1 bg-[var(--oh-border)]" />
-          </div>
-
-          <div
-            data-testid="onboarding-recommended-automations"
-            className="flex flex-col"
-          >
-            <RecommendedAutomationsLauncher
-              onLaunched={onLaunched}
-            />
-          </div>
-        </>
-      ) : null}
 
       <div className="flex shrink-0 items-center justify-between gap-2 bg-[#0E0D0A] pt-7 pb-7">
         <BrandButton
