@@ -96,9 +96,7 @@ class ConfigService {
     ]);
 
     const provider = params.provider__eq ?? null;
-    const verifiedNames = new Set(
-      provider ? (verifiedMap?.[provider] ?? []) : [],
-    );
+    const verifiedNames = new Set<string>();
     if (provider === "exeaon" || provider === "openai") {
       verifiedNames.add("exeaon1-nunya-14b");
       verifiedNames.add("exeaon-27b");

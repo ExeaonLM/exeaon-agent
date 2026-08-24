@@ -20,6 +20,7 @@ import {
   FREE_MODEL_BADGE_LABEL,
   FREE_OPENHANDS_MODEL_NOTE,
   isFreeOpenHandsModel,
+  formatProviderModelNameForDisplay,
 } from "#/utils/format-model-name";
 
 const freeModelBadgeClassName =
@@ -224,9 +225,9 @@ export function ModelSelector({
         <div className="flex flex-col gap-2">
           <HelpLink
             testId="openhands-account-help"
-            text={t(I18nKey.SETTINGS$NEED_OPENHANDS_ACCOUNT)}
+            text="Need an Exeaon Cloud Account:"
             linkText={t(I18nKey.SETTINGS$CLICK_HERE)}
-            href={PRODUCT_URL.PRODUCTION}
+            href="https://exeaon.dev"
             size="settings"
             linkColor="white"
           />
@@ -269,9 +270,14 @@ export function ModelSelector({
               classNames={{ heading: "text-[var(--oh-muted)]" }}
             >
               {verifiedModels.map((model) => (
-                <AutocompleteItem key={model.name} textValue={model.name}>
+                <AutocompleteItem key={model.name} textValue={formatProviderModelNameForDisplay(selectedProvider, model.name) || model.name}>
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="truncate">{model.name}</span>
+                    <span className="truncate">
+                      {formatProviderModelNameForDisplay(
+                        selectedProvider,
+                        model.name,
+                      ) || model.name}
+                    </span>
                     {isFreeOpenHandsModel(
                       `${selectedProvider}/${model.name}`,
                     ) ? (
