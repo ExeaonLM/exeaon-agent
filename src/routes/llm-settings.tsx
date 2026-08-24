@@ -218,7 +218,7 @@ export function LlmSettingsScreen({
         trimmedBaseUrl.length > 0 &&
         !isProviderDefaultBaseUrl(currentModel, trimmedBaseUrl);
 
-      return hasCustomBaseUrl ? "all" : "basic";
+      return hasCustomBaseUrl ? "advanced" : "basic";
     },
     [],
   );
@@ -426,40 +426,32 @@ export function LlmSettingsScreen({
               className="flex flex-col gap-6"
               data-testid="llm-settings-form-basic"
             >
-              {renderAuthTypeInput()}
+              <ModelSelector
+                currentModel={modelValue || undefined}
+                onChange={(provider, model) => {
+                  const nextModel = buildModelId(provider, model);
+                  if (nextModel) {
+                    onChange("llm.model", nextModel);
+                  }
+                }}
+                wrapperClassName="!flex-col !gap-6"
+                isDisabled={isDisabled}
+              />
 
-              {isSubscriptionAuth ? (
-                renderSubscriptionSettings()
-              ) : (
-                <>
-                  <ModelSelector
-                    currentModel={modelValue || undefined}
-                    onChange={(provider, model) => {
-                      const nextModel = buildModelId(provider, model);
-                      if (nextModel) {
-                        onChange("llm.model", nextModel);
-                      }
-                    }}
-                    wrapperClassName="!flex-col !gap-6"
-                    isDisabled={isDisabled}
-                  />
+              {showConnectionSelector ? renderConnectionSelector() : null}
 
-                  {showConnectionSelector ? renderConnectionSelector() : null}
+              {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
+                <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
+              ) : null}
 
-                  {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
-                    <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
-                  ) : null}
-
-                  {isLinkedToConnection
-                    ? null
-                    : renderApiKeyInput(
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-input",
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-help-anchor",
-                      )}
-                </>
-              )}
+              {isLinkedToConnection
+                ? null
+                : renderApiKeyInput(
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-input",
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-help-anchor",
+                  )}
             </div>
           ) : (
             <div

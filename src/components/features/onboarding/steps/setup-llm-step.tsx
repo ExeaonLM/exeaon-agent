@@ -25,7 +25,7 @@ interface SetupLlmStepProps {
  * explicit override marks the model dirty so the Next button persists the
  * suggested default immediately.
  */
-export const ONBOARDING_DEFAULT_LLM_MODEL = "openhands/kimi-k3";
+export const ONBOARDING_DEFAULT_LLM_MODEL = "exeaon/exeaon1-nunya-14b";
 
 /**
  * Step 2: embed the LLM settings form. The screen runs in `embedded`
@@ -144,7 +144,7 @@ export function SetupLlmStep({ onBack, onNext }: SetupLlmStepProps) {
           {t(I18nKey.ONBOARDING$LLM_TITLE)}
         </h2>
         <p className="text-sm text-[var(--oh-muted)]">
-          {t(I18nKey.ONBOARDING$LLM_SUBTITLE)}
+          Pick a provider and model. We&apos;ve pre-selected Exeaon 14B (Nunya).
         </p>
       </header>
 

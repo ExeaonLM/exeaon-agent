@@ -99,10 +99,15 @@ class ConfigService {
     const verifiedNames = new Set(
       provider ? (verifiedMap?.[provider] ?? []) : [],
     );
-    if (provider === "exeaon") {
+    if (provider === "exeaon" || provider === "openai") {
       verifiedNames.add("exeaon1-nunya-14b");
       verifiedNames.add("exeaon-27b");
       verifiedNames.add("exeaon-72b");
+    } else if (provider === "openhands") {
+      verifiedNames.add("glm-5.2");
+      verifiedNames.add("kimi-k3");
+      verifiedNames.add("deepseek-v4-flash");
+      verifiedNames.add("minimax-m2.7");
     }
     const verifiedItems: LLMModel[] = [...verifiedNames].map((name) => ({
       provider,
@@ -110,17 +115,7 @@ class ConfigService {
       verified: true,
     }));
 
-    const prefixedItems: LLMModel[] = provider
-      ? (models ?? [])
-          .filter((model) => model.startsWith(`${provider}/`))
-          .map((model) => model.slice(provider.length + 1))
-          .filter((name) => name.length > 0 && !verifiedNames.has(name))
-          .map((name) => ({
-            provider,
-            name,
-            verified: false,
-          }))
-      : [];
+    const prefixedItems: LLMModel[] = [];
 
     const items = limitItems(
       filterByVerified(
@@ -161,24 +156,10 @@ class ConfigService {
       });
     }
 
-    const llmClient = new LLMMetadataClient(getAgentServerClientOptions());
-    const verifiedFetch =
-      verifiedByProvider !== undefined
-        ? Promise.resolve(verifiedByProvider)
-        : llmClient.getVerifiedModels();
-    const [providers, verifiedMap] = await Promise.all([
-      llmClient.getProviders(),
-      verifiedFetch,
-    ]);
-
-    const verifiedProviders = new Set(Object.keys(verifiedMap ?? {}));
-    verifiedProviders.add("openai");
-    verifiedProviders.add("exeaon");
-    const names = new Set<string>(["openai", "exeaon", ...verifiedProviders, ...(providers ?? [])]);
-    const providerItems: LLMProvider[] = [...names].map((name) => ({
-      name,
-      verified: verifiedProviders.has(name),
-    }));
+    const providerItems: LLMProvider[] = [
+      { name: "exeaon", verified: true },
+      { name: "openhands", verified: true },
+    ];
 
     const items = limitItems(
       filterByVerified(

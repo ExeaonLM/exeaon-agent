@@ -327,9 +327,7 @@ export function SdkSectionPage({
   const showAdvanced =
     forceShowAdvancedView ||
     resolvedSources.some((src) => hasAdvancedSettings(src.filteredSchema));
-  const showAll =
-    allowAllView &&
-    resolvedSources.some((src) => hasMinorSettings(src.filteredSchema));
+  const showAll = false;
 
   const schemaUnavailableMessage = React.useMemo(() => {
     const firstError = resolvedSourceConfigs.reduce<unknown>(

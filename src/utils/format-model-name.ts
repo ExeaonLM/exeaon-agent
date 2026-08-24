@@ -6,10 +6,10 @@ export const EXEAON_MODELS = {
   "exeaon/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
   "exeaon/exeaon-27b": "Exeaon 27B",
   "exeaon/exeaon-72b": "Exeaon 72B",
-  "openhands/kimi-k3": "Kimi K3",
-  "openhands/glm-5.2": "GLM-5.2",
-  "openhands/deepseek-v4-flash": "DeepSeek V4 Flash",
-  "openhands/minimax-m2.7": "MiniMax M2.7",
+  "openhands/glm-5.2": "Exeaon GLM-5.2",
+  "openhands/kimi-k3": "Exeaon Kimi K3",
+  "openhands/deepseek-v4-flash": "Exeaon DeepSeek V4 Flash",
+  "openhands/minimax-m2.7": "Exeaon MiniMax M2.7",
 } as const;
 
 export const FREE_OPENHANDS_MODELS = EXEAON_MODELS;

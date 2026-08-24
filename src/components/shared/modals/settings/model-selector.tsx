@@ -71,21 +71,21 @@ export function ModelSelector({
   } = useProviderModels(selectedProvider);
 
   const verifiedProviders = React.useMemo(
-    () => providers.filter((p) => p.verified),
+    () =>
+      providers.filter(
+        (p) => p.name === "exeaon" || p.name === "openhands",
+      ),
     [providers],
   );
-  const unverifiedProviders = React.useMemo(
-    () => providers.filter((p) => !p.verified),
-    [providers],
-  );
+  const unverifiedProviders = React.useMemo<typeof providers>(() => [], []);
 
   const verifiedModels = React.useMemo(
     () => providerModels.filter((m) => m.verified),
     [providerModels],
   );
-  const unverifiedModels = React.useMemo(
-    () => providerModels.filter((m) => !m.verified),
-    [providerModels],
+  const unverifiedModels = React.useMemo<typeof providerModels>(
+    () => [],
+    [],
   );
 
   React.useEffect(() => {
