@@ -14,6 +14,7 @@ import { HooksModal } from "../conversation-panel/hooks-modal";
 import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
 import { TranscriptExportModal } from "./transcript-export-modal";
+import { sanitizeConversationTitle } from "#/utils/sanitize-conversation-title";
 
 export function ConversationName() {
   const { t } = useTranslation("openhands");
@@ -164,7 +165,7 @@ export function ConversationName() {
             onDoubleClick={handleDoubleClick}
             title={conversation.title || ""}
           >
-            {conversation.title}
+            {sanitizeConversationTitle(conversation.title)}
           </div>
         )}
 

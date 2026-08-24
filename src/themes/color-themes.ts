@@ -107,7 +107,7 @@ const NEO_WHITE_BUTTON_TOKENS: Record<
 
 export const COLOR_THEMES: Record<ColorThemeKey, ColorThemeDefinition> = {
   "openhands-deepsea": {
-    label: "OpenHands-DeepSea",
+    label: "Exeaon Midnight",
     // Matches the values already set by index.css; included so switching back
     // from another theme restores the original palette explicitly.
     scale: {
@@ -165,7 +165,7 @@ export const COLOR_THEMES: Record<ColorThemeKey, ColorThemeDefinition> = {
   },
 
   "openhands-neutral": {
-    label: "OpenHands-Neutral",
+    label: "Exeaon Solar (Default)",
     scale: NEUTRAL_SCALE,
     // Each stop follows the same positional mapping as hero.ts:
     //   heroui-default-100 ← cool-grey-950 position ← neutral-950 (#181818)
@@ -175,7 +175,7 @@ export const COLOR_THEMES: Record<ColorThemeKey, ColorThemeDefinition> = {
   },
 
   "openhands-neo": {
-    label: "OpenHands-Neo",
+    label: "Exeaon Void",
     scale: NEUTRAL_SCALE,
     heroui: NEUTRAL_HEROUI,
     tokens: NEO_WHITE_BUTTON_TOKENS,

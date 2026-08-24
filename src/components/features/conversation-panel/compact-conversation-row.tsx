@@ -10,6 +10,7 @@ import { ConversationStatusDot } from "./conversation-status-dot";
 import { ConversationCardFooter } from "./conversation-card/conversation-card-footer";
 import { I18nKey } from "#/i18n/declaration";
 import { useBackendScopedPath } from "#/hooks/use-backend-scoped-path";
+import { sanitizeConversationTitle } from "#/utils/sanitize-conversation-title";
 
 interface CompactConversationRowProps {
   conversationId: string;
@@ -68,7 +69,7 @@ export function CompactConversationRow({
           showTooltip={false}
         />
         <span className="text-sm font-medium text-white truncate" title={title}>
-          {title || t(I18nKey.CONVERSATION$UNTITLED)}
+          {sanitizeConversationTitle(title) || t(I18nKey.CONVERSATION$UNTITLED)}
         </span>
       </div>
       <ConversationCardFooter

@@ -16,12 +16,9 @@ import { ConversationGitActionsMenu } from "./conversation-git-actions-menu";
 
 /** Same 28px height as overview / drawer header icon buttons. */
 const GIT_ACTIONS_BUTTON_CLASSNAME = cn(
-  "inline-flex h-7 min-h-7 w-fit shrink-0 cursor-pointer items-center justify-center gap-1.5 px-2.5",
-  "rounded-md text-xs font-normal leading-none",
-  formControlBorderClassName,
-  formControlTransitionClassName,
-  "text-[var(--oh-muted)]",
-  formControlMutedHoverClassName,
+  "inline-flex h-7 min-h-7 w-fit shrink-0 cursor-pointer items-center justify-center gap-1.5 px-3",
+  "rounded-lg text-xs font-medium leading-none border border-[#2E281F] bg-[#14120D] text-[#EDE7D8]",
+  "hover:border-[#FFD026]/40 hover:bg-[#1C1811] hover:text-[#FFF4B8] transition-all duration-150 shadow-sm",
   "disabled:cursor-not-allowed disabled:opacity-30",
 );
 
@@ -85,8 +82,8 @@ export function ConversationGitActionsToggle({
       aria-disabled={isArchivedConversation}
       data-testid="conversation-git-actions-toggle"
     >
-      <GitCommitHorizontal className="size-4 shrink-0" size={16} aria-hidden />
-      <span className="whitespace-nowrap">{label}</span>
+      <GitCommitHorizontal className="size-3.5 shrink-0 text-[#FFD026]" aria-hidden />
+      <span className="whitespace-nowrap font-medium">{label}</span>
     </button>
   );
 

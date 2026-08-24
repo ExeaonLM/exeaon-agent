@@ -174,6 +174,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<EditIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$RENAME)}
+            shortcut="R"
           />
         </ContextMenuListItem>
       )}
@@ -333,10 +334,16 @@ export function ConversationNameContextMenu({
       )}
 
       {onDelete && (
-        <ContextMenuListItem testId="delete-button" onClick={onDelete}>
+        <ContextMenuListItem
+          testId="delete-button"
+          onClick={onDelete}
+          className="hover:!bg-red-500/10"
+        >
           <ConversationNameContextMenuIconText
             icon={<DeleteIcon width={16} height={16} />}
             text={t(I18nKey.COMMON$DELETE_CONVERSATION)}
+            shortcut="D"
+            variant="danger"
           />
         </ContextMenuListItem>
       )}
