@@ -224,7 +224,7 @@ export function CheckBackendStep({
   );
 
   const actionRowClassName = cn(
-    "sticky bottom-0 mt-2 flex items-center gap-2 bg-base-secondary pt-4 pb-7",
+    "sticky bottom-0 mt-2 flex items-center gap-2 bg-[#0E0D0A] pt-4 pb-7",
     onBack ? "justify-between" : "justify-end",
   );
   const titleKey = treatAsNoBackend

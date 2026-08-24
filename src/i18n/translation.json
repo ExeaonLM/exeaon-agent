@@ -30532,7 +30532,7 @@
     "uk": "Увійти в хмару"
   },
   "ONBOARDING$BACKEND_SUBTITLE": {
-    "en": "Exeaon talks to an agent server. Make sure the default backend is reachable.",
+    "en": "Exeaon connects to an agent server runtime. Make sure your local or cloud backend is reachable.",
     "ja": "Exeaon はエージェントサーバーと通信します。デフォルトのバックエンドに接続できることを確認してください。",
     "zh-CN": "Exeaon 通过智能体服务器进行通信。请确认默认后端可访问。",
     "zh-TW": "Exeaon 透過代理伺服器溝通。請確認預設後端可連線。",
@@ -40664,4 +40664,5 @@
     "zh-TW": "已更新連線「{{name}}」"
   }
 }
+
 

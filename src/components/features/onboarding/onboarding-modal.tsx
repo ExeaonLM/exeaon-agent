@@ -164,14 +164,10 @@ export function OnboardingModal({
     lockedCloudHost !== null &&
     backend.kind === "cloud" &&
     isSameCloudHost(backend.host, lockedCloudHost);
-  const skipBackendStep =
-    !noBackendSelected &&
-    healthByBackendId[backend.id]?.isConnected === true &&
-    (lockedCloudHost === null || isActiveLockedCloudBackend);
+  // Always include backend check step in onboarding flow so it can be viewed and customized
+  const skipBackendStep = false;
 
-  const slideOrder = skipBackendStep
-    ? PHASE_ORDER_WITHOUT_BACKEND
-    : PHASE_ORDER_WITH_BACKEND;
+  const slideOrder = PHASE_ORDER_WITH_BACKEND;
 
   const [phase, setPhase] = React.useState<OnboardingPhase>(
     () =>
