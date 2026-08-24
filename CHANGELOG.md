@@ -8,24 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Claude-Style Compact Top Bar**: Added clean, icon-only header navigation buttons (`size-6`) for Files, Changes, Terminal, Browser, Usage, Git Actions, and VSCode with quick hover tooltips and Solar Gold active indicators.
+- **Claude-Style Top Header Lane Search**: Migrated the command search bar into a compact icon-only button directly in the sidebar header next to the Exeaon logo and collapse toggle.
+- **Engineering Prompt Macros & Workflows**: Revamped landing prompt suggestions and the Prompt Macros submenu with production-grade engineering workflows:
+  - **Build Full-Stack App**: Scaffolds modular TypeScript full-stack architectures with Dark Void UI and service contracts.
+  - **Find & Fix Bugs**: Deep-dive static & runtime code auditing, type safety enforcement, and automated regression verification.
+  - **Refactor & Modernize**: Monolith decomposition, custom hooks, performance optimization, and modern code idioms.
+  - **Automate & Deploy**: Multi-stage Docker containerization, docker-compose orchestration, and CI/CD GitHub Actions pipelines.
+- **Claude-Style Live Thinking & Status Animations**:
+  - Dual-ring pulsing Solar Gold indicator (`animate-ping` + amber glow) inside frosted glass pill containers (`#120F0A`/95 + `backdrop-blur-md`).
+  - Seamless Framer Motion transitions (`opacity`, `translateY`, `scale`) for status indicators, preventing layout shifts and flickering.
+  - Animated collapsible `<think>` reasoning sections with clean Markdown formatting and responsive state chevrons.
+- **Polished Dark Void Agent Status Controls**: Upgraded the in-chat agent status pill with live pulsing activity dots, tactile pause/resume controls, and subtle Dark Void glass badges.
 - **Interactive Token & Context Analytics Modal**: Real-time context window capacity meter with percentile breakdown (Input, Output, Cache Hits, Cache Writes), session cost tracking, and quick context compaction action.
-- **High-Contrast Dark Void Aesthetic**: Obsidian dark canvas theme (`#080705` to `#14110C`) paired with Solar Gold (`#FFD026`) and Sunset Amber (`#FF7A00`) accents across context menus, command palette, and modal dialogs.
 - **Enhanced Folder & Workspace Browser**: Modernized file browser modal with native Windows drive detection, favorites list (Home, Desktop, Documents, Downloads), custom sleek scrollbars, and absolute path resolution.
-- **Sanitized Conversation Titles**: Automatic stripping of raw `<think>` blocks, prefixes, and markdown artifacts from sidebar conversation headings.
 
 ### Changed
-- **Right Panel Overhaul**: Removed redundant drawer tab headers and duplicate menus inside active tools. Opening a tool now directly renders its dedicated workspace view.
-- **Usage Action**: Changed "Display Usage and Cost" across conversation context menus to open the sleek dialog modal rather than toggling the secondary sidebar.
-- **Rebranding**: Complete branding alignment to **Exeaon Canvas** with updated release endpoints and environment variable labels (`EXEAON_`).
+- **Settings Navigation Rebranding**:
+  - Rebranded **Application** $\rightarrow$ **Appearance**.
+  - Rebranded **Condenser** $\rightarrow$ **Compactor**.
+  - Rebranded **Agent Canvas** $\rightarrow$ **Exeaon Canvas**.
+  - Rebranded **Macros** $\rightarrow$ **Prompt Macros**.
+  - Rebranded **Automations** $\rightarrow$ **Flows** across dashboard metrics, filter chips, recommended flows rail, and templates.
+- **Agent Error Card Redesign**: Transformed raw error text into an alert card with Dark Void borders and expandable debugging details.
 
 ### Fixed
-- Fixed Windows absolute path error (`400 Bad Request: Path must be absolute`) in folder browser when referencing root paths.
-- Fixed dark / unreadable metric numbers in the Token Analytics dashboard by enforcing high-contrast bold typography.
+- Fixed `AnimatePresence` multiple-child warning by wrapping status indicator components in a single motion container.
+- Fixed translation completeness and removed redundant string references across multilingual language bundles.
 - Fixed duplicate tab header rendering inside the desktop drawer panel.
+- Fixed Windows absolute path resolution in folder browser.
 
 ## [1.15.0] - 2026-08-24
 
 ### Added
 - Exeaon Agent UI integration & LiteLLM function calling support.
 - Initial Exeaon dark theme tokens and custom styling components.
+
