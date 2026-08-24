@@ -69,20 +69,21 @@ class ConfigService {
     const active = getActiveBackend();
 
     if (active.backend.kind === "cloud") {
-      // Cloud exposes /api/v1/config/models/search which returns LLMModelPage directly.
-      // verifiedByProvider is not needed — the cloud API embeds verified status natively.
-      const qs = buildCloudQueryString({
-        page_id: params.page_id,
-        limit: params.limit,
-        query: params.query,
-        verified__eq: params.verified__eq,
-        provider__eq: params.provider__eq,
-      });
-      return callCloudProxy<LLMModelPage>({
-        backend: active.backend,
-        method: "GET",
-        path: `/api/v1/config/models/search${qs}`,
-      });
+      // Return our curated Exeaon Cloud model list instead of calling the upstream
+      // cloud registry, which returns unrelated Claude/OpenAI models.
+      const provider = params.provider__eq ?? null;
+      const cloudNames: string[] = [];
+      if (provider === "openhands") {
+        cloudNames.push("glm-5.2", "kimi-k3", "deepseek-v4-flash", "minimax-m2.7");
+      } else if (provider === "exeaon" || provider === "openai") {
+        cloudNames.push("exeaon1-nunya-14b", "exeaon-27b", "exeaon-72b");
+      }
+      const items: LLMModel[] = cloudNames.map((name) => ({
+        provider,
+        name,
+        verified: true,
+      }));
+      return { items, next_page_id: null };
     }
 
     const llmClient = new LLMMetadataClient(getAgentServerClientOptions());
