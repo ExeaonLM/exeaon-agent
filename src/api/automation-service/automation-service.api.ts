@@ -102,10 +102,16 @@ localAutomationAxios.interceptors.request.use(async (config) => {
   if (!backend) throw new NoBackendAvailableError();
   
   let effectiveHost = backend.host;
-  // If the host is explicitly pointing to the raw agent-server (port 18000),
-  // route automation requests through the ingress/frontend proxy or directly to the automation service on port 18001.
+  // The automation backend runs on :18001; the raw agent-server on :18000 does
+  // not serve /api/automation (it 404s). Routing to the Vite origin (:3005)
+  // also 404s because there is no ingress proxy on it in this setup. So when
+  // the backend host is the raw agent-server, go straight to the automation
+  // service on :18001, which answers /api/automation/* directly.
   if (effectiveHost.includes(":18000")) {
-    if (typeof window !== "undefined" && window.location.port) {
+    // Go through our own origin so the Vite dev proxy forwards /api/automation
+    // to the automation backend (:18001). A direct cross-origin call to :18001
+    // is blocked -- the automation backend sends no CORS header.
+    if (typeof window !== "undefined" && window.location?.origin) {
       effectiveHost = window.location.origin;
     } else {
       effectiveHost = effectiveHost.replace(":18000", ":18001");

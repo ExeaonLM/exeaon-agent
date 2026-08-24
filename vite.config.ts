@@ -112,6 +112,11 @@ export default defineConfig(({ mode }) => {
   const WS_PROTOCOL = USE_TLS ? "wss" : "ws";
 
   const API_URL = `${PROTOCOL}://${VITE_BACKEND_HOST}/`;
+  // The automation backend runs on its own port (18001 by default), separate
+  // from the agent-server. /api/automation must proxy there, not to the
+  // agent-server (which 404s it). Derive from the backend host by swapping the
+  // port so it follows whatever host the agent-server is on.
+  const AUTOMATION_URL = API_URL.replace(/:\d+\/?$/, ":18001/");
   const WS_URL = `${WS_PROTOCOL}://${VITE_BACKEND_HOST}/`;
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
   const base = normalizeBasePath(VITE_BASE_PATH);
@@ -393,6 +398,13 @@ export default defineConfig(({ mode }) => {
       host: true,
       allowedHosts: true,
       proxy: {
+        // More specific than "/api" and declared first so /api/automation is
+        // routed to the automation backend, not the agent-server.
+        "/api/automation": {
+          target: AUTOMATION_URL,
+          changeOrigin: true,
+          secure: !INSECURE_SKIP_VERIFY,
+        },
         "/api": {
           target: API_URL,
           changeOrigin: true,
