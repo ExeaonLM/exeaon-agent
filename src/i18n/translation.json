@@ -32113,7 +32113,7 @@
     "ca": "Biblioteca"
   },
   "NAV$CUSTOMIZE": {
-    "en": "Customize",
+    "en": "Integrations",
     "ja": "カスタマイズ",
     "zh-CN": "自定义",
     "zh-TW": "自訂",
@@ -40664,5 +40664,3 @@
     "zh-TW": "已更新連線「{{name}}」"
   }
 }
-
-

@@ -156,8 +156,9 @@ export interface InterfaceCopy {
 export function getInterfaceCopy(): InterfaceCopy {
   const manifest = requireInterface();
   return {
-    sidebarLabel: manifest.navigation.sidebar.label,
-    commandMenuTitle: manifest.navigation.commandMenu.title,
+    // Exeaon brand: the feature is "Flows", not "Automate".
+    sidebarLabel: "Flows",
+    commandMenuTitle: "Flows",
     commandMenuDescription: manifest.navigation.commandMenu.description,
     commandMenuKeywords: manifest.navigation.commandMenu.keywords,
     listTitle: manifest.pages.list.title,
