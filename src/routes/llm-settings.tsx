@@ -458,58 +458,50 @@ export function LlmSettingsScreen({
               className="flex flex-col gap-6"
               data-testid="llm-settings-form-advanced"
             >
-              {renderAuthTypeInput()}
+              <SettingsInput
+                testId="llm-custom-model-input"
+                label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
+                type="text"
+                className="w-full"
+                value={modelValue}
+                placeholder={defaultModel}
+                onChange={(value) => onChange("llm.model", value)}
+                isDisabled={isDisabled}
+              />
 
-              {isSubscriptionAuth ? (
-                renderSubscriptionSettings()
-              ) : (
+              {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
                 <>
-                  <SettingsInput
-                    testId="llm-custom-model-input"
-                    label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
-                    type="text"
-                    className="w-full"
-                    value={modelValue}
-                    placeholder={defaultModel}
-                    onChange={(value) => onChange("llm.model", value)}
-                    isDisabled={isDisabled}
-                  />
-
-                  {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
-                    <>
-                      {isFreeOpenHandsModel(modelValue) ? (
-                        <OpenHandsFreeModelsNote />
-                      ) : null}
-                      <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
-                    </>
+                  {isFreeOpenHandsModel(modelValue) ? (
+                    <OpenHandsFreeModelsNote />
                   ) : null}
-
-                  {showConnectionSelector ? renderConnectionSelector() : null}
-
-                  {isLinkedToConnection ? null : (
-                    <SettingsInput
-                      testId="base-url-input"
-                      label={t(I18nKey.SETTINGS$BASE_URL)}
-                      type="text"
-                      className="w-full"
-                      value={baseUrlValue}
-                      // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
-                      placeholder="https://api.openai.com"
-                      onChange={(value) => onChange("llm.base_url", value)}
-                      isDisabled={isDisabled}
-                    />
-                  )}
-
-                  {isLinkedToConnection
-                    ? null
-                    : renderApiKeyInput(
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-input",
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-help-anchor-advanced",
-                      )}
+                  <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
                 </>
+              ) : null}
+
+              {showConnectionSelector ? renderConnectionSelector() : null}
+
+              {isLinkedToConnection ? null : (
+                <SettingsInput
+                  testId="base-url-input"
+                  label={t(I18nKey.SETTINGS$BASE_URL)}
+                  type="text"
+                  className="w-full"
+                  value={baseUrlValue}
+                  // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
+                  placeholder="https://api.openai.com"
+                  onChange={(value) => onChange("llm.base_url", value)}
+                  isDisabled={isDisabled}
+                />
               )}
+
+              {isLinkedToConnection
+                ? null
+                : renderApiKeyInput(
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-input",
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-help-anchor-advanced",
+                  )}
             </div>
           )}
         </div>
