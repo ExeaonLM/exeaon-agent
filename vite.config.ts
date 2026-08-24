@@ -90,7 +90,7 @@ const appBuildConfig = {
 
 export default defineConfig(({ mode }) => {
   const {
-    VITE_BACKEND_HOST = "127.0.0.1:8000",
+    VITE_BACKEND_HOST = "127.0.0.1:18000",
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
     VITE_INSECURE_SKIP_VERIFY = "false",
