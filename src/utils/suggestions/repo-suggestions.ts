@@ -1,43 +1,51 @@
 const KEY_1 = "INCREASE_TEST_COVERAGE";
-const VALUE_1 = `I want to increase the test coverage of the repository in the current directory.
+const VALUE_1 = `I want to scaffold a modern, production-grade application in this workspace.
 
-Please investigate the repo to figure out what language is being used, and where tests are located, if there are any.
-
-If there are no tests already in the repo, add a very basic test, using typical testing strategies for the language involved.
-
-If there are existing tests, find a function or method which lacks adequate unit tests, and add unit tests for it. Be sure to respect the projects existing test structures.
-
-Make sure the tests pass before you finish.`;
+Please analyze the current project structure and requirements:
+1. Architecture: Establish a clean, modular directory structure with TypeScript, type-safe API boundaries, and clear separation of concerns.
+2. User Interface: Design a responsive, accessible Dark Void UI with smooth micro-interactions, coherent color hierarchy, and intuitive user flows.
+3. Backend & Services: Implement robust, performant services with input validation, graceful error handling, and structured data flow.
+4. Testing & Verification: Add unit tests, ensure all dependencies build cleanly, and verify that the dev server launches with zero errors.`;
 
 const KEY_2 = "AUTO_MERGE_PRS";
-const VALUE_2 = `Please add a GitHub action to this repository which automatically merges pull requests from Dependabot so long as the tests are passing.`;
+const VALUE_2 = `Please perform a comprehensive deep-dive code audit across this repository to find and fix bugs:
+
+1. Static & Runtime Analysis: Scan for potential null/undefined exceptions, unhandled promises, memory leaks, and edge-case race conditions.
+2. Type Safety: Resolve all TypeScript compiler diagnostics, eliminate unsafe any casts, and tighten return types.
+3. Security & Resilience: Validate inputs, sanitize query parameters, and ensure safe fallback states for unexpected payloads.
+4. Verification: Run the test suite and verify that all identified bugs are resolved without regressions.`;
 
 const KEY_3 = "FIX_README";
-const VALUE_3 = `Please look at the README and make the following improvements, if they make sense:
-* correct any typos that you find
-* add missing language annotations on codeblocks
-* if there are references to other files or other sections of the README, turn them into links
-* make sure the readme has an h1 title towards the top
-* make sure any existing sections in the readme are appropriately separated with headings
+const VALUE_3 = `Please analyze the codebase and refactor the architecture for maximum performance, maintainability, and clean code principles:
 
-If there are no obvious ways to improve the README, make at least one small change to make the wording clearer or friendlier`;
+1. Modularization: Decompose complex monolithic components into cohesive, single-responsibility modules and reusable hooks.
+2. Performance Optimization: Minimize redundant re-renders, optimize heavy computations, and streamline state management.
+3. Modernization: Upgrade outdated patterns to modern idioms while strictly preserving existing functionality and API contracts.
+4. Documentation & Tests: Update docstrings, refine interface documentation, and confirm that all unit tests pass.`;
 
 const KEY_4 = "CLEAN_DEPENDENCIES";
-const VALUE_4 = `Examine the dependencies of the current codebase. Make sure you can run the code and any tests.
+const VALUE_4 = `Set up an automated CI/CD pipeline and containerization for this project:
 
-Then run any commands necessary to update all dependencies to the latest versions, and make sure the code continues to run correctly and the tests pass. If changes need to be made to the codebase, go ahead and make those changes. You can look up documentation for new versions using the browser if you need to.
-
-If a particular dependency update is causing trouble (e.g. breaking changes that you can't fix), you can revert it and send a message to the user explaining why.
-
-Additionally, if you're able to prune any dependencies that are obviously unused, please do so. You may use third party tools to check for unused dependencies.`;
+1. Containerization: Create an optimized multi-stage Dockerfile and docker-compose setup with health checks, proper non-root users, and caching.
+2. CI/CD Workflows: Create GitHub Actions workflows for continuous integration (typecheck, lint, test) and automated release/deployment.
+3. Scripts & Optimization: Standardize build and verification scripts in package.json, pruning unused dependencies and optimizing artifact sizes.
+4. Verification: Test the container build locally to ensure a seamless zero-downtime deployment pipeline.`;
 
 const KEY_5 = "ADD_DOCS";
-const VALUE_5 = `Investigate the documentation in the root of the current repo. Please add a CODE_OF_CONDUCT.md and CONTRIBUTORS.md with good defaults if they are not present. Use information in the README to inform the CONTRIBUTORS doc. If there is no LICENSE currently in the repo, please add the Apache 2.0 license. Add links to all these documents into the README`;
+const VALUE_5 = `Generate comprehensive documentation and architecture guides for this repository:
+
+1. Architecture Overview: Create an ARCHITECTURE.md outlining system design, data flows, core components, and design decisions.
+2. API Documentation: Document all public endpoints, schemas, environment variables, and authentication mechanisms.
+3. Contributing Guidelines: Add a detailed CONTRIBUTING.md and CODE_OF_CONDUCT.md with clear setup steps.
+4. README Enhancement: Polish the main README.md with badges, quickstart instructions, and architecture links.`;
 
 const KEY_6 = "ADD_DOCKERFILE";
-const VALUE_6 = `Investigate the current repo to understand the installation instructions. Then create a Dockerfile that runs the application, using best practices like arguments and multi-stage builds wherever appropriate.
+const VALUE_6 = `Investigate the current repository and create a production-ready multi-stage Dockerfile:
 
-If there is an existing Dockerfile, and there are ways to improve it according to best practices, do so.`;
+1. Use lightweight base images (e.g. alpine/slim) with optimal layer caching.
+2. Ensure secure non-root execution and minimal attack surface.
+3. Add health check endpoints and proper signal handling for graceful shutdown.
+4. Provide a docker-compose.yml file configured for local development and testing.`;
 
 export const REPO_SUGGESTIONS: Record<string, string> = {
   [KEY_1]: VALUE_1,
@@ -47,3 +55,4 @@ export const REPO_SUGGESTIONS: Record<string, string> = {
   [KEY_5]: VALUE_5,
   [KEY_6]: VALUE_6,
 };
+
