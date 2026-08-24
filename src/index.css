@@ -52,6 +52,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Spotted dot grid texture for cream / light surfaces */
+[data-theme="light"],
+.theme-light,
+.dot-grid-pattern {
+  background-image: radial-gradient(circle, rgba(116, 109, 93, 0.18) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
 code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;

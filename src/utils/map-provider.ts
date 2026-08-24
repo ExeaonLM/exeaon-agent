@@ -1,5 +1,5 @@
-// These are provider names, not user-facing text
 export const MAP_PROVIDER = {
+  exeaon: "Exeaon",
   openai: "OpenAI",
   azure: "Azure",
   azure_ai: "Azure AI Studio",
@@ -23,7 +23,7 @@ export const MAP_PROVIDER = {
   replicate: "Replicate",
   voyage: "Voyage AI",
   openrouter: "OpenRouter",
-  openhands: "OpenHands",
+  openhands: "Exeaon Cloud",
   lemonade: "Lemonade",
   clarifai: "Clarifai",
   moonshot: "Moonshot",

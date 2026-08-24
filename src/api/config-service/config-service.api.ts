@@ -99,6 +99,11 @@ class ConfigService {
     const verifiedNames = new Set(
       provider ? (verifiedMap?.[provider] ?? []) : [],
     );
+    if (provider === "exeaon") {
+      verifiedNames.add("exeaon1-nunya-14b");
+      verifiedNames.add("exeaon-27b");
+      verifiedNames.add("exeaon-72b");
+    }
     const verifiedItems: LLMModel[] = [...verifiedNames].map((name) => ({
       provider,
       name,
@@ -167,7 +172,9 @@ class ConfigService {
     ]);
 
     const verifiedProviders = new Set(Object.keys(verifiedMap ?? {}));
-    const names = new Set<string>([...verifiedProviders, ...(providers ?? [])]);
+    verifiedProviders.add("openai");
+    verifiedProviders.add("exeaon");
+    const names = new Set<string>(["openai", "exeaon", ...verifiedProviders, ...(providers ?? [])]);
     const providerItems: LLMProvider[] = [...names].map((name) => ({
       name,
       verified: verifiedProviders.has(name),

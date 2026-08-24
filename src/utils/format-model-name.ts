@@ -1,16 +1,20 @@
-export const FREE_MODEL_BADGE_LABEL = "Free";
+export const FREE_MODEL_BADGE_LABEL = "Exeaon";
 
-export const FREE_OPENHANDS_MODELS = {
-  "openhands/kimi-k3": "OpenHands Kimi K3 (free)",
-  "openhands/glm-5.2": "OpenHands GLM-5.2 (free)",
-  "openhands/deepseek-v4-flash": "OpenHands DeepSeek V4 Flash (free)",
-  "openhands/minimax-m2.7": "OpenHands MiniMax M2.7 (free)",
+export const EXEAON_MODELS = {
+  "openai/exeaon": "Exeaon 14B (Nunya)",
+  "exeaon": "Exeaon 14B (Nunya)",
+  "exeaon/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
+  "exeaon/exeaon-27b": "Exeaon 27B",
+  "exeaon/exeaon-72b": "Exeaon 72B",
+  "openhands/kimi-k3": "Kimi K3",
+  "openhands/glm-5.2": "GLM-5.2",
+  "openhands/deepseek-v4-flash": "DeepSeek V4 Flash",
+  "openhands/minimax-m2.7": "MiniMax M2.7",
 } as const;
 
+export const FREE_OPENHANDS_MODELS = EXEAON_MODELS;
 export const FREE_OPENHANDS_MODEL_IDS = Object.keys(FREE_OPENHANDS_MODELS);
-export const FREE_OPENHANDS_MODEL_NOTE = `Free OpenHands models: ${FREE_OPENHANDS_MODEL_IDS.join(
-  ", ",
-)}. Other provider endpoints with similar model names may require separate billing.`;
+export const FREE_OPENHANDS_MODEL_NOTE = `Exeaon models: Exeaon 14B (Nunya), Exeaon 27B, Exeaon 72B. Running on Exeaon runtime.`;
 
 export const isFreeOpenHandsModel = (
   model: string | null | undefined,
