@@ -100,8 +100,20 @@ localAutomationAxios.interceptors.request.use(async (config) => {
   // the 401 errors reported in issue #829.
   const backend = getEffectiveLocalBackend();
   if (!backend) throw new NoBackendAvailableError();
+  
+  let effectiveHost = backend.host;
+  // If the host is explicitly pointing to the raw agent-server (port 18000),
+  // route automation requests through the ingress/frontend proxy or directly to the automation service on port 18001.
+  if (effectiveHost.includes(":18000")) {
+    if (typeof window !== "undefined" && window.location.port) {
+      effectiveHost = window.location.origin;
+    } else {
+      effectiveHost = effectiveHost.replace(":18000", ":18001");
+    }
+  }
+
   // eslint-disable-next-line no-param-reassign
-  config.baseURL = backend.host;
+  config.baseURL = effectiveHost;
 
   const apiKey = backend.apiKey?.trim();
   if (apiKey) {
