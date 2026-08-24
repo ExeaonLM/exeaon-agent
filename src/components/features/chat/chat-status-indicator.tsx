@@ -15,33 +15,25 @@ function ChatStatusIndicator({
     <div
       data-testid="chat-status-indicator"
       className={cn(
-        "w-full max-w-full rounded-[100px] p-1 bg-[var(--oh-surface)] flex items-center gap-1",
+        "max-w-full rounded-full px-2.5 py-1 bg-[#120F0A]/90 border border-[#2B2316] backdrop-blur-md flex items-center gap-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.3)]",
       )}
     >
       <AnimatePresence mode="wait">
-        {/* Dot */}
-        <motion.span
-          key={`dot-${status}`}
-          className="flex-shrink-0 animate-[pulse_1.2s_ease-in-out_infinite]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <DebugStackframeDot className="w-4 h-4" color={statusColor} />
-        </motion.span>
-
-        {/* Text */}
-        <motion.span
-          key={`text-${status}`}
+        <motion.div
+          key={status}
           initial={{ opacity: 0, y: -2 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 2 }}
-          transition={{ duration: 0.3 }}
-          className="pr-1.5 font-normal text-[11px] leading-[16px] normal-case break-words whitespace-normal"
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="flex items-center gap-1.5"
         >
-          {status}
-        </motion.span>
+          <span className="flex-shrink-0 animate-[pulse_1.2s_ease-in-out_infinite]">
+            <DebugStackframeDot className="w-3.5 h-3.5" color={statusColor || "#FFD026"} />
+          </span>
+          <span className="font-medium text-[11px] leading-[16px] text-[#E0D8C3] normal-case break-words whitespace-normal">
+            {status}
+          </span>
+        </motion.div>
       </AnimatePresence>
     </div>
   );

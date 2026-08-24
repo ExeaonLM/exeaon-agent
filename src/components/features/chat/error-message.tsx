@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import ArrowDown from "#/icons/angle-down-solid.svg?react";
-import ArrowUp from "#/icons/angle-up-solid.svg?react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import i18n from "#/i18n";
 import { MarkdownRenderer } from "../markdown/markdown-renderer";
 
@@ -19,24 +19,39 @@ export function ErrorMessage({ errorId, defaultMessage }: ErrorMessageProps) {
     ? errorId
     : "CHAT_INTERFACE$AGENT_ERROR_MESSAGE";
 
+  const Chevron = showDetails ? ChevronUp : ChevronDown;
+
   return (
-    <div className="flex flex-col gap-2 my-2 py-2 text-sm w-full">
-      <div className="font-bold text-danger">
-        {t(errorKey)}
+    <div className="my-2.5 w-full rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-sm backdrop-blur-sm shadow-[0_2px_12px_rgba(239,68,68,0.08)]">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-red-400 font-medium">
+          <AlertCircle className="size-4 shrink-0 text-red-400" />
+          <span>{t(errorKey)}</span>
+        </div>
         <button
           type="button"
           onClick={() => setShowDetails((prev) => !prev)}
-          className="cursor-pointer text-left"
+          className="flex items-center gap-1 text-xs text-red-400/80 hover:text-red-300 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-red-500/10"
         >
-          {showDetails ? (
-            <ArrowUp className="h-4 w-4 ml-2 inline fill-danger" />
-          ) : (
-            <ArrowDown className="h-4 w-4 ml-2 inline fill-danger" />
-          )}
+          <span>{showDetails ? "Hide Details" : "Show Details"}</span>
+          <Chevron className="size-3.5" />
         </button>
       </div>
 
-      {showDetails && <MarkdownRenderer>{defaultMessage}</MarkdownRenderer>}
+      <AnimatePresence>
+        {showDetails && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="mt-2.5 border-t border-red-500/20 pt-2.5 text-xs text-red-200/90 font-mono"
+          >
+            <MarkdownRenderer>{defaultMessage}</MarkdownRenderer>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

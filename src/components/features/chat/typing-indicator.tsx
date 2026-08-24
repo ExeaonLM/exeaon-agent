@@ -132,16 +132,16 @@ export function TypingIndicator({ events }: TypingIndicatorProps) {
 
   return (
     <div
-      className="flex min-w-0 max-w-full items-center gap-2 rounded-full border border-[var(--oh-border)] bg-[var(--oh-surface)] px-3 py-1.5 text-xs text-[var(--oh-text-secondary)]"
+      className="flex min-w-0 max-w-full items-center gap-2.5 rounded-full border border-[#2B2316] bg-[#120F0A]/95 backdrop-blur-md px-3.5 py-1.5 text-xs text-[#E0D8C3] shadow-[0_4px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(255,208,38,0.08)]"
       data-testid="live-activity-chip"
       role="status"
       aria-live="polite"
     >
-      <span
-        aria-hidden="true"
-        className="size-1.5 shrink-0 animate-pulse rounded-full bg-[var(--oh-status-success)] motion-reduce:animate-none"
-      />
-      <span className="min-w-0 truncate">
+      <span className="relative flex size-2 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FFD026] opacity-75 duration-1000" />
+        <span className="relative inline-flex size-2 rounded-full bg-[#FFD026] shadow-[0_0_8px_rgba(255,208,38,0.8)]" />
+      </span>
+      <span className="min-w-0 truncate font-medium text-[#F5F5F5] tracking-wide">
         {activity.kind === "text" ? (
           activity.text
         ) : (
