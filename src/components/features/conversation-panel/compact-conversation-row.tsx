@@ -1,12 +1,12 @@
 import React from "react";
 import { Tooltip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
+import { MessageSquare } from "lucide-react";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 import { SandboxStatus } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { RepositorySelection } from "#/api/open-hands.types";
 import { cn } from "#/utils/utils";
-import { ConversationStatusDot } from "./conversation-status-dot";
 import { ConversationCardFooter } from "./conversation-card/conversation-card-footer";
 import { I18nKey } from "#/i18n/declaration";
 import { useBackendScopedPath } from "#/hooks/use-backend-scoped-path";
@@ -34,7 +34,7 @@ interface CompactConversationRowProps {
 
 /**
  * Minimal one-row presentation of a conversation used by the collapsed
- * sidebar. The row itself is just the agent status dot; hovering it shows a
+ * sidebar. The row itself is a clean chat icon; hovering it shows a
  * floating preview with the conversation's title, repo and timestamp.
  */
 export function CompactConversationRow({
@@ -63,11 +63,6 @@ export function CompactConversationRow({
   const preview = (
     <div className="w-[260px] p-3">
       <div className="flex items-center gap-2 mb-1">
-        <ConversationStatusDot
-          executionStatus={executionStatus}
-          sandboxStatus={sandboxStatus}
-          showTooltip={false}
-        />
         <span className="text-sm font-medium text-white truncate" title={title}>
           {sanitizeConversationTitle(title) || t(I18nKey.CONVERSATION$UNTITLED)}
         </span>
@@ -108,16 +103,12 @@ export function CompactConversationRow({
             "flex items-center justify-center w-10 h-9 mx-auto rounded-md",
             "transition-colors cursor-pointer",
             navActive || isActive
-              ? "bg-tertiary"
-              : "hover:bg-[var(--oh-surface-raised)]",
+              ? "bg-tertiary text-white"
+              : "hover:bg-[var(--oh-surface-raised)] text-[#8C8275] hover:text-[#EDEDED]",
           )
         }
       >
-        <ConversationStatusDot
-          executionStatus={executionStatus}
-          sandboxStatus={sandboxStatus}
-          showTooltip={false}
-        />
+        <MessageSquare className="size-4" />
       </NavigationLink>
     </Tooltip>
   );
