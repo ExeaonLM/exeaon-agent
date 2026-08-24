@@ -238,16 +238,14 @@ export function CheckBackendStep({
       data-testid="onboarding-step-check-backend"
       className="flex flex-col gap-6"
     >
-      <header className="flex flex-col gap-2">
-        <h2 className="text-2xl font-medium text-white">{t(titleKey)}</h2>
-        {treatAsNoBackend ? null : (
-          <p
-            data-testid="onboarding-backend-subtitle"
-            className="text-sm text-[var(--oh-muted)]"
-          >
-            {t(I18nKey.ONBOARDING$BACKEND_SUBTITLE)}
-          </p>
-        )}
+      <header className="flex flex-col items-center text-center gap-2">
+        <h2 className="text-2xl font-medium text-white">Backend Check Status</h2>
+        <p
+          data-testid="onboarding-backend-subtitle"
+          className="text-sm text-[var(--oh-muted)]"
+        >
+          Exeaon talks to an agent server. Make sure the default backend is reachable.
+        </p>
       </header>
 
       {treatAsNoBackend ? null : (
