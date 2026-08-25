@@ -8,11 +8,15 @@ import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
-import { ArrowRight, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Pencil, Trash2, ChevronDown, Terminal as TerminalIcon, Square } from "lucide-react";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
 import { useSendMessage } from "#/hooks/use-send-message";
+import { useAgentState } from "#/hooks/use-agent-state";
+import { AgentState } from "#/types/agent-state";
+import { useCommandStore } from "#/stores/command-store";
+import { useUnifiedPauseConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 
@@ -194,6 +198,28 @@ export function CustomChatInput({
     [pendingMessages, conversationId],
   );
 
+  const { curAgentState } = useAgentState();
+  const commands = useCommandStore((state) => state.commands);
+  const [isTaskExpanded, setIsTaskExpanded] = React.useState(true);
+  const unifiedPauseMutation = useUnifiedPauseConversation();
+
+  const isTaskRunning =
+    curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING;
+
+  const activeCommand = React.useMemo(() => {
+    const inputCommands = commands.filter((c) => c.type === "input");
+    return (
+      inputCommands[inputCommands.length - 1]?.content ||
+      "Agent execution in progress..."
+    );
+  }, [commands]);
+
+  const handleStopRunningTask = async () => {
+    if (conversationId) {
+      await unifiedPauseMutation.mutateAsync({ conversationId });
+    }
+  };
+
   const handleEditPending = (msg: { id: string; text: string }) => {
     removePendingMessage(msg.id);
     setMessageToSend(msg.text);
@@ -217,6 +243,50 @@ export function CustomChatInput({
         fileInputRef={fileInputRef}
         onChange={handleFileInputChange}
       />
+
+      {/* Running Tasks Bar (Antigravity-Style) */}
+      {isTaskRunning && (
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#141318]/95 backdrop-blur-md shadow-xl transition-all">
+          <div
+            onClick={() => setIsTaskExpanded((prev) => !prev)}
+            className="flex items-center justify-between px-3.5 py-2 cursor-pointer hover:bg-white/[0.03] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <span className="text-xs font-medium text-zinc-200">
+                1 task running
+              </span>
+            </div>
+            <ChevronDown
+              className={cn(
+                "w-3.5 h-3.5 text-zinc-400 transition-transform duration-200",
+                isTaskExpanded && "rotate-180",
+              )}
+            />
+          </div>
+
+          {isTaskExpanded && (
+            <div className="border-t border-white/5 px-3.5 py-2 bg-black/30 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 font-mono text-xs text-zinc-300">
+                <TerminalIcon className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                <span className="truncate">{activeCommand}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleStopRunningTask}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 hover:text-white text-[11px] font-medium transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
+                title="Stop running command and unlock terminal"
+              >
+                <Square className="w-3 h-3 fill-current text-red-400" />
+                <span>Stop Task</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Queued Messages Bar (Antigravity-Style) */}
       {activePending.length > 0 && (
