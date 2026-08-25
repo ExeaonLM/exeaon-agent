@@ -204,7 +204,8 @@ export function CustomChatInput({
   const unifiedPauseMutation = useUnifiedPauseConversation();
 
   const isTaskRunning =
-    curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING;
+    Boolean(conversationId) &&
+    (curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING);
 
   const activeCommand = React.useMemo(() => {
     const inputCommands = commands.filter((c) => c.type === "input");

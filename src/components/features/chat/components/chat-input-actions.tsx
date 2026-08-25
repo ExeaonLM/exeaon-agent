@@ -504,8 +504,20 @@ export function ChatInputActions({
             buttonClassName={buttonClassName}
             handleSubmit={handleSubmit}
             handleStop={handlePauseAgent}
-            isRunning={curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING || isPausing}
-            disabled={disabled || (!canSubmit && curAgentState !== AgentState.RUNNING && curAgentState !== AgentState.LOADING && !isPausing)}
+            isRunning={
+              Boolean(conversationId) &&
+              (curAgentState === AgentState.RUNNING ||
+                curAgentState === AgentState.LOADING ||
+                isPausing)
+            }
+            disabled={
+              disabled ||
+              (!canSubmit &&
+                (!conversationId ||
+                  (curAgentState !== AgentState.RUNNING &&
+                    curAgentState !== AgentState.LOADING &&
+                    !isPausing)))
+            }
           />
         )}
       </div>
