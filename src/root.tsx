@@ -356,14 +356,6 @@ export default function App() {
     return <AgentServerBootstrapLoading />;
   }
 
-  if (
-    activeCloudLoggedOut ||
-    activeCloudUnreachable ||
-    isAgentServerUnavailableError(config.error)
-  ) {
-    return <MissingAgentServerScreen />;
-  }
-
   return (
     <>
       <Outlet />
