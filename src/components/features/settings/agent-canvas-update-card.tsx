@@ -312,7 +312,7 @@ export function AgentCanvasUpdateCard({
           className="flex w-full cursor-pointer flex-col gap-1 rounded-md border border-[var(--oh-border)] bg-base-secondary px-3 py-2 text-left hover:bg-[var(--oh-surface-raised)]"
         >
           <span className="flex w-full items-center gap-2">
-            <span className="flex-1 truncate text-sm font-semibold leading-5 text-white">
+            <span className="flex-1 truncate text-sm font-semibold leading-5 text-[var(--cool-grey-50)]">
               Exeaon Claw
             </span>
             {comparison !== null && (
@@ -341,7 +341,7 @@ export function AgentCanvasUpdateCard({
 
           <span className="flex items-center gap-1.5 text-xs leading-5 text-[var(--oh-muted)]">
             <span>{t(I18nKey.SETTINGS$APP_UPDATE_VERSION_LABEL)}</span>
-            <span className="text-white">{AGENT_CANVAS_CLIENT_VERSION}</span>
+            <span className="text-[var(--cool-grey-200)]">{AGENT_CANVAS_CLIENT_VERSION}</span>
           </span>
         </button>
       </section>

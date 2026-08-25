@@ -246,38 +246,38 @@ export function CustomChatInput({
 
       {/* Running Tasks Bar (Antigravity-Style) */}
       {isTaskRunning && (
-        <div className="mb-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#141318]/95 backdrop-blur-md shadow-xl transition-all">
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-[var(--oh-border)] bg-[var(--oh-bg-editor-sidebar)]/95 backdrop-blur-md shadow-xl transition-all">
           <div
             onClick={() => setIsTaskExpanded((prev) => !prev)}
-            className="flex items-center justify-between px-3.5 py-2 cursor-pointer hover:bg-white/[0.03] transition-colors"
+            className="flex items-center justify-between px-3.5 py-2 cursor-pointer hover:bg-[var(--oh-surface-raised)] transition-colors"
           >
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
-              <span className="text-xs font-medium text-zinc-200">
+              <span className="text-xs font-medium text-[var(--cool-grey-100)]">
                 1 task running
               </span>
             </div>
             <ChevronDown
               className={cn(
-                "w-3.5 h-3.5 text-zinc-400 transition-transform duration-200",
+                "w-3.5 h-3.5 text-[var(--cool-grey-400)] transition-transform duration-200",
                 isTaskExpanded && "rotate-180",
               )}
             />
           </div>
 
           {isTaskExpanded && (
-            <div className="border-t border-white/5 px-3.5 py-2 bg-black/30 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0 font-mono text-xs text-zinc-300">
-                <TerminalIcon className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <div className="border-t border-[var(--oh-border)] px-3.5 py-2 bg-[var(--oh-surface-raised)]/30 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 font-mono text-xs text-[var(--cool-grey-200)]">
+                <TerminalIcon className="w-3.5 h-3.5 text-[var(--cool-grey-400)] shrink-0" />
                 <span className="truncate">{activeCommand}</span>
               </div>
               <button
                 type="button"
                 onClick={handleStopRunningTask}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 hover:text-white text-[11px] font-medium transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 hover:text-red-300 text-[11px] font-medium transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
                 title="Stop running command and unlock terminal"
               >
                 <Square className="w-3 h-3 fill-current text-red-400" />
@@ -290,32 +290,32 @@ export function CustomChatInput({
 
       {/* Queued Messages Bar (Antigravity-Style) */}
       {activePending.length > 0 && (
-        <div className="mb-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#141318]/95 backdrop-blur-md shadow-xl transition-all">
-          <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/5 bg-white/[0.02]">
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-[var(--oh-border)] bg-[var(--oh-bg-editor-sidebar)]/95 backdrop-blur-md shadow-xl transition-all">
+          <div className="flex items-center justify-between px-3.5 py-2 border-b border-[var(--oh-border)] bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-zinc-200">
+              <span className="text-xs font-medium text-[var(--cool-grey-100)]">
                 Queued Messages
               </span>
-              <span className="flex items-center justify-center rounded-full bg-zinc-800/90 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+              <span className="flex items-center justify-center rounded-full bg-[var(--cool-grey-800)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--cool-grey-200)]">
                 {activePending.length}
               </span>
-              <span className="text-[11px] text-zinc-400">
+              <span className="text-[11px] text-[var(--cool-grey-400)]">
                 · Sends after agent finishes working
               </span>
             </div>
           </div>
-          <div className="divide-y divide-white/5 p-1">
+          <div className="divide-y divide-[var(--oh-border)] p-1">
             {activePending.map((msg) => (
               <div
                 key={msg.id}
-                className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 hover:bg-white/5 group transition-colors"
+                className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-[var(--cool-grey-200)] hover:bg-[var(--oh-surface-raised)] group transition-colors"
               >
                 <span className="truncate flex-1 mr-3 font-normal">{msg.text}</span>
-                <div className="flex items-center gap-1 text-zinc-400">
+                <div className="flex items-center gap-1 text-[var(--cool-grey-400)]">
                   <button
                     type="button"
                     onClick={() => handleSendPendingNow(msg.id)}
-                    className="p-1 rounded hover:bg-white/10 hover:text-emerald-400 transition-colors cursor-pointer"
+                    className="p-1 rounded hover:bg-[var(--oh-surface-raised)] hover:text-emerald-400 transition-colors cursor-pointer"
                     title="Send now"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />

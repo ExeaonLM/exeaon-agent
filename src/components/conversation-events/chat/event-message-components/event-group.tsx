@@ -120,21 +120,21 @@ export function EventGroup({
             : t(I18nKey.EVENT_GROUP$EXPAND)
         }
         data-testid="event-group-toggle"
-        className="w-full flex items-center justify-between gap-2 text-left cursor-pointer rounded-xl border border-white/[0.07] bg-[#141419]/80 backdrop-blur-sm px-3.5 py-2 text-zinc-300 transition-all hover:bg-[#1a1a20] hover:border-white/[0.12] shadow-sm"
+        className="w-full flex items-center justify-between gap-2 text-left cursor-pointer rounded-xl border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]/80 backdrop-blur-sm px-3.5 py-2 text-[var(--cool-grey-300)] transition-all hover:bg-[var(--oh-surface-raised)] shadow-sm"
       >
         {isFinalized ? (
-          <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-zinc-300">
-            <Chevron className="h-3.5 w-3.5 fill-current text-zinc-400 flex-shrink-0" />
+          <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-[var(--cool-grey-300)]">
+            <Chevron className="h-3.5 w-3.5 fill-current text-[var(--cool-grey-400)] flex-shrink-0" />
             <span className="truncate">{countSummary}</span>
           </span>
         ) : (
           <>
-            <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-zinc-200">
-              <Chevron className="h-3.5 w-3.5 fill-current text-zinc-400 flex-shrink-0" />
+            <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-[var(--cool-grey-100)]">
+              <Chevron className="h-3.5 w-3.5 fill-current text-[var(--cool-grey-400)] flex-shrink-0" />
               <span className="truncate">{latestTitle ?? countSummary}</span>
             </span>
-            <span className="flex items-center flex-shrink-0 text-xs text-zinc-400 font-normal">
-              <span className="truncate text-[11px] bg-zinc-800/80 px-2 py-0.5 rounded-full border border-white/5">{countSummary}</span>
+            <span className="flex items-center flex-shrink-0 text-xs text-[var(--cool-grey-400)] font-normal">
+              <span className="truncate text-[11px] bg-[var(--cool-grey-800)]/80 px-2 py-0.5 rounded-full border border-[var(--oh-border)] text-[var(--cool-grey-300)]">{countSummary}</span>
               {isRunning ? (
                 <LoaderCircle
                   data-testid="spinner-icon"

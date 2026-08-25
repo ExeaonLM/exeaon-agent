@@ -7,7 +7,7 @@ export function paragraph({
   React.HTMLAttributes<HTMLParagraphElement> &
   ExtraProps) {
   return (
-    <p className="py-1.5 leading-relaxed text-zinc-200 first:pt-0 last:pb-0 font-normal">
+    <p className="py-1.5 leading-relaxed text-[var(--cool-grey-300)] first:pt-0 last:pb-0 font-normal">
       {children}
     </p>
   );
