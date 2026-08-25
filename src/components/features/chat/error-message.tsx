@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import i18n from "#/i18n";
 import { MarkdownRenderer } from "../markdown/markdown-renderer";
+import { sanitizeLlmErrorMessage } from "#/utils/user-facing-error";
 
 interface ErrorMessageProps {
   errorId?: string;
@@ -13,6 +14,8 @@ interface ErrorMessageProps {
 export function ErrorMessage({ errorId, defaultMessage }: ErrorMessageProps) {
   const { t } = useTranslation("openhands");
   const [showDetails, setShowDetails] = React.useState(false);
+
+  const cleanMessage = sanitizeLlmErrorMessage(defaultMessage);
 
   const hasValidTranslationId = !!errorId && i18n.exists(errorId);
   const errorKey = hasValidTranslationId
@@ -45,13 +48,14 @@ export function ErrorMessage({ errorId, defaultMessage }: ErrorMessageProps) {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="mt-2.5 border-t border-red-500/20 pt-2.5 text-xs text-red-200/90 font-mono"
+            className="mt-2.5 border-t border-red-500/20 pt-2.5 text-xs text-red-200/90 leading-relaxed font-sans"
           >
-            <MarkdownRenderer>{defaultMessage}</MarkdownRenderer>
+            <MarkdownRenderer>{cleanMessage}</MarkdownRenderer>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+
 

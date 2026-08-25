@@ -1,34 +1,85 @@
 export const FREE_MODEL_BADGE_LABEL = "Exeaon";
 
-export const EXEAON_MODELS = {
-  "openai/exeaon": "Exeaon 14B (Nunya)",
-  "openai/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
-  "openai/exeaon-27b": "Exeaon 27B",
-  "openai/exeaon-72b": "Exeaon 72B",
-  "exeaon": "Exeaon 14B (Nunya)",
-  "exeaon/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
-  "exeaon/exeaon-27b": "Exeaon 27B",
-  "exeaon/exeaon-72b": "Exeaon 72B",
-  // Exeaon Cloud (openhands provider) serves the same real Exeaon models
-  "openhands/exeaon1-nunya-14b": "Exeaon 14B (Nunya)",
-  "openhands/exeaon-27b": "Exeaon 27B",
-  "openhands/exeaon-72b": "Exeaon 72B",
-} as const;
+export interface ExeaonModelMeta {
+  name: string;
+  subtitle: string;
+}
 
-export const FREE_OPENHANDS_MODELS = EXEAON_MODELS;
-export const FREE_OPENHANDS_MODEL_IDS = Object.keys(FREE_OPENHANDS_MODELS);
-export const FREE_OPENHANDS_MODEL_NOTE = `Exeaon models: Exeaon 14B (Nunya), Exeaon 27B, Exeaon 72B. Running on Exeaon runtime.`;
+export const EXEAON_MODELS: Record<string, ExeaonModelMeta> = {
+  "openai/exeaon1-claw-32b": {
+    name: "Exeaon Coder",
+    subtitle: "Flagship sovereign coding & reasoning",
+  },
+  "openai/exeaon": {
+    name: "Exeaon Coder",
+    subtitle: "Flagship sovereign coding & reasoning",
+  },
+  "openhands/exeaon1-claw-32b": {
+    name: "Exeaon Coder",
+    subtitle: "Flagship sovereign coding & reasoning",
+  },
+  "exeaon1-claw-32b": {
+    name: "Exeaon Coder",
+    subtitle: "Flagship sovereign coding & reasoning",
+  },
+  "openai/exeaon1-nunya-14b": {
+    name: "Exeaon Nunya 2.0",
+    subtitle: "Fast lightweight reasoning & script automation",
+  },
+  "openhands/exeaon1-nunya-14b": {
+    name: "Exeaon Nunya 2.0",
+    subtitle: "Fast lightweight reasoning & script automation",
+  },
+  "exeaon1-nunya-14b": {
+    name: "Exeaon Nunya 2.0",
+    subtitle: "Fast lightweight reasoning & script automation",
+  },
+  "openai/exeaon1-kese-30b-a3b": {
+    name: "Exeaon Kese",
+    subtitle: "High-throughput MoE multi-agent architecture",
+  },
+  "exeaon1-kese-30b-a3b": {
+    name: "Exeaon Kese",
+    subtitle: "High-throughput MoE multi-agent architecture",
+  },
+  "openai/exeaon1-dzo-4b": {
+    name: "Exeaon Dzo",
+    subtitle: "Ultra-compact edge coder",
+  },
+  "exeaon1-dzo-4b": {
+    name: "Exeaon Dzo",
+    subtitle: "Ultra-compact edge coder",
+  },
+};
+
+export const FREE_OPENHANDS_MODELS = Object.fromEntries(
+  Object.entries(EXEAON_MODELS).map(([k, v]) => [k, v.name]),
+);
+export const FREE_OPENHANDS_MODEL_IDS = Object.keys(EXEAON_MODELS);
+export const FREE_OPENHANDS_MODEL_NOTE = `Exeaon models: Exeaon Coder, Exeaon Nunya 2.0, Exeaon Kese, Exeaon Dzo.`;
 
 export const isFreeOpenHandsModel = (
   model: string | null | undefined,
-): model is keyof typeof FREE_OPENHANDS_MODELS =>
-  Boolean(model && model in FREE_OPENHANDS_MODELS);
+): model is keyof typeof EXEAON_MODELS =>
+  Boolean(model && model in EXEAON_MODELS);
+
+export function getExeaonModelMeta(
+  model: string | null | undefined,
+): ExeaonModelMeta | null {
+  if (!model) return null;
+  if (isFreeOpenHandsModel(model)) return EXEAON_MODELS[model];
+  const cleaned = model.replace(/^(openai|openhands|litellm_proxy)\//, "");
+  if (isFreeOpenHandsModel(cleaned)) return EXEAON_MODELS[cleaned];
+  return null;
+}
 
 export function formatModelNameForDisplay(
   model: string | null | undefined,
 ): string | null {
   if (!model) return null;
-  return isFreeOpenHandsModel(model) ? FREE_OPENHANDS_MODELS[model] : model;
+  const meta = getExeaonModelMeta(model);
+  if (meta) return meta.name;
+  return model.replace(/^(openai|openhands|litellm_proxy)\//, "");
 }
 
 export function formatProviderModelNameForDisplay(
@@ -37,30 +88,15 @@ export function formatProviderModelNameForDisplay(
 ): string | null {
   if (!model) return null;
   const fullModel = provider ? `${provider}/${model}` : model;
-  return isFreeOpenHandsModel(fullModel)
-    ? FREE_OPENHANDS_MODELS[fullModel]
-    : model;
+  return formatModelNameForDisplay(fullModel);
 }
 
-/**
- * Format a native (OpenHands-kind) routing model string for display, stripping
- * the provider route prefix (e.g. ``"anthropic/claude-sonnet-4-5-20250929"`` →
- * ``"claude-sonnet-4-5-20250929"``, ``"litellm_proxy/openai/gpt-4o"`` →
- * ``"gpt-4o"``) so a conversation chip shows a meaningful model name rather than
- * the full routing path.
- *
- * Returns ``null`` for an empty/nullish input, and falls back to the original
- * string when stripping the prefix would leave nothing (e.g. a trailing slash)
- * — never an empty string, which would collapse the chip text.
- *
- * Display-only: unlike {@link deriveProfileNameFromModel} this does not sanitize
- * to an identifier, so it keeps the real model id intact for the chip.
- */
 export function formatNativeModelName(
   model: string | null | undefined,
 ): string | null {
   if (!model) return null;
-  if (isFreeOpenHandsModel(model)) return FREE_OPENHANDS_MODELS[model];
+  const meta = getExeaonModelMeta(model);
+  if (meta) return meta.name;
   const lastSegment = model.split("/").pop();
   return lastSegment || model;
 }

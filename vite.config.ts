@@ -393,6 +393,9 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
+      hmr: {
+        overlay: false,
+      },
       port: FE_PORT,
       strictPort: true, // Fail if port is busy (dynamic allocation handles fallback)
       host: true,

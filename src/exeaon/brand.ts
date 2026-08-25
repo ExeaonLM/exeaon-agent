@@ -7,7 +7,7 @@
  * through one-line imports; the values live here. See ../../exeaon/MERGE_STRATEGY.md.
  */
 export const BRAND = {
-  name: "Exeaon Agent",
+  name: "Exeaon Claw",
   tagline: "Sovereign AI coding agent, on your hardware.",
   logo: "/exeaon-logo-512.png",
 
@@ -20,13 +20,17 @@ export const BRAND = {
    */
   model: {
     provider: "openai" as const,
-    id: "openai/exeaon",
+    id: "openai/exeaon1-claw-32b",
     // Hosted published-model endpoint by default; point at a local `epure
     // serve` by setting EXEAON_MODEL_BASE_URL.
     baseUrl:
+      (typeof import.meta !== "undefined" &&
+        import.meta.env?.VITE_EXEAON_MODEL_BASE_URL) ||
       (typeof process !== "undefined" && process.env?.EXEAON_MODEL_BASE_URL) ||
-      "https://akpaluelliot9--exeaon-compress-exeaonendpoint-api.modal.run/v1",
+      "https://elliotakpalu--exeaon-compress-exeaonendpoint-api.modal.run/v1",
     apiKey:
+      (typeof import.meta !== "undefined" &&
+        import.meta.env?.VITE_EXEAON_MODEL_API_KEY) ||
       (typeof process !== "undefined" && process.env?.EXEAON_MODEL_API_KEY) ||
       "sk-exeaon",
   },

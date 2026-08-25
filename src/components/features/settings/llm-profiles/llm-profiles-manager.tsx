@@ -124,19 +124,8 @@ export function LlmProfilesManager({
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-medium text-white">
-              {t(I18nKey.SETTINGS$AVAILABLE_PROFILES)}
+              Available Models
             </h2>
-            {onAddProfile && canManage ? (
-              <BrandButton
-                testId="add-llm-profile"
-                type="button"
-                variant="secondary"
-                className="ml-auto"
-                onClick={onAddProfile}
-              >
-                {t(I18nKey.SETTINGS$ADD_LLM_PROFILE)}
-              </BrandButton>
-            ) : null}
           </div>
 
           <ProfilesBody
@@ -154,15 +143,6 @@ export function LlmProfilesManager({
             isActivating={activateProfile.isPending}
           />
         </div>
-
-        {isLocal && canManage ? (
-          <ProviderConnectionsManager
-            connections={connectionList}
-            linkedCountById={linkedCountById}
-            isLoading={isLoadingConnections}
-            loadError={connectionsError ?? null}
-          />
-        ) : null}
       </div>
 
       <RenameProfileModal

@@ -8,6 +8,11 @@ import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
+import { ArrowRight, Pencil, Trash2 } from "lucide-react";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useOptionalConversationId } from "#/hooks/use-conversation-id";
+import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
+import { useSendMessage } from "#/hooks/use-send-message";
 import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 
@@ -163,6 +168,48 @@ export function CustomChatInput({
   useEffect(() => {
     syncCanSubmit();
   }, [syncCanSubmit, images.length, files.length]);
+
+  const { conversationId } = useOptionalConversationId();
+  const pendingMessages = useOptimisticUserMessageStore(
+    (state) => state.pendingMessages,
+  );
+  const removePendingMessage = useOptimisticUserMessageStore(
+    (state) => state.removePendingMessage,
+  );
+  const setMessageToSend = useConversationStore(
+    (state) => state.setMessageToSend,
+  );
+  const { send } = useSendMessage();
+
+  const activePending = React.useMemo(
+    () =>
+      conversationId
+        ? pendingMessages.filter((message) =>
+            matchesPendingConversationId(
+              conversationId,
+              message.conversationId,
+            ),
+          )
+        : [],
+    [pendingMessages, conversationId],
+  );
+
+  const handleEditPending = (msg: { id: string; text: string }) => {
+    removePendingMessage(msg.id);
+    setMessageToSend(msg.text);
+  };
+
+  const handleSendPendingNow = async (id: string) => {
+    const msg = activePending.find((m) => m.id === id);
+    if (msg && conversationId) {
+      removePendingMessage(id);
+      await send({
+        message: msg.text,
+        conversationId,
+      });
+    }
+  };
+
   return (
     <div className={cn("w-full", className)}>
       {/* Hidden file input */}
@@ -170,6 +217,61 @@ export function CustomChatInput({
         fileInputRef={fileInputRef}
         onChange={handleFileInputChange}
       />
+
+      {/* Queued Messages Bar (Antigravity-Style) */}
+      {activePending.length > 0 && (
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#141318]/95 backdrop-blur-md shadow-xl transition-all">
+          <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-zinc-200">
+                Queued Messages
+              </span>
+              <span className="flex items-center justify-center rounded-full bg-zinc-800/90 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                {activePending.length}
+              </span>
+              <span className="text-[11px] text-zinc-400">
+                · Sends after agent finishes working
+              </span>
+            </div>
+          </div>
+          <div className="divide-y divide-white/5 p-1">
+            {activePending.map((msg) => (
+              <div
+                key={msg.id}
+                className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 hover:bg-white/5 group transition-colors"
+              >
+                <span className="truncate flex-1 mr-3 font-normal">{msg.text}</span>
+                <div className="flex items-center gap-1 text-zinc-400">
+                  <button
+                    type="button"
+                    onClick={() => handleSendPendingNow(msg.id)}
+                    className="p-1 rounded hover:bg-white/10 hover:text-emerald-400 transition-colors cursor-pointer"
+                    title="Send now"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEditPending(msg)}
+                    className="p-1 rounded hover:bg-white/10 hover:text-amber-400 transition-colors cursor-pointer"
+                    title="Edit message"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removePendingMessage(msg.id)}
+                    className="p-1 rounded hover:bg-white/10 hover:text-red-400 transition-colors cursor-pointer"
+                    title="Delete from queue"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Container with grip */}
       <div className="relative w-full">

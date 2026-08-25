@@ -313,7 +313,7 @@ export function AgentCanvasUpdateCard({
         >
           <span className="flex w-full items-center gap-2">
             <span className="flex-1 truncate text-sm font-semibold leading-5 text-white">
-              {t(I18nKey.SETTINGS$APP_UPDATE_CARD_TITLE)}
+              Exeaon Claw
             </span>
             {comparison !== null && (
               <span

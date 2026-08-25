@@ -375,66 +375,293 @@ export function BackendSelector({
     ],
   );
 
+  const [profileMenuOpen, setProfileMenuOpen] = React.useState(defaultOpen);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!profileMenuOpen) return undefined;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileMenuOpen]);
+
   return (
     <>
-      <div className="flex items-center gap-2 w-full">
-        <div className="flex-1 min-w-0">
-          <Dropdown
-            testId="backend-selector"
-            key={`${activeValue}-${activeOption?.label ?? ""}`}
-            defaultValue={
-              activeOption ?? {
-                value: activeValue,
-                label: noBackendSelected ? noBackendLabel : active.backend.name,
-                prefix: noBackendSelected
-                  ? buildNoBackendPrefix()
-                  : buildStatusPrefix(healthByBackendId[active.backend.id]),
-              }
-            }
-            footer={addBackendFooter}
-            openUpward={openUpward}
-            hideTrigger={hideTrigger}
-            defaultOpen={defaultOpen}
-            openOnHover={!hideTrigger}
-            onChange={(item) => {
-              if (!item) return;
-              void handleSelectBackend(item.value);
-            }}
-            placeholder={
-              noBackendSelected ? noBackendLabel : active.backend.name
-            }
-            loading={someCloudLoading}
-            options={options}
-            className="h-10 px-2 py-0 bg-transparent border-transparent hover:bg-[var(--oh-surface-raised)] focus-within:bg-[var(--oh-surface-raised)] focus-within:border-transparent focus-within:ring-0"
-          />
-        </div>
-        {!hideTrigger ? (
-          <StyledTooltip
-            content={settingsLabel}
-            placement={settingsTooltipPlacement}
-            offset={10}
-          >
-            <NavigationLink
-              to="/settings"
-              data-testid="backend-selector-settings-link"
-              data-active={isSettingsActive}
-              aria-label={settingsLabel}
-              className={
-                isSettingsActive
-                  ? cn(
-                      "inline-flex items-center justify-center shrink-0 w-9 h-9 rounded-md bg-tertiary text-white font-normal cursor-pointer",
-                      formControlTransitionClassName,
-                    )
-                  : cn(
-                      "inline-flex items-center justify-center shrink-0 w-9 h-9 rounded-md text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)] cursor-pointer",
-                      formControlTransitionClassName,
-                    )
-              }
+      <div ref={containerRef} className="relative flex items-center w-full">
+        {/* Claude-style User Profile Trigger Pill */}
+        <button
+          type="button"
+          data-testid="user-profile-trigger"
+          onClick={() => setProfileMenuOpen((prev) => !prev)}
+          className={cn(
+            "flex items-center gap-2.5 w-full h-11 px-2 py-1.5 rounded-xl transition-all cursor-pointer text-left select-none",
+            profileMenuOpen
+              ? "bg-white/[0.08] text-white"
+              : "hover:bg-white/[0.05] text-[var(--oh-foreground)]",
+          )}
+        >
+          {/* Avatar Badge */}
+          <div className="flex items-center justify-center size-7 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/30 border border-amber-500/40 text-amber-400 font-semibold text-xs shrink-0 shadow-inner">
+            E
+          </div>
+
+          {/* Name & Pro Badge */}
+          <div className="flex flex-col min-w-0 flex-1 leading-tight">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-white truncate">
+                Elliot
+              </span>
+              <span className="text-xs text-[var(--oh-text-dim)]">·</span>
+              <span className="text-[11px] font-semibold text-amber-400">
+                Pro
+              </span>
+            </div>
+          </div>
+
+          {/* Chevron */}
+          <span className="shrink-0 text-[var(--oh-muted)]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={cn(
+                "size-4 transition-transform duration-200",
+                profileMenuOpen ? "rotate-180 text-white" : "",
+              )}
             >
-              <Settings width={16} height={16} />
-            </NavigationLink>
-          </StyledTooltip>
-        ) : null}
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+
+        {/* Claude-Style Floating Profile Menu */}
+        {profileMenuOpen && (
+          <div
+            data-testid="user-profile-popover"
+            className={cn(
+              "absolute left-0 bottom-full mb-2 z-50 w-[270px] rounded-2xl bg-[#141413] border border-white/10 shadow-2xl p-1.5 flex flex-col gap-0.5 text-sm animate-in fade-in zoom-in-95 duration-150",
+            )}
+          >
+            {/* Header: User Email */}
+            <div className="px-3 py-2 border-b border-white/[0.08] mb-1">
+              <div className="text-xs text-[var(--oh-text-dim)] truncate font-mono">
+                elliotakpalu@gmail.com
+              </div>
+            </div>
+
+            {/* Menu Links */}
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                navigate("/settings");
+              }}
+              className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <Settings className="size-4 text-[var(--oh-muted)]" />
+                <span>Settings</span>
+              </div>
+              <span className="text-[11px] text-[var(--oh-text-dim)] font-mono">
+                Ctrl+,
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                navigate("/settings/app");
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4 text-[var(--oh-muted)]"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                <path d="M2 12h20" />
+              </svg>
+              <span>Language</span>
+            </button>
+
+            <a
+              href="https://exeaon.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setProfileMenuOpen(false)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left no-underline"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4 text-[var(--oh-muted)]"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span>Get help</span>
+            </a>
+
+            <div className="my-1 border-t border-white/[0.08]" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                navigate("/settings/account");
+              }}
+              className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4 text-amber-400"
+                >
+                  <path d="m5 12 7-7 7 7" />
+                  <path d="M12 19V5" />
+                </svg>
+                <span>Account & Cloud</span>
+              </div>
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+                Pro
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                navigate("/settings/skills");
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4 text-[var(--oh-muted)]"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+              </svg>
+              <span>Get apps and extensions</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                navigate("/settings/app");
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4 text-[var(--oh-muted)]"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" x2="8" y1="13" y2="13" />
+                <line x1="16" x2="8" y1="17" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <span>View changelog</span>
+            </button>
+
+            <a
+              href="https://exeaon.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setProfileMenuOpen(false)}
+              className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left no-underline"
+            >
+              <div className="flex items-center gap-2.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4 text-[var(--oh-muted)]"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" x2="12" y1="16" y2="12" />
+                  <line x1="12" x2="12" y1="8" y2="8.01" />
+                </svg>
+                <span>Learn more</span>
+              </div>
+              <span className="text-xs text-[var(--oh-muted)]">›</span>
+            </a>
+
+            <div className="my-1 border-t border-white/[0.08]" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                displaySuccessToast("Signed out of session");
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" x2="9" y1="12" y2="12" />
+              </svg>
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </div>
       {addBackendModalOpen ? (
         <AddBackendModal onClose={() => setAddBackendModalOpen(false)} />

@@ -13,7 +13,7 @@ import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
-import { formatModelNameForDisplay } from "#/utils/format-model-name";
+import { formatModelNameForDisplay, getExeaonModelMeta } from "#/utils/format-model-name";
 
 const PROFILE_LABEL_MAX_CHARS = 18;
 
@@ -74,7 +74,9 @@ export function ChatInputLlmProfileMenuContent({
           </li>
           {profiles.map((profile) => {
             const isCurrent = profile.name === currentProfileName;
-            const displayModel = formatModelNameForDisplay(profile.model);
+            const meta = getExeaonModelMeta(profile.model) || getExeaonModelMeta(profile.name);
+            const title = meta ? meta.name : formatModelNameForDisplay(profile.name);
+            const subtitle = meta ? meta.subtitle : (profile.model ? formatModelNameForDisplay(profile.model) : null);
             return (
               <ContextMenuListItem
                 key={profile.name}
@@ -89,29 +91,29 @@ export function ChatInputLlmProfileMenuContent({
                   handleSelect(profile.name);
                 }}
                 className={cn(
-                  "flex flex-col items-stretch gap-0.5",
+                  "flex flex-col items-stretch gap-0.5 py-2 px-3",
                   isCurrent && "bg-[var(--oh-interactive-hover)]",
                 )}
               >
                 <span className="flex items-center gap-2">
                   <span
-                    className="flex-1 truncate text-sm leading-5"
-                    title={profile.model ?? profile.name}
+                    className="flex-1 truncate text-sm font-medium leading-5 text-white"
+                    title={title ?? profile.name}
                   >
-                    {profile.name}
+                    {title}
                   </span>
                   {isCurrent && (
                     <CheckIcon
                       width={14}
                       height={14}
-                      className="shrink-0"
+                      className="shrink-0 text-[#FFD026]"
                       aria-hidden
                     />
                   )}
                 </span>
-                {displayModel && (
+                {subtitle && (
                   <span className="block truncate text-xs leading-4 text-[var(--oh-muted)]">
-                    {displayModel}
+                    {subtitle}
                   </span>
                 )}
               </ContextMenuListItem>
@@ -151,7 +153,7 @@ export function ChatInputLlmProfileMenuContent({
             className={cn("shrink-0", settingsIconClassName)}
             aria-hidden
           />
-          <span>{t(I18nKey.SETTINGS$LLM_PROFILES)}</span>
+          <span>Models</span>
         </NavigationLink>
       </li>
     </>
@@ -175,7 +177,17 @@ export function ChatInputLlmProfilePicker() {
     return null;
   }
 
-  const label = currentProfileName ?? t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER);
+  const currentProfile = profiles.find((p) => p.name === currentProfileName);
+  const modelToFormat =
+    currentProfile?.model ?? currentProfileModel ?? currentProfileName;
+  const meta =
+    (modelToFormat ? getExeaonModelMeta(modelToFormat) : null) ||
+    (currentProfileName ? getExeaonModelMeta(currentProfileName) : null);
+  const label = meta
+    ? meta.name
+    : currentProfileName
+      ? formatModelNameForDisplay(currentProfileName)
+      : t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER);
 
   return (
     <div className="relative min-w-0">

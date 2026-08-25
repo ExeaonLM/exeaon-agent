@@ -76,7 +76,16 @@ class ConfigService {
         provider === "exeaon" ||
         provider === "openhands" ||
         provider === "openai"
-          ? ["exeaon1-nunya-14b", "exeaon-27b", "exeaon-72b"]
+          ? [
+              "exeaon1-claw-32b",
+              "exeaon1-kese-30b-a3b",
+              "exeaon1-kese-32b",
+              "exeaon1-nunya-14b",
+              "exeaon1-nunya-8b",
+              "exeaon1-dzo-4b",
+              "exeaon-27b",
+              "exeaon-72b",
+            ]
           : [];
       const items: LLMModel[] = cloudNames.map((name) => ({
         provider,
@@ -104,7 +113,12 @@ class ConfigService {
       provider === "openhands" ||
       provider === "openai"
     ) {
+      verifiedNames.add("exeaon1-claw-32b");
+      verifiedNames.add("exeaon1-kese-30b-a3b");
+      verifiedNames.add("exeaon1-kese-32b");
       verifiedNames.add("exeaon1-nunya-14b");
+      verifiedNames.add("exeaon1-nunya-8b");
+      verifiedNames.add("exeaon1-dzo-4b");
       verifiedNames.add("exeaon-27b");
       verifiedNames.add("exeaon-72b");
     }

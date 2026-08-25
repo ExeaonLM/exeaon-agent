@@ -8,33 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Dedicated Settings Pages for Skills & Agent Tools**:
+  - `/settings/skills`: Interactive skill explorer with categories, search, toggles, and detail drawer.
+  - `/settings/tools`: Live schema browser showing runtime tools (`terminal_command`, `file_editor`, `browser_engine`, `agent_skills`, `subagent_orchestrator`) and read-only sovereign system prompt protocols.
+- **Claude-Style User Profile Footer (`[E] Elliot · Pro ⌄`)**:
+  - Replaced legacy backend selector with an avatar pill button and upward floating menu (Email, Settings `Ctrl+,`, Language, Account & Cloud with Pro badge, Get Apps & Extensions, View Changelog, Log Out).
+- **Sovereign Exeaon Model Pipeline**:
+  - Connected directly to `Exeaon/Exeaon1-Claw-32B` (and `Exeaon1-Nunya-14B` / `Exeaon1-Kese-32B`) via `epure-runtime` on the active Modal `exeaon-compress` endpoint (`https://elliotakpalu--exeaon-compress-exeaonendpoint-api.modal.run/v1`).
 - **Claude-Style Top Header Lane Search**: Migrated the command search bar into a compact icon-only button directly in the sidebar header next to the Exeaon logo and collapse toggle.
-- **Engineering Prompt Macros & Workflows**: Revamped landing prompt suggestions and the Prompt Macros submenu with production-grade engineering workflows:
-  - **Build Full-Stack App**: Scaffolds modular TypeScript full-stack architectures with Dark Void UI and service contracts.
-  - **Find & Fix Bugs**: Deep-dive static & runtime code auditing, type safety enforcement, and automated regression verification.
-  - **Refactor & Modernize**: Monolith decomposition, custom hooks, performance optimization, and modern code idioms.
-  - **Automate & Deploy**: Multi-stage Docker containerization, docker-compose orchestration, and CI/CD GitHub Actions pipelines.
-- **Claude-Style Live Thinking & Status Animations**:
-  - Dual-ring pulsing Solar Gold indicator (`animate-ping` + amber glow) inside frosted glass pill containers (`#120F0A`/95 + `backdrop-blur-md`).
-  - Seamless Framer Motion transitions (`opacity`, `translateY`, `scale`) for status indicators, preventing layout shifts and flickering.
-  - Animated collapsible `<think>` reasoning sections with clean Markdown formatting and responsive state chevrons.
-- **Polished Dark Void Agent Status Controls**: Upgraded the in-chat agent status pill with live pulsing activity dots, tactile pause/resume controls, and subtle Dark Void glass badges.
-- **Interactive Token & Context Analytics Modal**: Real-time context window capacity meter with percentile breakdown (Input, Output, Cache Hits, Cache Writes), session cost tracking, and quick context compaction action.
-- **Enhanced Folder & Workspace Browser**: Modernized file browser modal with native Windows drive detection, favorites list (Home, Desktop, Documents, Downloads), custom sleek scrollbars, and absolute path resolution.
+- **Engineering Prompt Macros & Workflows**: Revamped landing prompt suggestions and the Prompt Macros submenu with production-grade engineering workflows (Full-Stack, Find & Fix Bugs, Refactor, Automate & Deploy).
+- **Claude-Style Live Thinking & Status Animations**: Dual-ring pulsing Solar Gold indicator inside frosted glass pill containers with collapsible `<think>` reasoning blocks.
+- **Interactive Token & Context Analytics Modal**: Real-time context capacity meter, token breakdown, and quick context compaction.
 
 ### Changed
+- **Connection Security & UI Locking**:
+  - Locked default sovereign backend connection and removed edit/delete/add tampering buttons from backend management modals.
+  - Formatted all connection failures (502 / ECONNREFUSED) into clean, professional *"Exeaon Server Offline — Please restart the application"* notices.
+- **Modal Smart Idle Scaling**:
+  - Removed `min_containers=1` to prevent 24/7 idle credit burn on A100 GPUs.
+  - Configured `scaledown_window=600` (10 minutes) for zero-latency multi-turn conversations while scaling to 0 when idle.
+- **Chat `+` Context Menu Simplification**:
+  - Streamlined chat attachment context menu strictly to Prompt Macros, Attach Files & Images, and Git Tools.
+- **Command Menu (`Cmd+K`) Modernization**:
+  - Aligned search results with native Exeaon routes: Models, Skills, Agent Tools, Account & Cloud, Compactor, Context, Validation, Appearance, Secrets, and MCP Servers.
 - **Settings Navigation Rebranding**:
   - Rebranded **Application** $\rightarrow$ **Appearance**.
   - Rebranded **Condenser** $\rightarrow$ **Compactor**.
   - Rebranded **Agent Canvas** $\rightarrow$ **Exeaon Canvas**.
-  - Rebranded **Macros** $\rightarrow$ **Prompt Macros**.
-  - Rebranded **Automations** $\rightarrow$ **Flows** across dashboard metrics, filter chips, recommended flows rail, and templates.
-- **Agent Error Card Redesign**: Transformed raw error text into an alert card with Dark Void borders and expandable debugging details.
+  - Rebranded **Automations** $\rightarrow$ **Flows**.
+- **Model Display Name Formatting**:
+  - Standardized model selector labels across chat input, profile cards, and settings to clean branded names (`Exeaon Coder`, `Exeaon Nunya 14B`, `Exeaon Kese 32B`).
 
 ### Fixed
+- Fixed 502 Bad Gateway by managing process sockets on ports 18000, 18001, and 18080.
+- Fixed stale conversation configs carrying disabled workspace URLs by cleaning old conversation caches and patching agent server settings.
 - Fixed `AnimatePresence` multiple-child warning by wrapping status indicator components in a single motion container.
-- Fixed translation completeness and removed redundant string references across multilingual language bundles.
-- Fixed duplicate tab header rendering inside the desktop drawer panel.
 - Fixed Windows absolute path resolution in folder browser.
 
 ## [1.15.0] - 2026-08-24

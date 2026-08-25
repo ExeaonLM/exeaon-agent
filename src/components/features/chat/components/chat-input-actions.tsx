@@ -503,7 +503,9 @@ export function ChatInputActions({
           <ChatSendButton
             buttonClassName={buttonClassName}
             handleSubmit={handleSubmit}
-            disabled={disabled || !canSubmit}
+            handleStop={handlePauseAgent}
+            isRunning={curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING || isPausing}
+            disabled={disabled || (!canSubmit && curAgentState !== AgentState.RUNNING && curAgentState !== AgentState.LOADING && !isPausing)}
           />
         )}
       </div>

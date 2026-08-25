@@ -89,6 +89,6 @@ export default {
   appDirectory: "src",
   ...(basename ? { basename } : {}),
   buildEnd: unpackClientDirectory,
-  presets: [vercelPreset()],
+  presets: process.env.VERCEL ? [vercelPreset()] : [],
   ssr: false,
 } satisfies Config;

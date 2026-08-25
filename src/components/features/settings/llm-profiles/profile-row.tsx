@@ -7,7 +7,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { EllipsisButton } from "#/components/features/conversation-panel/ellipsis-button";
 import { BrandBadge } from "#/components/shared/badge";
 import { cn } from "#/utils/utils";
-import { formatModelNameForDisplay } from "#/utils/format-model-name";
+import { formatModelNameForDisplay, getExeaonModelMeta } from "#/utils/format-model-name";
 import {
   settingsListIconActionButtonClassName,
   settingsListRowClassName,
@@ -40,7 +40,9 @@ export function ProfileRow({
   const { t } = useTranslation("openhands");
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const displayModel = formatModelNameForDisplay(profile.model);
+  const meta = getExeaonModelMeta(profile.model) || getExeaonModelMeta(profile.name);
+  const title = meta ? meta.name : (formatModelNameForDisplay(profile.name) || profile.name);
+  const subtitle = meta ? meta.subtitle : (profile.model ? formatModelNameForDisplay(profile.model) : null);
 
   return (
     <div
@@ -50,16 +52,16 @@ export function ProfileRow({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           className="min-w-0 max-w-full truncate text-sm font-medium text-white"
-          title={profile.name}
+          title={title}
         >
-          {profile.name}
+          {title}
         </span>
-        {displayModel ? (
+        {subtitle ? (
           <span
-            className="min-w-0 max-w-full truncate text-sm text-[var(--oh-muted)]"
-            title={profile.model ?? undefined}
+            className="min-w-0 max-w-full truncate text-xs text-[var(--oh-muted)]"
+            title={subtitle}
           >
-            {displayModel}
+            {subtitle}
           </span>
         ) : null}
         {isActive && (

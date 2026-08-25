@@ -1,14 +1,15 @@
 import { Settings } from "#/types/settings";
+import { BRAND } from "#/exeaon/brand";
 
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  llm_model: "openhands/exeaon1-nunya-14b",
-  llm_base_url: "",
+  llm_model: BRAND.model.id,
+  llm_base_url: BRAND.model.baseUrl,
   agent: "CodeActAgent",
   language: "en",
-  llm_api_key: null,
-  llm_api_key_set: false,
+  llm_api_key: BRAND.model.apiKey,
+  llm_api_key_set: true,
   search_api_key_set: false,
   confirmation_mode: false,
   security_analyzer: "llm",
@@ -37,7 +38,9 @@ export const DEFAULT_SETTINGS: Settings = {
     agent_kind: "openhands",
     agent: "CodeActAgent",
     llm: {
-      model: "openhands/exeaon1-nunya-14b",
+      model: BRAND.model.id,
+      base_url: BRAND.model.baseUrl,
+      api_key: BRAND.model.apiKey,
     },
     condenser: {
       enabled: true,

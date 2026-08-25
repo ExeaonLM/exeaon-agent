@@ -43,7 +43,11 @@ export function SettingsDesktopSidebar({
           <SidebarNavLink
             key={renderedItem.item.to}
             to={renderedItem.item.to}
-            label={t(renderedItem.item.text as I18nKey)}
+            label={
+              renderedItem.item.text.startsWith("SETTINGS$")
+                ? t(renderedItem.item.text as I18nKey)
+                : renderedItem.item.text
+            }
             end
             testId={`sidebar-settings-${renderedItem.item.to}`}
             icon={renderedItem.item.icon}

@@ -4,10 +4,8 @@
   "version": "1.15.0",
   "identifier": "com.exeaon.canvas",
   "build": {
-    "frontendDist": "../build/client",
     "devUrl": "http://localhost:3005",
-    "beforeDevCommand": "npm run dev:frontend",
-    "beforeBuildCommand": "npm run build"
+    "frontendDist": "../build"
   },
   "app": {
     "windows": [
