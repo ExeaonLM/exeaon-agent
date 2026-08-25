@@ -123,9 +123,20 @@ export function LlmProfilesManager({
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-base font-medium text-white">
+            <h2 className="text-base font-medium text-[var(--cool-grey-50)]">
               Available Models
             </h2>
+            {onAddProfile && canManage ? (
+              <BrandButton
+                testId="add-llm-profile"
+                type="button"
+                variant="secondary"
+                className="ml-auto"
+                onClick={onAddProfile}
+              >
+                Add model
+              </BrandButton>
+            ) : null}
           </div>
 
           <ProfilesBody
