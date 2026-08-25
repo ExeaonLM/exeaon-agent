@@ -108,6 +108,9 @@ export function getUserFacingConnectionErrorMessage(
   if (messages.some(isBackendRequestTimeoutMessage)) {
     return BACKEND_REQUEST_TIMEOUT_MESSAGE;
   }
+  return messages[0] ?? null;
+}
+
 export function sanitizeLlmErrorMessage(
   message: string | null | undefined,
 ): string {
