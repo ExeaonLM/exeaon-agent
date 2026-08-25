@@ -346,7 +346,20 @@ export function LlmSettingsLocalView() {
       }
     }
 
-    const model = typeof llmConfig.model === "string" ? llmConfig.model : "";
+    // Sanitize llmConfig: Strip empty strings, empty dict sentinels, null, or undefined
+    // values so the backend Pydantic models don't reject them with 422 Unprocessable Content.
+    const sanitizedLlmConfig: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(llmConfig)) {
+      if (value === "" || value === "{}" || value === null || value === undefined) {
+        continue;
+      }
+      sanitizedLlmConfig[key] = value;
+    }
+
+    const model =
+      typeof sanitizedLlmConfig.model === "string"
+        ? sanitizedLlmConfig.model
+        : "";
     if (!model) {
       displayErrorToast(t(I18nKey.SETTINGS$MODEL_REQUIRED));
       return;
@@ -369,7 +382,7 @@ export function LlmSettingsLocalView() {
       if (!connectionId) {
         try {
           const preflight = await ProfilesService.validateProfile(trimmedName, {
-            llm: llmConfig as SaveProfileRequest["llm"],
+            llm: sanitizedLlmConfig as SaveProfileRequest["llm"],
             include_secrets: true,
           });
           if (preflight && !preflight.valid) {
@@ -390,7 +403,7 @@ export function LlmSettingsLocalView() {
       await saveProfile.mutateAsync({
         name: trimmedName,
         request: {
-          llm: llmConfig as SaveProfileRequest["llm"],
+          llm: sanitizedLlmConfig as SaveProfileRequest["llm"],
           include_secrets: true,
         },
       });
