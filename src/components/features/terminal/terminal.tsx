@@ -72,7 +72,7 @@ function Terminal() {
               >
                 <TerminalIcon className="size-3.5 text-zinc-400" />
                 <span className="truncate max-w-[120px]">{tab.name}</span>
-                {tabs.length > 1 && !tab.isAgent && (
+                {tabs.length > 1 && (
                   <button
                     type="button"
                     onClick={(e) => handleCloseTab(e, tab.id)}
