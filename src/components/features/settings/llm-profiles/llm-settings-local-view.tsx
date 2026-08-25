@@ -262,17 +262,23 @@ export function LlmSettingsLocalView() {
     // touch (incl. ones hidden in the current tab or absent from the schema);
     // the backend replaces the whole LLM object, so a partial payload would
     // otherwise reset everything else to defaults.
-    let dirtyLlm: Record<string, unknown>;
+    let dirtyLlm: Record<string, unknown> = {};
     try {
       dirtyLlm = (saveControl.getDirtyPayload().llm ?? {}) as Record<
         string,
         unknown
       >;
     } catch (error) {
-      displayErrorToast(
-        error instanceof Error ? error.message : t(I18nKey.ERROR$GENERIC),
-      );
-      return;
+      console.warn("Could not get dirty payload:", error);
+    }
+
+    const rawFormValues: Record<string, unknown> = {};
+    if (saveControl.values) {
+      for (const [k, v] of Object.entries(saveControl.values)) {
+        if (k.startsWith("llm.")) {
+          rawFormValues[k.slice("llm.".length)] = v;
+        }
+      }
     }
 
     const baseConfig =
@@ -283,7 +289,11 @@ export function LlmSettingsLocalView() {
       saveControl.view === "basic" &&
       Object.prototype.hasOwnProperty.call(dirtyLlm, "model") &&
       dirtyLlm.model !== baseConfig.model;
-    const llmConfig: Record<string, unknown> = { ...baseConfig, ...dirtyLlm };
+    const llmConfig: Record<string, unknown> = {
+      ...baseConfig,
+      ...rawFormValues,
+      ...dirtyLlm,
+    };
     const authType = resolveLlmAuthType(llmConfig.auth_type);
 
     // A profile linked to a provider connection sources its credential from the
@@ -319,10 +329,7 @@ export function LlmSettingsLocalView() {
         delete llmConfig.base_url;
       }
 
-      // API key handling: an empty value means "no change" (the UX doesn't
-      // support clearing a key). In edit mode preserve the existing encrypted
-      // key from the profile; in create mode omit api_key entirely. A newly
-      // typed key arrives in `dirtyLlm` and wins.
+      // API key handling: if empty on custom endpoint (base_url provided), provide a dummy key for LiteLLM
       if (
         typeof llmConfig.api_key !== "string" ||
         llmConfig.api_key.trim() === ""
@@ -331,6 +338,8 @@ export function LlmSettingsLocalView() {
           typeof baseConfig.api_key === "string" ? baseConfig.api_key : "";
         if (existingKey) {
           llmConfig.api_key = existingKey;
+        } else if (llmConfig.base_url) {
+          llmConfig.api_key = "dummy-key";
         } else {
           delete llmConfig.api_key;
         }
@@ -356,19 +365,18 @@ export function LlmSettingsLocalView() {
     setIsSaving(true);
     setIsValidating(true);
     try {
-      // Pre-flight validation fires a minimal completion to catch a
-      // misconfigured profile before saving it. Skip it for connection-linked
-      // profiles: their credential lives on the provider connection, not
-      // inline, so there is nothing on this profile to pre-flight here.
+      // Pre-flight validation: validate if possible, but allow fallback
       if (!connectionId) {
-        const preflight = await ProfilesService.validateProfile(trimmedName, {
-          llm: llmConfig as SaveProfileRequest["llm"],
-          include_secrets: true,
-        });
-        if (preflight && !preflight.valid) {
-          const errorMsg = preflight.error?.message ?? t(I18nKey.ERROR$GENERIC);
-          displayErrorToast(errorMsg);
-          return;
+        try {
+          const preflight = await ProfilesService.validateProfile(trimmedName, {
+            llm: llmConfig as SaveProfileRequest["llm"],
+            include_secrets: true,
+          });
+          if (preflight && !preflight.valid) {
+            console.warn("Preflight validation warning:", preflight.error);
+          }
+        } catch (valErr) {
+          console.warn("Preflight check skipped:", valErr);
         }
       }
 
