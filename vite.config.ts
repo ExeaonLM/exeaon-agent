@@ -477,7 +477,18 @@ export default defineConfig(({ mode }) => {
           : {}),
       },
       watch: {
-        ignored: ["**/node_modules/**", "**/.git/**"],
+        // Ignore the Rust build tree: `tauri dev` recompiles into
+        // src-tauri/target/, and every build writes hundreds of files. Without
+        // this, the dev watcher treats that as a change storm and react-router
+        // logs "Config changed" hundreds of times per build, reload-thrashing
+        // the webview so the app never settles (the x276 burst that lined up
+        // exactly with each `cargo` finish).
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/src-tauri/target/**",
+          "**/src-tauri/gen/**",
+        ],
       },
     },
     ssr: {

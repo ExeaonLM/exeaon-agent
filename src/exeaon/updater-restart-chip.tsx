@@ -8,7 +8,11 @@ import { cn } from "#/utils/utils";
  * quiet progress state while downloading. Hidden otherwise. Driven by the shared
  * updater store, so a check kicked off from Settings surfaces here automatically.
  */
-export function UpdaterRestartChip({ collapsed = false }: { collapsed?: boolean }) {
+export function UpdaterRestartChip({
+  collapsed = false,
+}: {
+  collapsed?: boolean;
+}) {
   const { status, availableVersion, progress, relaunch } = useUpdater();
 
   if (status === "downloading") {

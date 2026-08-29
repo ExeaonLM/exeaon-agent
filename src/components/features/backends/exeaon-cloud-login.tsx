@@ -110,10 +110,15 @@ export function ExeaonCloudLogin({
     "w-full rounded-lg border border-[var(--oh-border)] bg-[var(--oh-bg-input,#201D15)] px-3 py-2 text-sm text-[var(--oh-fg)] outline-none focus:border-[#F3CE49]";
 
   return (
-    <form onSubmit={submit} className="mx-auto flex w-full max-w-sm flex-col gap-3">
+    <form
+      onSubmit={submit}
+      className="mx-auto flex w-full max-w-sm flex-col gap-3"
+    >
       <div>
         <h1 className="text-lg font-semibold text-[var(--oh-fg)]">
-          {mode === "login" ? "Sign in to Exeaon" : "Create your Exeaon account"}
+          {mode === "login"
+            ? "Sign in to Exeaon"
+            : "Create your Exeaon account"}
         </h1>
         <p className="mt-1 text-sm text-[var(--oh-muted)]">
           {mode === "login"

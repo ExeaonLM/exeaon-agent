@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2, Laptop, ShieldCheck } from "lucide-react";
+import { Loader2, Laptop } from "lucide-react";
 import ExeaonLogo from "#/assets/branding/openhands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { useTracking } from "#/hooks/use-tracking";
@@ -45,7 +45,10 @@ export function OnboardingModal({
             </div>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white mt-1">
-            Welcome to <span className="bg-gradient-to-r from-[#FFD026] via-[#FFF4B8] to-[#FF7A00] bg-clip-text text-transparent">Exeaon Claw</span>
+            Welcome to{" "}
+            <span className="bg-gradient-to-r from-[#FFD026] via-[#FFF4B8] to-[#FF7A00] bg-clip-text text-transparent">
+              Exeaon Claw
+            </span>
           </h1>
         </div>
 
@@ -72,7 +75,8 @@ export function OnboardingModal({
                   host="https://cloud.exeaon.dev"
                   testIdRoot="onboarding-cloud"
                   onSuccess={() => {
-                    if (!isPreview) trackOnboardingCompleted({ agent: "cloud" });
+                    if (!isPreview)
+                      trackOnboardingCompleted({ agent: "cloud" });
                     onClose();
                   }}
                 />

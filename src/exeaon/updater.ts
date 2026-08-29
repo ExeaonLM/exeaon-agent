@@ -39,10 +39,6 @@ export function isTauriRuntime(): boolean {
 
 const isTauri = isTauriRuntime;
 
-// The Update handle returned by check(), kept between check and install.
-let pendingUpdate: { downloadAndInstall: (cb?: (e: unknown) => void) => Promise<void> } | null =
-  null;
-
 export const useUpdater = create<UpdaterState>((set) => ({
   status: "idle",
   availableVersion: null,
@@ -63,7 +59,6 @@ export const useUpdater = create<UpdaterState>((set) => ({
         set({ status: "uptodate" });
         return;
       }
-      pendingUpdate = update as unknown as typeof pendingUpdate;
       set({
         status: "available",
         availableVersion: (update as { version?: string }).version ?? null,
@@ -75,12 +70,16 @@ export const useUpdater = create<UpdaterState>((set) => ({
       set({ status: "downloading", progress: 0 });
       let downloaded = 0;
       let total = 0;
-      await (update as unknown as {
-        downloadAndInstall: (cb: (e: {
-          event: string;
-          data?: { contentLength?: number; chunkLength?: number };
-        }) => void) => Promise<void>;
-      }).downloadAndInstall((e) => {
+      await (
+        update as unknown as {
+          downloadAndInstall: (
+            cb: (e: {
+              event: string;
+              data?: { contentLength?: number; chunkLength?: number };
+            }) => void,
+          ) => Promise<void>;
+        }
+      ).downloadAndInstall((e) => {
         if (e.event === "Started") {
           total = e.data?.contentLength ?? 0;
         } else if (e.event === "Progress") {

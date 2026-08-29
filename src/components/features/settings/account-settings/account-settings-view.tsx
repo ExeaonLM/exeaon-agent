@@ -222,7 +222,9 @@ export function AccountSettingsView() {
 
       {/* Execution Connections */}
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-white">Execution Connections</h3>
+        <h3 className="text-sm font-medium text-white">
+          Execution Connections
+        </h3>
 
         {/* Local Sovereign Engine Connection */}
         <div className="flex items-center justify-between rounded-xl border border-[var(--oh-border)] bg-base-secondary p-4">

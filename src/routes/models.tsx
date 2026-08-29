@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { getEffectiveLocalBackend } from "#/api/backend-registry/active-store";
 import { getAgentServerHttpClientOptions } from "#/api/agent-server-client-options";
+import { I18nKey } from "#/i18n/declaration";
 
 interface HardwareSpecs {
   ramGb: number;
@@ -162,6 +163,11 @@ export default function ModelsPage() {
     };
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
+        // Direct PATCH to the local agent-server's settings to point its LLM at
+        // the just-started local llama endpoint. The typed client has no
+        // settings-diff surface for this one-shot wiring, so a direct fetch is
+        // intentional here.
+        // eslint-disable-next-line local/no-direct-agent-server-fetch
         const resp = await fetch(`${host}/api/settings`, {
           method: "PATCH",
           headers: {
@@ -226,7 +232,7 @@ export default function ModelsPage() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="flex items-center justify-between px-6 pt-5 pb-2">
         <h1 className="text-lg font-semibold text-[var(--oh-fg)]">
-          {t("NAV$MODELS")}
+          {t(I18nKey.NAV$MODELS)}
         </h1>
         {hasTauri && (
           <button
@@ -272,7 +278,9 @@ export default function ModelsPage() {
                 <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
                   <div>
                     <span className="text-[var(--oh-muted)]">RAM: </span>
-                    <span className="text-[var(--oh-fg)]">{specs.ramGb} GB</span>
+                    <span className="text-[var(--oh-fg)]">
+                      {specs.ramGb} GB
+                    </span>
                   </div>
                   <div>
                     <span className="text-[var(--oh-muted)]">CPU cores: </span>

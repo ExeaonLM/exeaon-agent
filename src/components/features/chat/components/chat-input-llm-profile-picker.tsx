@@ -13,7 +13,10 @@ import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
-import { formatModelNameForDisplay, getExeaonModelMeta } from "#/utils/format-model-name";
+import {
+  formatModelNameForDisplay,
+  getExeaonModelMeta,
+} from "#/utils/format-model-name";
 
 const PROFILE_LABEL_MAX_CHARS = 18;
 
@@ -74,9 +77,17 @@ export function ChatInputLlmProfileMenuContent({
           </li>
           {profiles.map((profile) => {
             const isCurrent = profile.name === currentProfileName;
-            const meta = getExeaonModelMeta(profile.model) || getExeaonModelMeta(profile.name);
-            const title = meta ? meta.name : formatModelNameForDisplay(profile.name);
-            const subtitle = meta ? meta.subtitle : (profile.model ? formatModelNameForDisplay(profile.model) : null);
+            const meta =
+              getExeaonModelMeta(profile.model) ||
+              getExeaonModelMeta(profile.name);
+            const title = meta
+              ? meta.name
+              : formatModelNameForDisplay(profile.name);
+            const subtitle = meta
+              ? meta.subtitle
+              : profile.model
+                ? formatModelNameForDisplay(profile.model)
+                : null;
             return (
               <ContextMenuListItem
                 key={profile.name}
