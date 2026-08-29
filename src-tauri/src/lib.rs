@@ -139,6 +139,11 @@ fn spawn_bundled_runtime(resource_dir: &Path) -> Option<Child> {
 
     // Core secrets
     cmd.env("OH_SECRET_KEY", SESSION_API_KEY);
+    // Force UTF-8 I/O. Without this the agent-server runs under Windows' default
+    // cp1252 'charmap' codec and 500s when a model response contains non-ASCII
+    // characters (e.g. the "→" arrow: "can't encode character '→'").
+    cmd.env("PYTHONUTF8", "1");
+    cmd.env("PYTHONIOENCODING", "utf-8");
     // Allow Tauri WebView origin through CORS
     cmd.env("OH_ALLOW_CORS_ORIGINS", r#"["http://tauri.localhost"]"#);
 
@@ -191,6 +196,11 @@ fn start_backend_if_needed(resource_dir: &Path) -> Option<Child> {
 
     // Core secrets
     cmd.env("OH_SECRET_KEY", SESSION_API_KEY);
+    // Force UTF-8 I/O. Without this the agent-server runs under Windows' default
+    // cp1252 'charmap' codec and 500s when a model response contains non-ASCII
+    // characters (e.g. the "→" arrow: "can't encode character '→'").
+    cmd.env("PYTHONUTF8", "1");
+    cmd.env("PYTHONIOENCODING", "utf-8");
     // Allow Tauri WebView origin through CORS
     cmd.env("OH_ALLOW_CORS_ORIGINS", r#"["http://tauri.localhost"]"#);
 
@@ -335,13 +345,27 @@ fn is_automation_alive() -> bool {
     .is_ok()
 }
 
-/// Locate the bundled `llama-server.exe` (Vulkan build) in resources.
+/// Locate the bundled `llama-server.exe` (Vulkan build). Probes the two layouts
+/// the installer can produce (`<resource_dir>/llama` and
+/// `<resource_dir>/resources/llama`, mirroring `bundled_python`), plus — in a
+/// debug build — the source `src-tauri/resources/llama` so `tauri dev` (where
+/// bundle resources aren't copied next to the exe) can still start a model.
 fn llama_server_exe(resource_dir: &Path) -> Option<std::path::PathBuf> {
-    let exe = resource_dir.join("llama").join("llama-server.exe");
-    if exe.exists() {
-        return Some(exe);
-    }
-    None
+    let mut candidates = vec![
+        resource_dir.join("llama").join("llama-server.exe"),
+        resource_dir
+            .join("resources")
+            .join("llama")
+            .join("llama-server.exe"),
+    ];
+    #[cfg(debug_assertions)]
+    candidates.push(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("llama")
+            .join("llama-server.exe"),
+    );
+    candidates.into_iter().find(|c| c.exists())
 }
 
 /// Spawn the local llama.cpp server for a GGUF model.
