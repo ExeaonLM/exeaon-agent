@@ -7,7 +7,7 @@ import type {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { Settings, SettingsSchema, SettingsValue } from "#/types/settings";
 import { stringRecord } from "#/utils/mcp-config";
-import { getActiveBackend } from "../backend-registry/active-store";
+import { isCloudAppServerBackend } from "../backend-registry/active-store";
 import {
   fetchCloudConversationSettingsSchema,
   fetchCloudSettings,
@@ -251,7 +251,7 @@ const cloudCompatibleMcpConfig = async (value: unknown): Promise<unknown> => {
     Object.values(serverMap).some(
       (server) =>
         isRecord(server) && isRecord(server.auth) && server.auth !== null,
-    ) && getActiveBackend().backend.kind === "cloud";
+    ) && isCloudAppServerBackend();
 
   const storedHeadersByServer = new Map<string, Record<string, string>>();
   if (needsStoredCredential) {
@@ -448,7 +448,7 @@ class SettingsService {
     // SettingsApiResponse shape and feed straight into syncDerivedSettings
     // so cloud-native fields like provider_tokens_set reach the GUI's
     // useUserProviders → useAppInstallations → useGitRepositories chain.
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       try {
         const cloud = await withRetry(() => fetchCloudSettings());
         return syncDerivedSettings(cloud);
@@ -512,7 +512,7 @@ class SettingsService {
   }
 
   static async getSettingsSchema(): Promise<SettingsSchema> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return (await fetchCloudSettingsSchema()) as SettingsSchema;
     }
     return (await new SettingsClient(
@@ -521,7 +521,7 @@ class SettingsService {
   }
 
   static async getConversationSettingsSchema(): Promise<SettingsSchema> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return (await fetchCloudConversationSettingsSchema()) as SettingsSchema;
     }
     return (await new SettingsClient(
@@ -535,7 +535,7 @@ class SettingsService {
    * the catalog from redacted display settings.
    */
   static async patchMcpConfig(patch: MCPConfigPatch): Promise<boolean> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       const mcpConfig = await cloudCompatibleMcpConfig(patch);
       await withRetry(() =>
         saveCloudSettings({
@@ -557,7 +557,7 @@ class SettingsService {
     settingsKey: string,
     patch: MCPServerPatch,
   ): Promise<boolean> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return SettingsService.patchMcpConfig({ [settingsKey]: patch });
     }
     await withRetry(() =>
@@ -574,7 +574,7 @@ class SettingsService {
     settingsKey: string,
     server: MCPServer,
   ): Promise<boolean> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return SettingsService.patchMcpConfig({ [settingsKey]: server });
     }
     await withRetry(() =>
@@ -588,7 +588,7 @@ class SettingsService {
   }
 
   static async deleteMcpServer(settingsKey: string): Promise<boolean> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return SettingsService.patchMcpConfig({ [settingsKey]: null });
     }
     await withRetry(() =>
@@ -643,7 +643,7 @@ class SettingsService {
       payload.misc_settings_diff = { app_preferences: appPreferences };
     }
 
-    const isCloud = getActiveBackend().backend.kind === "cloud";
+    const isCloud = isCloudAppServerBackend();
     if (isCloud) {
       const hasCloudWork =
         !!payload.agent_settings_diff ||

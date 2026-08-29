@@ -4,6 +4,7 @@ import { getAgentServerClientOptions } from "../agent-server-client-options";
 import {
   getActiveBackend,
   getRegisteredBackends,
+  isCloudAppServerBackend,
 } from "../backend-registry/active-store";
 import {
   getCredentialValidationForServer,
@@ -190,7 +191,7 @@ class McpService {
     // is configured.")` and block the install flow entirely. Short-circuit
     // with a synthetic success so saving proceeds; any real connection
     // failure surfaces inside the conversation runtime instead.
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return { ok: true, tools: [] };
     }
     const validation = getCredentialValidationForServer(server);

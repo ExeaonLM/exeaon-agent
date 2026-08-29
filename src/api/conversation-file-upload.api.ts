@@ -1,6 +1,6 @@
 import { RemoteWorkspace } from "@openhands/typescript-client/workspace/remote-workspace";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
-import { getActiveBackend } from "#/api/backend-registry/active-store";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { batchGetCloudConversations } from "#/api/cloud/conversation-service.api";
 import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
 import type { FileUploadSuccessResponse } from "#/api/open-hands.types";
@@ -37,7 +37,7 @@ export async function resolveConversationRuntime(
     };
   }
 
-  if (getActiveBackend().backend.kind === "cloud") {
+  if (isCloudAppServerBackend()) {
     const [conversation] = await batchGetCloudConversations([conversationId]);
     return {
       conversationUrl: conversation?.conversation_url?.trim() ?? null,
@@ -82,7 +82,7 @@ export async function uploadFilesToConversation(
     conversationId,
     currentConversation,
   );
-  const isCloud = getActiveBackend().backend.kind === "cloud";
+  const isCloud = isCloudAppServerBackend();
 
   const sessionApiKey =
     currentConversation?.id === conversationId

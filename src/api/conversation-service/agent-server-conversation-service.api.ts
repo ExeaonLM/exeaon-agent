@@ -22,6 +22,7 @@ import { resolveAbsoluteAgentServerPath } from "../agent-server-home";
 import {
   getActiveBackend,
   getEffectiveLocalBackend,
+  isCloudAppServerBackend,
 } from "../backend-registry/active-store";
 import { callCloudProxy } from "../cloud/proxy";
 import ProfilesService from "../profiles-service/profiles-service.api";
@@ -364,7 +365,7 @@ class AgentServerConversationService {
     let conversationUrl = runtime?.conversationUrl ?? null;
     let sessionApiKey = runtime?.sessionApiKey ?? null;
 
-    if (active.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       if (!conversationUrl || !sessionApiKey) {
         const [conversation] = await batchGetCloudConversations([
           conversationId,
@@ -418,7 +419,7 @@ class AgentServerConversationService {
       agentProfileKind,
     } = options;
 
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // Cloud path mirrors OpenHands' frontend: build a flat
       // AppConversationStartRequest, POST /api/v1/app-conversations
       // (returns a WORKING task), and let the conversation route's
@@ -553,7 +554,7 @@ class AgentServerConversationService {
   static async getStartTask(
     taskId: string,
   ): Promise<AppConversationStartTask | null> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return getCloudAppConversationStartTask(taskId);
     }
     // Local agent-server creates conversations synchronously — every
@@ -625,7 +626,7 @@ class AgentServerConversationService {
   ): Promise<(AppConversation | null)[]> {
     if (ids.length === 0) return [];
 
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return batchGetCloudConversations(ids);
     }
 
@@ -675,7 +676,7 @@ class AgentServerConversationService {
     conversationId: string,
     filePath?: string,
   ): Promise<string> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // Cloud exposes a per-conversation file endpoint; the sandbox
       // working dir is fixed (`/workspace/project`), so PLAN.md lives at
       // a known absolute path. Mirrors OpenHands' readConversationFile.
@@ -695,7 +696,7 @@ class AgentServerConversationService {
   }
 
   static async downloadConversation(conversationId: string): Promise<Blob> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return downloadCloudConversation(conversationId);
     }
 
@@ -751,7 +752,7 @@ class AgentServerConversationService {
   ): Promise<void> {
     const active = getActiveBackend().backend;
 
-    if (active.kind === "cloud" && conversationUrl) {
+    if (isCloudAppServerBackend() && conversationUrl) {
       await callCloudProxy({
         backend: active,
         method: "POST",
@@ -772,7 +773,7 @@ class AgentServerConversationService {
     limit: number = 20,
     pageId?: string,
   ): Promise<AppConversationPage> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return searchCloudConversations(limit, pageId);
     }
 
@@ -788,7 +789,7 @@ class AgentServerConversationService {
   }
 
   static async deleteConversation(conversationId: string): Promise<void> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await deleteCloudConversation(conversationId);
     } else {
       await new ConversationClient(
@@ -823,7 +824,7 @@ class AgentServerConversationService {
     fromEventId: string,
     title?: string,
   ): Promise<DirectConversationInfo> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       throw new Error(
         "Branching a conversation isn't supported on the cloud backend yet.",
       );
@@ -888,7 +889,7 @@ class AgentServerConversationService {
   ): Promise<void> {
     const { backend } = getActiveBackend();
 
-    if (backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // No conversation (home page): activate globally so the next
       // conversation starts with it. ProfilesService routes to the cloud
       // activate endpoint.
@@ -951,7 +952,7 @@ class AgentServerConversationService {
     model: string,
   ): Promise<void> {
     const { backend } = getActiveBackend();
-    if (backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await callCloudProxy({
         backend,
         method: "POST",

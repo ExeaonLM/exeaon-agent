@@ -143,6 +143,28 @@ export function getEffectiveLocalBackend(): Backend | null {
   return null;
 }
 
+/**
+ * Whether the active backend implements the OpenHands *app-server* API —
+ * conversations, settings, skills, secrets, git, MCP, plugins, agent profiles.
+ *
+ * Exeaon's cloud backend is the Kratos ai-gateway: it does auth, billing/usage,
+ * and LLM-inference proxying, but implements NONE of those app-server endpoints
+ * (they return the gateway's plain "404 page not found"). The agent itself
+ * always runs on the LOCAL sovereign engine (127.0.0.1:18000), which is always
+ * connected; cloud *models* are used as LLM profiles whose inference is routed
+ * to the gateway at runtime. So app-server operations must always target the
+ * local engine, regardless of which backend is "active" for identity/billing —
+ * that is exactly what lets local and cloud models coexist without the app
+ * losing its conversations, skills, secrets, or profiles when signed in.
+ *
+ * This predicate is therefore always false today. It exists as the single,
+ * named seam where a future real cloud app-server would opt back in, replacing
+ * the scattered `getActiveBackend().backend.kind === "cloud"` app-server checks.
+ */
+export function isCloudAppServerBackend(): boolean {
+  return false;
+}
+
 export function getRegisteredBackends(): Backend[] {
   return snapshot.backends;
 }
