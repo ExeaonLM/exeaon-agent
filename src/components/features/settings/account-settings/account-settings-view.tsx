@@ -1,10 +1,14 @@
 import React from "react";
-import { Laptop, LogOut, Sparkles, Cpu, RefreshCw } from "lucide-react";
+import { Laptop, LogOut, Sparkles, Cpu, RefreshCw, Pencil } from "lucide-react";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { BrandBadge } from "#/components/shared/badge";
 import { useNavigate } from "react-router";
 import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
-import { fetchCloudMe, type CloudMe } from "#/api/cloud/exeaon-me.api";
+import {
+  fetchCloudMe,
+  renameCloudOrg,
+  type CloudMe,
+} from "#/api/cloud/exeaon-me.api";
 
 function fmtInt(n: number): string {
   return new Intl.NumberFormat().format(Math.round(n));
@@ -59,6 +63,38 @@ export function AccountSettingsView() {
     me?.role ||
     (user?.isPlatformAdmin || me?.isPlatformAdmin ? "Administrator" : "Member");
 
+  // Org rename (owner/admin only; the gateway also enforces it).
+  const canRenameOrg =
+    me?.role === "owner" || me?.role === "admin" || !!me?.isPlatformAdmin;
+  const [editingOrg, setEditingOrg] = React.useState(false);
+  const [orgDraft, setOrgDraft] = React.useState("");
+  const [savingOrg, setSavingOrg] = React.useState(false);
+  const [orgError, setOrgError] = React.useState("");
+
+  const startEditOrg = () => {
+    setOrgDraft(me?.orgName || "");
+    setOrgError("");
+    setEditingOrg(true);
+  };
+  const saveOrgName = async () => {
+    const name = orgDraft.trim();
+    if (!name) {
+      setOrgError("Enter an organization name.");
+      return;
+    }
+    setSavingOrg(true);
+    setOrgError("");
+    try {
+      const saved = await renameCloudOrg(name);
+      setMe((prev) => (prev ? { ...prev, orgName: saved } : prev));
+      setEditingOrg(false);
+    } catch {
+      setOrgError("Could not rename. Check your connection and role.");
+    } finally {
+      setSavingOrg(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
       {/* Profile & Identity Section */}
@@ -109,11 +145,65 @@ export function AccountSettingsView() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-[var(--oh-border)] text-xs">
             <div>
               <span className="text-[var(--oh-muted)] block mb-1">
-                Organization ID
+                Organization
               </span>
-              <code className="bg-black/40 px-2 py-1 rounded text-white font-mono text-[11px] select-all border border-white/5">
-                {me ? me.tenantId || "—" : loading ? "…" : "—"}
-              </code>
+              {editingOrg ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={orgDraft}
+                      onChange={(e) => setOrgDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveOrgName();
+                        if (e.key === "Escape") setEditingOrg(false);
+                      }}
+                      disabled={savingOrg}
+                      maxLength={128}
+                      className="min-w-0 flex-1 rounded border border-white/10 bg-black/40 px-2 py-1 text-white text-xs outline-none focus:border-[#F3CE49]"
+                    />
+                    <button
+                      type="button"
+                      onClick={saveOrgName}
+                      disabled={savingOrg}
+                      className="rounded bg-[#F3CE49] px-2 py-1 text-[11px] font-semibold text-black hover:bg-[#F7DA6B] disabled:opacity-50"
+                    >
+                      {savingOrg ? "Saving…" : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingOrg(false)}
+                      disabled={savingOrg}
+                      className="text-[11px] text-[var(--oh-muted)] hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {orgError && (
+                    <span className="text-[11px] text-red-400">{orgError}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-medium">
+                    {me?.orgName || (loading ? "…" : "—")}
+                  </span>
+                  {canRenameOrg && me && (
+                    <button
+                      type="button"
+                      onClick={startEditOrg}
+                      title="Rename organization"
+                      className="text-[var(--oh-muted)] hover:text-white"
+                    >
+                      <Pencil className="size-3" />
+                    </button>
+                  )}
+                </div>
+              )}
+              {me && me.tenantId > 0 && (
+                <code className="mt-1 inline-block text-[10px] text-[var(--oh-muted)] font-mono select-all">
+                  ID {me.tenantId}
+                </code>
+              )}
             </div>
             <div>
               <span className="text-[var(--oh-muted)] block mb-1">Role</span>

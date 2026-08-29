@@ -17,6 +17,7 @@ export interface CloudMe {
   displayName: string;
   isPlatformAdmin: boolean;
   tenantId: number;
+  orgName: string;
   role: string;
   tier: "pro" | "free";
   status: string;
@@ -45,6 +46,7 @@ function unwrap(payload: unknown): CloudMe {
     displayName: String(d.displayName ?? ""),
     isPlatformAdmin: Boolean(d.isPlatformAdmin),
     tenantId: num(d.tenantId),
+    orgName: String(d.orgName ?? ""),
     role: String(d.role ?? ""),
     tier: d.tier === "pro" ? "pro" : "free",
     status: String(d.status ?? "none"),
@@ -80,4 +82,21 @@ export async function fetchCloudMe(): Promise<CloudMe | null> {
     headers: { Authorization: `Bearer ${be.apiKey}` },
   });
   return unwrap(res.data);
+}
+
+/**
+ * Rename the signed-in user's own organization (its display name). The gateway
+ * enforces that the caller is an owner/admin of their tenant. Returns the new
+ * name on success; throws when not signed in or the request fails.
+ */
+export async function renameCloudOrg(displayName: string): Promise<string> {
+  const be = cloudBackend();
+  if (!be) throw new Error("Not signed in to Exeaon Cloud.");
+  const res = await axios.post(
+    `${be.host}/ai/gateway/org/rename`,
+    { displayName },
+    { timeout: 15000, headers: { Authorization: `Bearer ${be.apiKey}` } },
+  );
+  const body = res.data as { data?: { displayName?: string } } | undefined;
+  return String(body?.data?.displayName ?? displayName);
 }
