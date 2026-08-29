@@ -27,11 +27,10 @@ import {
 import { getWorkspacesUnsupportedMessage } from "#/utils/workspaces-compatibility";
 import type { PluginSpec } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { PluginPickerModal } from "#/components/features/plugins/plugin-picker-modal";
-import { PluginPickerTrigger } from "#/components/features/plugins/plugin-picker-trigger";
 import { PinnedAutomationsDashboard } from "./featured-automations/pinned-automations-dashboard";
 import { RunningAutomationsList } from "./featured-automations/running-automations-list";
 import { HomeHeaderTitle } from "./home-header/home-header-title";
-import { OpenLauncherButton } from "./open-launcher-button";
+import { Plus, Folder, Puzzle } from "lucide-react";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
@@ -53,6 +52,7 @@ export function HomeChatLauncher() {
     useState<WorkspaceMode>("local_repo");
   const [selectedPlugins, setSelectedPlugins] = useState<PluginSpec[]>([]);
   const [isPluginPickerOpen, setIsPluginPickerOpen] = useState(false);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
   const { mutateAsync: createConversation, isPending } =
     useCreateConversation();
@@ -235,7 +235,7 @@ export function HomeChatLauncher() {
         </div>
 
         <div className="flex items-center justify-start gap-2">
-          {hasSelection ? (
+          {hasSelection && (
             <HomeGitControlBarPreview
               workspace={pendingWorkspace}
               repository={pendingRepository}
@@ -246,19 +246,61 @@ export function HomeChatLauncher() {
               onRepoClick={() => setIsDialogOpen(true)}
               onWorkspaceModeChange={setWorkspaceMode}
             />
-          ) : (
-            <OpenLauncherButton
-              kind={isLocal ? "local" : "cloud"}
-              onClick={() => setIsDialogOpen(true)}
-              disabled={isCreating || Boolean(workspacesUnsupportedMessage)}
-              disabledTooltip={workspacesUnsupportedMessage}
-            />
           )}
-          <PluginPickerTrigger
-            count={selectedPlugins.length}
-            onClick={() => setIsPluginPickerOpen(true)}
-            disabled={isCreating}
-          />
+          {/* One "+" menu instead of a row of buttons: Add folder (workspace)
+              + Plugins. Cleaner, and not the OpenHands two-button layout. */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPlusMenuOpen((o) => !o)}
+              disabled={isCreating}
+              aria-label="Add"
+              className="flex size-9 items-center justify-center rounded-full border border-[var(--oh-border)] text-[var(--oh-muted)] transition-colors hover:border-[#F3CE49]/50 hover:text-[var(--oh-fg)] disabled:opacity-40"
+            >
+              <Plus className="size-4" />
+            </button>
+            {plusMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setPlusMenuOpen(false)}
+                />
+                <div className="absolute left-0 top-full z-50 mt-2 flex w-52 flex-col gap-0.5 rounded-xl border border-[var(--oh-border)] bg-[#141413] p-1.5 shadow-2xl">
+                  <button
+                    type="button"
+                    disabled={Boolean(workspacesUnsupportedMessage)}
+                    title={workspacesUnsupportedMessage || undefined}
+                    onClick={() => {
+                      setPlusMenuOpen(false);
+                      setIsDialogOpen(true);
+                    }}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                  >
+                    <Folder className="size-4 text-[var(--oh-muted)]" />
+                    <span>{isLocal ? "Add folder" : "Add repository"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlusMenuOpen(false);
+                      setIsPluginPickerOpen(true);
+                    }}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Puzzle className="size-4 text-[var(--oh-muted)]" />
+                      Plugins
+                    </span>
+                    {selectedPlugins.length > 0 && (
+                      <span className="text-[11px] font-semibold text-[#F3CE49]">
+                        {selectedPlugins.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 flex w-full flex-col gap-8">
