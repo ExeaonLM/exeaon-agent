@@ -14,6 +14,7 @@
  */
 import { AgentServerClient } from "@openhands/typescript-client/clients";
 import { getAgentServerClientOptions } from "../agent-server-client-options";
+import { readStoredBackends } from "../backend-registry/storage";
 
 const PROVIDER_CONNECTIONS_PATH = "/api/llm/provider-connections";
 
@@ -48,7 +49,15 @@ export interface UpdateProviderConnectionRequest {
 }
 
 function createClient(): AgentServerClient {
-  const { host, apiKey } = getAgentServerClientOptions();
+  // Provider connections live only on the local agent-server, so always target
+  // it — reading host/key from the registry, since getEffectiveLocalBackend()
+  // (used by getAgentServerClientOptions with no overrides) is null while a
+  // cloud backend is active and would throw NoBackendAvailableError.
+  const local = readStoredBackends().find((b) => b.kind === "local");
+  const { host, apiKey } = getAgentServerClientOptions({
+    host: local?.host || "http://127.0.0.1:18000",
+    apiKey: local?.apiKey ?? null,
+  });
   return new AgentServerClient({ host, ...(apiKey ? { apiKey } : {}) });
 }
 
