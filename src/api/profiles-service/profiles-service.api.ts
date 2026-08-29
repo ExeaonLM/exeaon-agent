@@ -31,15 +31,7 @@ import type {
   ValidateProfileResponse,
 } from "@openhands/typescript-client";
 import { getAgentServerClientOptions } from "../agent-server-client-options";
-import { getActiveBackend } from "../backend-registry/active-store";
-import {
-  activateCloudProfile,
-  deleteCloudProfile,
-  fetchCloudProfile,
-  fetchCloudProfiles,
-  renameCloudProfile,
-  saveCloudProfile,
-} from "../cloud/profiles-service.api";
+import { readStoredBackends } from "../backend-registry/storage";
 
 /**
  * Profile summaries carry an optional `provider_connection_id` (the shared
@@ -70,8 +62,24 @@ export type {
   ValidateProfileResponse,
 };
 
-function isCloudBackend(): boolean {
-  return getActiveBackend().backend.kind === "cloud";
+/**
+ * LLM profiles (incl. user-added API models like Groq) always live on the LOCAL
+ * agent-server, so they must load/edit/delete regardless of which backend is
+ * active. Exeaon's cloud backend is the ai-gateway, which has no OpenHands
+ * profiles API — the old cloud branch 404'd and hid local profiles once signed
+ * in. We therefore always target the local agent-server, reading its host/key
+ * straight from the registry (getEffectiveLocalBackend() is null while a cloud
+ * backend is active). Cloud models are surfaced read-only elsewhere.
+ */
+function localProfilesClient(timeout?: number): ProfilesClient {
+  const local = readStoredBackends().find((b) => b.kind === "local");
+  return new ProfilesClient(
+    getAgentServerClientOptions({
+      host: local?.host || "http://127.0.0.1:18000",
+      apiKey: local?.apiKey ?? null,
+      ...(timeout !== undefined ? { timeout } : {}),
+    }),
+  );
 }
 
 function isAbortLike(error: unknown): boolean {
@@ -89,9 +97,7 @@ function isAbortLike(error: unknown): boolean {
 
 class ProfilesService {
   static async listProfiles(): Promise<ProfileListResponse> {
-    const raw = isCloudBackend()
-      ? await fetchCloudProfiles()
-      : await new ProfilesClient(getAgentServerClientOptions()).listProfiles();
+    const raw = await localProfilesClient().listProfiles();
 
     const profiles = (raw.profiles ?? []).filter(
       (p) =>
@@ -111,48 +117,30 @@ class ProfilesService {
   ): Promise<ProfileDetailResponse> {
     // Cloud never exposes profile secrets (api_key is always nulled with an
     // api_key_set flag), so `exposeSecrets` is local-only.
-    if (isCloudBackend()) return fetchCloudProfile(name);
     const options: GetProfileOptions = exposeSecrets ? { exposeSecrets } : {};
-    return new ProfilesClient(getAgentServerClientOptions()).getProfile(
-      name,
-      options,
-    );
+    return localProfilesClient().getProfile(name, options);
   }
 
   static async saveProfile(
     name: string,
     request: SaveProfileRequest,
   ): Promise<ProfileMutationResponse> {
-    if (isCloudBackend()) return saveCloudProfile(name, request);
-    return new ProfilesClient(getAgentServerClientOptions()).saveProfile(
-      name,
-      request,
-    );
+    return localProfilesClient().saveProfile(name, request);
   }
 
   static async deleteProfile(name: string): Promise<ProfileMutationResponse> {
-    if (isCloudBackend()) return deleteCloudProfile(name);
-    return new ProfilesClient(getAgentServerClientOptions()).deleteProfile(
-      name,
-    );
+    return localProfilesClient().deleteProfile(name);
   }
 
   static async renameProfile(
     name: string,
     newName: string,
   ): Promise<ProfileMutationResponse> {
-    if (isCloudBackend()) return renameCloudProfile(name, newName);
-    return new ProfilesClient(getAgentServerClientOptions()).renameProfile(
-      name,
-      newName,
-    );
+    return localProfilesClient().renameProfile(name, newName);
   }
 
   static async activateProfile(name: string): Promise<ActivateProfileResponse> {
-    if (isCloudBackend()) return activateCloudProfile(name);
-    return new ProfilesClient(getAgentServerClientOptions()).activateProfile(
-      name,
-    );
+    return localProfilesClient().activateProfile(name);
   }
 
   /**
@@ -171,11 +159,7 @@ class ProfilesService {
     name: string,
     request: SaveProfileRequest,
   ): Promise<ValidateProfileResponse | null> {
-    if (isCloudBackend()) return null;
-    const client = new ProfilesClient({
-      ...getAgentServerClientOptions(),
-      timeout: 30000,
-    });
+    const client = localProfilesClient(30000);
     try {
       return await client.validateProfile(name, request);
     } catch (error) {
