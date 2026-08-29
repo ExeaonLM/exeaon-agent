@@ -10,6 +10,7 @@ import {
   writeStoredActiveBackend,
 } from "#/api/backend-registry/storage";
 import type { Backend } from "#/api/backend-registry/types";
+import { writeCloudUser } from "#/api/cloud/session-store";
 
 // The production Exeaon Cloud gateway. Editable for self-hosters and dev.
 const DEFAULT_CLOUD_HOST = "https://exeaon-claw.fly.dev";
@@ -57,6 +58,13 @@ export function ExeaonCloudLogin({
     );
     writeStoredBackends([...others, backend]);
     writeStoredActiveBackend({ backendId: backend.id, orgId: null });
+    writeCloudUser({
+      userId: session.userId,
+      email: session.email,
+      displayName: session.displayName,
+      isPlatformAdmin: session.isPlatformAdmin,
+      host: backend.host,
+    });
   };
 
   const submit = async (e: React.FormEvent) => {

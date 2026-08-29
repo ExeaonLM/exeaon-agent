@@ -13,10 +13,29 @@ import {
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { BrandBadge } from "#/components/shared/badge";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import { useNavigate } from "react-router";
+import {
+  readCloudUser,
+  cloudLogout,
+} from "#/api/cloud/session-store";
 
 export function AccountSettingsView() {
   const { backend } = useActiveBackend();
-  const [isCloudConnected, setIsCloudConnected] = React.useState(true);
+  const navigate = useNavigate();
+  // Re-read on every render trigger so logout/login reflects immediately.
+  const [tick, setTick] = React.useState(0);
+  const user = React.useMemo(() => readCloudUser(), [tick]);
+  const isCloudConnected = !!user;
+  const initial =
+    (user?.displayName || user?.email || "?").trim().charAt(0).toUpperCase();
+  const handleAuthClick = () => {
+    if (isCloudConnected) {
+      cloudLogout();
+      setTick((n) => n + 1);
+    } else {
+      navigate("/signin");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
@@ -25,17 +44,21 @@ export function AccountSettingsView() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="flex size-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#FFD026] to-[#FF7A00] text-black font-semibold text-base shadow-[0_0_15px_rgba(255,208,38,0.3)]">
-              E
+              {initial}
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">Elliot</span>
-                <BrandBadge className="px-2 py-0.5 text-[10px] bg-[#FFD026]/10 text-[#FFD026] border border-[#FFD026]/30">
-                  Pro
-                </BrandBadge>
+                <span className="text-sm font-semibold text-white">
+                  {user?.displayName || user?.email || "Not signed in"}
+                </span>
+                {isCloudConnected && (
+                  <BrandBadge className="px-2 py-0.5 text-[10px] bg-[#FFD026]/10 text-[#FFD026] border border-[#FFD026]/30">
+                    {user?.isPlatformAdmin ? "Admin" : "Member"}
+                  </BrandBadge>
+                )}
               </div>
               <span className="text-xs text-[var(--oh-muted)]">
-                elliotakpalu@gmail.com
+                {user?.email || "Sign in to use Exeaon Cloud"}
               </span>
             </div>
           </div>
@@ -44,7 +67,7 @@ export function AccountSettingsView() {
             type="button"
             variant="secondary"
             className="text-xs"
-            onClick={() => setIsCloudConnected((prev) => !prev)}
+            onClick={handleAuthClick}
           >
             <LogOut className="size-3.5 mr-1 text-[var(--oh-muted)]" />
             {isCloudConnected ? "Log out" : "Sign in"}
