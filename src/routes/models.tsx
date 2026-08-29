@@ -152,9 +152,19 @@ export default function ModelsPage() {
   // started model is immediately usable in chat everywhere — "activate for
   // inference". Best-effort with a short retry (first run may still be booting).
   const activateForChat = React.useCallback(async (model: LocalModelEntry) => {
-    const local = getEffectiveLocalBackend();
-    const host = local?.host || "http://127.0.0.1:18000";
-    const sdk = getAgentServerHttpClientOptions();
+    // Best-effort: resolve the local agent-server host + key. When signed into
+    // cloud there is no local-backend client config (getAgentServerHttpClientOptions
+    // throws NoBackendAvailableError) — fall back to the default local host with
+    // no auth. Activation must never throw and never fail the model start; the
+    // server is already running regardless.
+    let host = "http://127.0.0.1:18000";
+    let authKey: string | undefined;
+    try {
+      host = getEffectiveLocalBackend()?.host || host;
+      authKey = getAgentServerHttpClientOptions().apiKey;
+    } catch {
+      // signed into cloud (or no local backend) — use the defaults above
+    }
     const llm = {
       provider: "openai",
       model: `openai/${model.name.replace(/\.gguf$/i, "")}`,
@@ -172,7 +182,7 @@ export default function ModelsPage() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            ...(sdk.apiKey ? { Authorization: `Bearer ${sdk.apiKey}` } : {}),
+            ...(authKey ? { Authorization: `Bearer ${authKey}` } : {}),
           },
           body: JSON.stringify({ agent_settings_diff: { llm } }),
         });
