@@ -70,6 +70,16 @@ function recommendations(specs: HardwareSpecs): Recommendation[] {
 let cachedSpecs: HardwareSpecs | null = null;
 
 const LLAMA_ENDPOINT = "http://127.0.0.1:18002/v1";
+// Remember which model the local server is serving so the "Active" badge is
+// correct across refreshes and app restarts (the server only reports up/down).
+const ACTIVE_MODEL_KEY = "exeaon-local-active-model";
+const readActiveModel = (): string | null => {
+  try {
+    return localStorage.getItem(ACTIVE_MODEL_KEY);
+  } catch {
+    return null;
+  }
+};
 
 export default function ModelsPage() {
   const { t } = useTranslation("openhands");
@@ -79,6 +89,8 @@ export default function ModelsPage() {
   const [running, setRunning] = React.useState(false);
   const [runningModel, setRunningModel] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [startingModel, setStartingModel] = React.useState<string | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState("");
   const [notice, setNotice] = React.useState("");
   const [hasTauri, setHasTauri] = React.useState(false);
@@ -96,7 +108,16 @@ export default function ModelsPage() {
     try {
       const status = await invoke<boolean>("local_model_status");
       setRunning(status);
-      if (!status) setRunningModel(null);
+      // Reconcile which model is active: if the server is up but we lost track
+      // (app restart / stale error), restore it from the last recorded start.
+      setRunningModel((prev) => (status ? (prev ?? readActiveModel()) : null));
+      if (!status) {
+        try {
+          localStorage.removeItem(ACTIVE_MODEL_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
     } catch {
       setRunning(false);
     }
@@ -197,9 +218,11 @@ export default function ModelsPage() {
 
   const startModel = async (model: LocalModelEntry) => {
     setBusy(true);
+    setStartingModel(model.name);
     setError("");
     setNotice("");
-    setRunningModel(model.name); // optimistic — the button shows "Starting…"
+    // start_local_model stops any current server first, so this doubles as a
+    // "switch model": clicking Start on a different model swaps to it.
     const doStart = () =>
       invoke("start_local_model", { modelPath: model.path, device });
     try {
@@ -217,8 +240,13 @@ export default function ModelsPage() {
           throw e;
         }
       }
-      await refreshStatus();
       setRunningModel(model.name);
+      try {
+        localStorage.setItem(ACTIVE_MODEL_KEY, model.name);
+      } catch {
+        /* ignore */
+      }
+      await refreshStatus();
       const activated = await activateForChat(model);
       setNotice(
         activated
@@ -232,6 +260,7 @@ export default function ModelsPage() {
       );
     } finally {
       setBusy(false);
+      setStartingModel(null);
     }
   };
 
@@ -239,6 +268,11 @@ export default function ModelsPage() {
     setBusy(true);
     setError("");
     try {
+      try {
+        localStorage.removeItem(ACTIVE_MODEL_KEY);
+      } catch {
+        /* ignore */
+      }
       await invoke("stop_local_model");
       await refreshStatus();
       setNotice("");
@@ -266,14 +300,24 @@ export default function ModelsPage() {
         {hasTauri && (
           <button
             type="button"
-            className="rounded-lg border border-[var(--oh-border)] px-3 py-1.5 text-sm text-[var(--oh-muted)] hover:text-[var(--oh-fg)]"
-            onClick={() => {
-              detectSpecs(true);
-              refreshStatus();
-              loadModels();
+            disabled={refreshing}
+            className="rounded-lg border border-[var(--oh-border)] px-3 py-1.5 text-sm text-[var(--oh-muted)] hover:text-[var(--oh-fg)] disabled:opacity-60"
+            onClick={async () => {
+              setRefreshing(true);
+              setError("");
+              try {
+                await Promise.all([
+                  detectSpecs(true),
+                  refreshStatus(),
+                  loadModels(),
+                ]);
+              } finally {
+                // Brief min-visible so the state change is perceptible.
+                setTimeout(() => setRefreshing(false), 400);
+              }
             }}
           >
-            Refresh
+            {refreshing ? "Refreshing…" : "Refresh"}
           </button>
         )}
       </div>
@@ -438,10 +482,15 @@ export default function ModelsPage() {
               <div className="flex flex-col gap-2">
                 {localModels.map((m) => {
                   const isRunning = running && runningModel === m.name;
+                  const isStarting = startingModel === m.name;
                   return (
                     <div
                       key={m.path}
-                      className="flex items-center gap-3 rounded-lg border border-[var(--oh-border)] bg-[var(--oh-bg)] px-3 py-2"
+                      className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                        isRunning
+                          ? "border-emerald-500/40 bg-emerald-500/[0.06]"
+                          : "border-[var(--oh-border)] bg-[var(--oh-bg)]"
+                      }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm text-[var(--oh-fg)]">
@@ -449,20 +498,33 @@ export default function ModelsPage() {
                         </div>
                         <div className="text-xs text-[var(--oh-muted)]">
                           {m.sizeGb} GB
+                          {isRunning
+                            ? ` · running on ${device.toUpperCase()} · ${LLAMA_ENDPOINT}`
+                            : ""}
                         </div>
                       </div>
                       {isRunning ? (
-                        <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-300">
+                        <span className="flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-300">
+                          <span className="size-1.5 rounded-full bg-emerald-400" />
                           Active
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => startModel(m)}
-                          disabled={busy || running}
+                          disabled={busy}
                           className="rounded-lg bg-[#F3CE49] px-3 py-1.5 text-sm font-semibold text-[#070605] hover:bg-[#F7DA6B] disabled:opacity-40"
+                          title={
+                            running
+                              ? "Switch the local server to this model"
+                              : "Start this model on the local server"
+                          }
                         >
-                          {busy ? "Starting…" : "Start"}
+                          {isStarting
+                            ? "Starting…"
+                            : running
+                              ? "Switch"
+                              : "Start"}
                         </button>
                       )}
                     </div>
