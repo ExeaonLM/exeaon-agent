@@ -1,22 +1,12 @@
 import { useNavigate } from "react-router";
-import { ExeaonCloudLogin } from "#/components/features/backends/exeaon-cloud-login";
+import { OnboardingModal } from "#/components/features/onboarding/onboarding-modal";
 
 /**
- * Full-page in-app sign in / sign up for Exeaon Cloud. On success the cloud
- * backend is stored and made active, then we return to the home screen.
+ * In-app sign in — the full-cover onboarding welcome (native email/password).
+ * Non-blocking: signing in or choosing local both return to the app. Reached
+ * from the profile popover's "Sign in" and the account page.
  */
 export default function SignInRoute() {
   const navigate = useNavigate();
-  return (
-    <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-8">
-      <ExeaonCloudLogin
-        onSignedIn={() => {
-          navigate("/");
-        }}
-        onUseLocal={() => {
-          navigate("/");
-        }}
-      />
-    </div>
-  );
+  return <OnboardingModal onClose={() => navigate("/")} />;
 }

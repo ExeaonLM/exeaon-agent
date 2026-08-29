@@ -1,14 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Plus, Server, Settings, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { isNoBackend } from "#/api/backend-registry/active-store";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { useAllCloudOrganizations } from "#/hooks/query/use-cloud-organizations";
 import { useCloudCurrentUserId } from "#/hooks/query/use-cloud-current-user-id";
 import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
 import { fetchCloudMe } from "#/api/cloud/exeaon-me.api";
-import { AddBackendModal } from "./add-backend-modal";
-import { ManageBackendsModal } from "./manage-backends-modal";
 import { cn } from "#/utils/utils";
 
 interface BackendSelectorProps {
@@ -33,14 +31,11 @@ interface BackendSelectorProps {
   sidebarCollapsed?: boolean;
 }
 
-// openUpward / hideTrigger / sidebarCollapsed remain on the props type so the
-// existing callers (SidebarRailBody) keep compiling, but the redesigned
-// profile-menu UI doesn't need them, so they're intentionally not destructured.
+// The redesigned profile-menu UI no longer surfaces backend add/manage or the
+// layout props; they remain on the props type so existing callers
+// (SidebarRailBody) keep compiling, but are intentionally not destructured.
 export function BackendSelector({
   defaultOpen = false,
-  onSelectOption,
-  onOpenAddBackend,
-  onOpenManageBackends,
 }: BackendSelectorProps = {}) {
   const { active, setActive } = useActiveBackendContext();
   const cloudOrgs = useAllCloudOrganizations();
@@ -76,10 +71,6 @@ export function BackendSelector({
     };
   }, [cloudUserId]);
 
-  const [addBackendModalOpen, setAddBackendModalOpen] = React.useState(false);
-  const [manageBackendsModalOpen, setManageBackendsModalOpen] =
-    React.useState(false);
-
   const noBackendSelected = isNoBackend(active.backend);
 
   // Self-heal a malformed `(cloudBackendId, null)` selection: once a cloud
@@ -105,24 +96,6 @@ export function BackendSelector({
       setActive(backend.id, target.id);
     }
   }, [active, cloudOrgs, currentUserIds, setActive, noBackendSelected]);
-
-  const openAddBackendModal = React.useCallback(() => {
-    if (onOpenAddBackend) {
-      onOpenAddBackend();
-      onSelectOption?.();
-      return;
-    }
-    setAddBackendModalOpen(true);
-  }, [onOpenAddBackend, onSelectOption]);
-
-  const openManageBackendsModal = React.useCallback(() => {
-    if (onOpenManageBackends) {
-      onOpenManageBackends();
-      onSelectOption?.();
-      return;
-    }
-    setManageBackendsModalOpen(true);
-  }, [onOpenManageBackends, onSelectOption]);
 
   const [profileMenuOpen, setProfileMenuOpen] = React.useState(defaultOpen);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -335,32 +308,6 @@ export function BackendSelector({
 
             <button
               type="button"
-              data-testid="add-backend-menu-item"
-              onClick={() => {
-                setProfileMenuOpen(false);
-                openAddBackendModal();
-              }}
-              className={menuRowClass}
-            >
-              <Plus className="size-4 text-[var(--oh-muted)]" />
-              <span>Add backend</span>
-            </button>
-
-            <button
-              type="button"
-              data-testid="manage-backends-menu-item"
-              onClick={() => {
-                setProfileMenuOpen(false);
-                openManageBackendsModal();
-              }}
-              className={menuRowClass}
-            >
-              <Server className="size-4 text-[var(--oh-muted)]" />
-              <span>Manage backends</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => {
                 setProfileMenuOpen(false);
                 navigate("/settings/skills");
@@ -440,14 +387,6 @@ export function BackendSelector({
           </div>
         )}
       </div>
-      {addBackendModalOpen ? (
-        <AddBackendModal onClose={() => setAddBackendModalOpen(false)} />
-      ) : null}
-      {manageBackendsModalOpen ? (
-        <ManageBackendsModal
-          onClose={() => setManageBackendsModalOpen(false)}
-        />
-      ) : null}
     </>
   );
 }
