@@ -13,6 +13,97 @@ unknown.
 
 ---
 
+## 0. Consolidated Exeaon vision — where MHS fits  [build]
+
+The one-line idea: **an AI system that can reason over software, execute tools,
+run simulations, orchestrate automation, use local/cloud models, and eventually
+operate compatible real-world hardware.**
+
+The pinned principle (keep it above the desk):
+
+> **Don't build Exeaon around MHS. Build Exeaon around agentic work. Use
+> simulation to make that work safe and scalable. Use hardware to make it real.
+> Use MHS when the ecosystem is ready to standardize the bridge.** That way,
+> whatever happens with MHS, the work stays valuable.
+
+MHS is the **bottom bridge**, adopted late. Everything above it is the product.
+The layers, and where each is detailed in this doc:
+
+```
+ EXEAON
+   ├── CLAW              the product: chat/coding/projects/docs, local+cloud
+   │                     models, model routing, OpenHands agent server, UX
+   │                                                         → §6 (orchestrator)
+   ├── EXEAON AGENT      our own orchestration layer (separate from OpenHands):
+   │                     main agent delegating to research/coding/automation/
+   │                     analysis/simulation/hardware subagents          → §0.1
+   ├── MODEL FABRIC      local ⇆ cloud router: use local intelligence when
+   │                     possible, cloud when necessary                  → §0.2
+   ├── SIMULATION        the future laboratory + digital twin (the gap MHS
+   │                     does NOT fill)                              → §2, §3
+   ├── CYBER LAB         sandboxed networks/security/adversary emulation → §0.3
+   ├── ENGINEERING LOOP  design→simulate→validate→deploy→measure→iterate → §3
+   ├── SANDBOX           policy/isolation/limits/telemetry; sim→hardware
+   │                     graduation                                 → §4, §7
+   ├── MHS               read/write driver + device safety limits    → §1, §6
+   └── HARDWARE LAB      lab-as-API: FPGA/scope/robot/instruments as
+                         reservable capabilities                     → §5
+```
+
+Layering discipline: **Claw**, **Exeaon Agent**, **simulation**, and **MHS** are
+*different layers* — do not collapse them. Claw is the workstation/control
+plane; Exeaon Agent is orchestration; simulation is the safe proving ground;
+MHS is only the physical bridge, plugged in last.
+
+**Immediate priority is unchanged and comes first:** finish → test → verify →
+polish Claw — login/create-account, cloud functionality, local model loading
+(llama.cpp, CUDA, Vulkan), model management, failure handling, UI, project
+workflows. First product promise: **Claw stays useful even with no internet.**
+The lab/simulation/hardware branches below are the *roadmap*, not a reason to
+delay shipping Claw.
+
+### 0.1 Exeaon Agent — the orchestration layer  [build]
+
+Separate from OpenHands/Claw. Our own architecture: a **main agent** that
+dynamically delegates to and orchestrates specialized subagents —
+**research · coding · automation · analysis · simulation · hardware**. The
+existing cron/news automation isn't the interesting part; **dynamic delegation
+and orchestration** across these capabilities is. Candidate spine pieces
+(LangGraph · Goose · NeMo Agent Toolkit · AI-Q) are the same set §9 weighs for
+the MHS subagent — the MHS subagent is one specialized member of this fleet, not
+a separate stack.
+
+### 0.2 Model Fabric — local ⇆ cloud  [build, partly real]
+
+A router in front of every model call: **local** (llama.cpp on CPU/CUDA/Vulkan —
+0.5B/4B/8B, compressed larger models, Exeaon models, offline+private) vs
+**cloud** (stronger models, expensive reasoning only when needed), chosen by
+**cost/capability**. Philosophy: *local intelligence whenever possible, cloud
+intelligence when necessary* — which also makes the pricing model interesting.
+This layer partly exists today in Claw (the local engine + cloud gateway +
+per-model profiles tagged Cloud/API/Local); the routing policy is the [build].
+
+### 0.3 Cyber Lab — sandboxed network/security experimentation  [build]
+
+A sibling of the engineering simulation layer for network + security work:
+network sim (Mininet · Containerlab · GNS3 · ns-3 · CORE), adversary/defense
+(CyberBattleSim · MITRE Caldera · Atomic Red Team), and ranges (CTFd · Kali).
+The hard rule is the same as the rest of the platform: **sandboxed
+experimentation, never an unrestricted agent on the real internet** — isolation,
+policy, and audit (§7) are load-bearing here, not optional.
+
+### 0.4 Simulation-first, open-source-first  [build]
+
+Every branch favors **open-source + free + programmable + headless +
+automatable** first; commercial platforms (Ansys/COMSOL/Simulink…) become future
+integrations, never dependencies. Robotics candidates to start from: Isaac
+Sim/Lab, MuJoCo, Gazebo, Genesis, Drake, CoppeliaSim, Webots, PyBullet.
+Engineering: OpenModelica, OpenFOAM (+ Simulink/Simscape later). Electronics:
+LTspice, KiCad+SPICE. Pick **one domain** to prove the loop (§11), don't boil
+the ocean.
+
+---
+
 ## 1. What MHS actually is  [real]
 
 **Model Hardware Standard (MHS)** — Anthropic research preview, announced
