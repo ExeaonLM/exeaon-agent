@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useMatch, useNavigate } from "react-router";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, LogOut } from "lucide-react";
 import { Dropdown } from "#/ui/dropdown/dropdown";
 import { DropdownOption } from "#/ui/dropdown/types";
 import { getLockedCloudHost } from "#/api/agent-server-config";
@@ -9,6 +9,7 @@ import { isNoBackend } from "#/api/backend-registry/active-store";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { useAllCloudOrganizations } from "#/hooks/query/use-cloud-organizations";
 import { useCloudCurrentUserId } from "#/hooks/query/use-cloud-current-user-id";
+import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
 import {
   useBackendsHealth,
   type BackendHealth,
@@ -155,6 +156,12 @@ export function BackendSelector({
   // Probe each registered backend every 10s.
   const healthByBackendId = useBackendsHealth(backends);
   const navigate = useNavigate();
+  const [, forceAccountRefresh] = React.useState(0);
+  const cloudUser = readCloudUser();
+  const accountInitial = (cloudUser?.displayName || cloudUser?.email || "?")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
   const settingsMatch = useMatch("/settings");
   const settingsSubrouteMatch = useMatch("/settings/*");
   const conversationMatch = useMatch("/conversations/:conversationId");
@@ -406,19 +413,23 @@ export function BackendSelector({
         >
           {/* Avatar Badge */}
           <div className="flex items-center justify-center size-7 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/30 border border-amber-500/40 text-amber-400 font-semibold text-xs shrink-0 shadow-inner">
-            E
+            {accountInitial}
           </div>
 
           {/* Name & Pro Badge */}
           <div className="flex flex-col min-w-0 flex-1 leading-tight">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-medium text-white truncate">
-                Elliot
+                {cloudUser?.displayName || cloudUser?.email || "Sign in"}
               </span>
-              <span className="text-xs text-[var(--oh-text-dim)]">·</span>
-              <span className="text-[11px] font-semibold text-amber-400">
-                Pro
-              </span>
+              {cloudUser && (
+                <>
+                  <span className="text-xs text-[var(--oh-text-dim)]">·</span>
+                  <span className="text-[11px] font-semibold text-amber-400">
+                    {cloudUser.isPlatformAdmin ? "Admin" : "Member"}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -453,9 +464,26 @@ export function BackendSelector({
             {/* Header: User Email */}
             <div className="px-3 py-2 border-b border-white/[0.08] mb-1">
               <div className="text-xs text-[var(--oh-text-dim)] truncate font-mono">
-                elliotakpalu@gmail.com
+                {cloudUser?.email || "Not signed in"}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                if (cloudUser) {
+                  cloudLogout();
+                  forceAccountRefresh((n) => n + 1);
+                } else {
+                  navigate("/signin");
+                }
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
+            >
+              <LogOut className="size-4 text-[var(--oh-muted)]" />
+              <span>{cloudUser ? "Log out" : "Sign in"}</span>
+            </button>
 
             {/* Menu Links */}
             <button
