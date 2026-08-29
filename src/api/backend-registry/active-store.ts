@@ -133,14 +133,29 @@ export function getActiveBackend(): ResolvedActiveBackend {
  * Pick the backend to use for *local agent-server protocol* calls.
  *
  * Most of the GUI's services (settings reads/writes, conversation CRUD,
- * skills/MCP/secrets, etc.) speak the local agent-server's protocol —
- * they would fail against a cloud host. Only the active backend is eligible:
- * a cloud selection must not borrow another registered local backend.
+ * skills/MCP/secrets, etc.) speak the local agent-server's protocol. In Exeaon
+ * the agent ALWAYS runs on the local sovereign engine — even while a cloud
+ * backend is "active" for identity/billing (the Exeaon gateway is not an
+ * OpenHands app-server; see isCloudAppServerBackend). So when the active
+ * backend is cloud, fall back to a registered local backend (preferring a
+ * healthy one) rather than returning null — otherwise every app-server call
+ * routed to local would throw NoBackendAvailableError the moment the user signs
+ * in, blanking the app. Returns null only when no local backend is registered
+ * at all.
  */
 export function getEffectiveLocalBackend(): Backend | null {
   const active = snapshot.active.backend;
   if (active.kind === "local" && !isNoBackend(active)) return active;
-  return null;
+  const healthyLocal = snapshot.backends.find(
+    (b) =>
+      b.kind === "local" &&
+      !isNoBackend(b) &&
+      getBackendHealthEntry(b.id)?.disabled !== true,
+  );
+  if (healthyLocal) return healthyLocal;
+  return (
+    snapshot.backends.find((b) => b.kind === "local" && !isNoBackend(b)) ?? null
+  );
 }
 
 /**
