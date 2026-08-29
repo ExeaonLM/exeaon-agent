@@ -91,4 +91,16 @@ export default {
   buildEnd: unpackClientDirectory,
   presets: process.env.VERCEL ? [vercelPreset()] : [],
   ssr: false,
+  // Opt in to the React Router v8 behaviors now, so the dev server stops
+  // printing a "Future Flag Warning" per flag on every (re)start. This app is
+  // SPA mode (ssr:false) and uses no route middleware or server data requests,
+  // so these are effectively no-ops today beyond silencing the warnings and
+  // keeping us aligned with v8 defaults ahead of the upgrade.
+  future: {
+    v8_middleware: true,
+    v8_splitRouteModules: true,
+    v8_viteEnvironmentApi: true,
+    v8_passThroughRequests: true,
+    v8_trailingSlashAwareDataRequests: true,
+  },
 } satisfies Config;

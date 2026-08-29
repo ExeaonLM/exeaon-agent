@@ -23,7 +23,7 @@ export function OnboardingModal({
 
   const handleContinueLocal = React.useCallback(() => {
     if (!isPreview) {
-      trackOnboardingCompleted({ mode: "local" });
+      trackOnboardingCompleted({ agent: "local" });
     }
     onClose();
   }, [isPreview, onClose, trackOnboardingCompleted]);
@@ -70,9 +70,9 @@ export function OnboardingModal({
               <div className="pt-2">
                 <DeviceFlowAuth
                   host="https://cloud.exeaon.dev"
-                  source="onboarding"
-                  onConnected={() => {
-                    if (!isPreview) trackOnboardingCompleted({ mode: "cloud" });
+                  testIdRoot="onboarding-cloud"
+                  onSuccess={() => {
+                    if (!isPreview) trackOnboardingCompleted({ agent: "cloud" });
                     onClose();
                   }}
                 />

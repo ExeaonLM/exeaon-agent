@@ -71,7 +71,7 @@ export function SettingsMobileDrawer({
               return (
                 <SettingsNavHeader
                   key={`header-${renderedItem.text}`}
-                  text={renderedItem.text}
+                  text={renderedItem.text as I18nKey}
                 />
               );
             }

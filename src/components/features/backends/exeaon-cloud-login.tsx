@@ -25,9 +25,17 @@ const DEFAULT_CLOUD_HOST = "https://exeaon-claw.fly.dev";
  */
 export function ExeaonCloudLogin({
   onSignedIn,
+  onUseLocal,
   defaultHost = DEFAULT_CLOUD_HOST,
 }: {
   onSignedIn?: (session: CloudSession) => void;
+  /**
+   * Escape hatch back into the app on the local (default) engine. Cloud sign-in
+   * is always optional — local is the sovereign default and needs no account —
+   * so this page must never trap the user. When provided, a "Continue with
+   * local" affordance is shown.
+   */
+  onUseLocal?: () => void;
   defaultHost?: string;
 }) {
   const [mode, setMode] = React.useState<"login" | "signup">("login");
@@ -182,6 +190,21 @@ export function ExeaonCloudLogin({
           placeholder="https://exeaon-claw.fly.dev"
         />
       </details>
+
+      {onUseLocal && (
+        <div className="mt-2 flex flex-col items-center gap-1 border-t border-[var(--oh-border)] pt-3">
+          <button
+            type="button"
+            onClick={onUseLocal}
+            className="text-sm font-medium text-[var(--oh-fg)] hover:text-[#F3CE49]"
+          >
+            Continue with local instead →
+          </button>
+          <span className="text-xs text-[var(--oh-muted)]">
+            Local runs on your hardware and never needs an account.
+          </span>
+        </div>
+      )}
     </form>
   );
 }

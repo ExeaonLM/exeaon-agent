@@ -1,6 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -24,7 +26,9 @@ import { BackendSelector } from "#/components/features/backends/backend-selector
 import { BackendStatusDot } from "#/components/features/backends/backend-status-dot";
 import { CommandMenuTrigger } from "#/components/features/command-menu/command-menu-trigger";
 import { useCommandMenuStore } from "#/stores/command-menu-store";
+import { useHistoryNav } from "#/hooks/use-history-nav";
 import { AgentCanvasVersionTile } from "#/components/features/settings/agent-canvas-version-tile";
+import { UpdaterRestartChip } from "#/exeaon/updater-restart-chip";
 import { SidebarConversationList } from "./sidebar-conversation-list";
 // Getting Started checklist removed -- onboarding auto-configures everything.
 // import { SidebarOnboardingChecklist } from "./sidebar-onboarding-checklist";
@@ -88,6 +92,7 @@ export function SidebarRailBody({
   const { t } = useTranslation("openhands");
   const backendCloseTimerRef = collapsedBackendCloseTimer;
   const openCommandMenu = useCommandMenuStore((state) => state.open);
+  const { canBack, canForward, goBack, goForward } = useHistoryNav();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -134,6 +139,44 @@ export function SidebarRailBody({
         </div>
 
         <div className="flex items-center gap-1 ml-auto">
+          {!collapsed && (
+            <>
+              <button
+                type="button"
+                data-testid="sidebar-nav-back"
+                aria-label="Back"
+                title="Back"
+                onClick={goBack}
+                disabled={!canBack}
+                className={cn(
+                  SIDEBAR_ICON_BUTTON_CLASS,
+                  "transition-colors",
+                  canBack
+                    ? "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)] cursor-pointer"
+                    : "text-[var(--oh-muted)]/30 cursor-default",
+                )}
+              >
+                <ArrowLeft width={14} height={14} />
+              </button>
+              <button
+                type="button"
+                data-testid="sidebar-nav-forward"
+                aria-label="Forward"
+                title="Forward"
+                onClick={goForward}
+                disabled={!canForward}
+                className={cn(
+                  SIDEBAR_ICON_BUTTON_CLASS,
+                  "transition-colors",
+                  canForward
+                    ? "text-[var(--oh-muted)] hover:text-white hover:bg-[var(--oh-surface-raised)] cursor-pointer"
+                    : "text-[var(--oh-muted)]/30 cursor-default",
+                )}
+              >
+                <ArrowRight width={14} height={14} />
+              </button>
+            </>
+          )}
           {!collapsed && (
             <button
               type="button"
@@ -237,6 +280,31 @@ export function SidebarRailBody({
             icon={<AutomationsIcon width={ICON_SIZE} height={ICON_SIZE} />}
           />
         )}
+        {/* Local models — run offline GGUF models (llama.cpp) from the sidebar. */}
+        <SidebarNavLink
+          to="/models"
+          label={t(I18nKey.NAV$MODELS)}
+          testId="sidebar-models-link"
+          collapsed={collapsed}
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+          }
+        />
       </nav>
 
       <SidebarConversationList collapsed={collapsed} />
@@ -248,6 +316,7 @@ export function SidebarRailBody({
             "mt-auto pb-2 cursor-pointer",
           )}
         >
+          <UpdaterRestartChip collapsed />
           <StyledTooltip
             content={t(I18nKey.SIDEBAR$SETTINGS)}
             placement="right"
@@ -341,6 +410,7 @@ export function SidebarRailBody({
               "-ml-2.5 w-[calc(100%+0.625rem)] border-t border-[var(--oh-border)] pt-2 px-2.5",
             )}
           >
+            <UpdaterRestartChip />
             <AgentCanvasVersionTile hideWhenUpToDate />
             <BackendSelector sidebarCollapsed={collapsed} openUpward />
           </div>

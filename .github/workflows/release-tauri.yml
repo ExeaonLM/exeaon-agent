@@ -1,0 +1,73 @@
+name: Release (Tauri, signed auto-update)
+
+# Builds the Tauri (src-tauri) desktop shell, SIGNS the bundles with the updater
+# key, and publishes them plus `latest.json` to a GitHub Release. The in-app
+# updater (tauri.conf.json → plugins.updater.endpoints) fetches that latest.json
+# from `releases/latest/download/latest.json`, verifies the signature against the
+# embedded pubkey, downloads and installs — no command, no manual download.
+#
+# REQUIRED repo secrets (Settings → Secrets and variables → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY           contents of ~/.tauri/exeaon-claw-updater.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  the key password ("" if generated without one)
+#
+# NOTE: the Tauri bundle references resources/python-runtime and resources/llama
+# (tauri.conf.json → bundle.resources). Those must exist before `tauri build`.
+# The `Prepare bundled resources` step below is a placeholder — wire it to the
+# same runtime-prep the Electron build uses (scripts/download-uv.mjs,
+# scripts/download-node.mjs, and whatever populates src-tauri/resources/) or the
+# build will fail on missing resources.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-tauri-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-tauri:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare bundled resources (placeholder — see header note)
+        shell: bash
+        run: |
+          echo "TODO: populate src-tauri/resources/python-runtime and .../llama"
+          echo "reuse scripts/download-uv.mjs / download-node.mjs as appropriate"
+
+      - name: Build, sign, and publish (tauri-action)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_POSTHOG_API_KEY: ${{ github.event_name == 'release' && vars.POSTHOG_PROD_KEY || vars.POSTHOG_STAGING_KEY }}
+        with:
+          # Attach to the existing release for this tag (release-please/publish
+          # flow), and emit the updater artifacts + latest.json.
+          tauriScript: npm run tauri --
+          releaseId: ${{ github.event.release.id }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true

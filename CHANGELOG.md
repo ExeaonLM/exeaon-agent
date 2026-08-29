@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Exeaon Agent Canvas will be documented in this file.
+All notable changes to Exeaon Agent Claw will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Streamlined chat attachment context menu strictly to Prompt Macros, Attach Files & Images, and Git Tools.
 - **Command Menu (`Cmd+K`) Modernization**:
   - Aligned search results with native Exeaon routes: Models, Skills, Agent Tools, Account & Cloud, Compactor, Context, Validation, Appearance, Secrets, and MCP Servers.
+- **Desktop App Rebrand**: Renamed the Tauri desktop application **Exeaon Canvas** $\rightarrow$ **Exeaon Claw** (product name, window title, bundle identifier `com.exeaon.claw`, Cargo package `exeaon_claw`, and i18n product-name strings).
 - **Settings Navigation Rebranding**:
   - Rebranded **Application** $\rightarrow$ **Appearance**.
   - Rebranded **Condenser** $\rightarrow$ **Compactor**.

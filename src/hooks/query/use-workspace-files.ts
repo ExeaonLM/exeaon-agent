@@ -38,12 +38,10 @@ const EXCLUDED_DIRS = [
   "target",
 ];
 
-// Build a `find` invocation that lists files relative to the workspace root.
+// Build a cross-platform file listing command that works on both Windows and Linux.
 function buildListCommand(): string {
-  const pruneExpr = EXCLUDED_DIRS.map((dir) => `-name '${dir}' -prune`).join(
-    " -o ",
-  );
-  return `find . \\( ${pruneExpr} \\) -o -type f -print 2>/dev/null | sort | head -n ${MAX_FILES}`;
+  const excluded = JSON.stringify(EXCLUDED_DIRS);
+  return `python -c "import os; ex = set(${excluded}); files = [os.path.relpath(os.path.join(r, f), '.').replace(chr(92), '/') for r, d, fs in os.walk('.') if not any(x in r.replace(chr(92), '/').split('/') for x in ex) for f in fs]; [print(f) for f in sorted(files)[:${MAX_FILES}]]"`;
 }
 
 function normalizePath(path: string): string {

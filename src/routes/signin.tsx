@@ -13,6 +13,9 @@ export default function SignInRoute() {
         onSignedIn={() => {
           navigate("/");
         }}
+        onUseLocal={() => {
+          navigate("/");
+        }}
       />
     </div>
   );

@@ -178,8 +178,7 @@ export function ChatInputLlmProfilePicker() {
   }
 
   const currentProfile = profiles.find((p) => p.name === currentProfileName);
-  const modelToFormat =
-    currentProfile?.model ?? currentProfileModel ?? currentProfileName;
+  const modelToFormat = currentProfile?.model ?? currentProfileName;
   const meta =
     (modelToFormat ? getExeaonModelMeta(modelToFormat) : null) ||
     (currentProfileName ? getExeaonModelMeta(currentProfileName) : null);
@@ -208,7 +207,7 @@ export function ChatInputLlmProfilePicker() {
           setIsPopoverOpen((open) => !open);
         }}
       >
-        <span className="truncate">{truncateLabel(label)}</span>
+        <span className="truncate">{truncateLabel(label ?? "")}</span>
         <ComboboxCaretInline isOpen={isPopoverOpen} />
       </button>
 

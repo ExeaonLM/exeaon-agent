@@ -10,6 +10,7 @@ import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { useAllCloudOrganizations } from "#/hooks/query/use-cloud-organizations";
 import { useCloudCurrentUserId } from "#/hooks/query/use-cloud-current-user-id";
 import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
+import { fetchCloudMe } from "#/api/cloud/exeaon-me.api";
 import {
   useBackendsHealth,
   type BackendHealth,
@@ -162,6 +163,29 @@ export function BackendSelector({
     .trim()
     .charAt(0)
     .toUpperCase();
+
+  // Real plan tier from the cloud gateway (GET /ai/gateway/me), fetched on
+  // mount and whenever the signed-in user changes. null = not signed in or
+  // gateway unreachable; the "Pro" badge is only shown when this resolves.
+  const [cloudTier, setCloudTier] = React.useState<"pro" | "free" | null>(null);
+  const cloudUserId = cloudUser?.userId ?? null;
+  React.useEffect(() => {
+    let cancelled = false;
+    if (cloudUserId == null) {
+      setCloudTier(null);
+      return undefined;
+    }
+    fetchCloudMe()
+      .then((m) => {
+        if (!cancelled) setCloudTier(m?.tier ?? "free");
+      })
+      .catch(() => {
+        if (!cancelled) setCloudTier(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cloudUserId]);
   const settingsMatch = useMatch("/settings");
   const settingsSubrouteMatch = useMatch("/settings/*");
   const conversationMatch = useMatch("/conversations/:conversationId");
@@ -482,7 +506,7 @@ export function BackendSelector({
               className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[var(--oh-foreground)] hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer text-left"
             >
               <LogOut className="size-4 text-[var(--oh-muted)]" />
-              <span>{cloudUser ? "Log out" : "Sign in"}</span>
+              <span>{cloudUser ? "Log out of Cloud" : "Sign in"}</span>
             </button>
 
             {/* Menu Links */}
@@ -578,9 +602,18 @@ export function BackendSelector({
                 </svg>
                 <span>Account & Cloud</span>
               </div>
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
-                Pro
-              </span>
+              {cloudTier && (
+                <span
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border",
+                    cloudTier === "pro"
+                      ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
+                      : "text-[var(--oh-muted)] bg-white/5 border-white/10",
+                  )}
+                >
+                  {cloudTier === "pro" ? "Pro" : "Free"}
+                </span>
+              )}
             </button>
 
             <button
@@ -661,33 +694,6 @@ export function BackendSelector({
               </div>
               <span className="text-xs text-[var(--oh-muted)]">›</span>
             </a>
-
-            <div className="my-1 border-t border-white/[0.08]" />
-
-            <button
-              type="button"
-              onClick={() => {
-                setProfileMenuOpen(false);
-                displaySuccessToast("Signed out of session");
-              }}
-              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-4"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" x2="9" y1="12" y2="12" />
-              </svg>
-              <span>Log out</span>
-            </button>
           </div>
         )}
       </div>

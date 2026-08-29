@@ -68,7 +68,10 @@ export function getExeaonModelMeta(
 ): ExeaonModelMeta | null {
   if (!model) return null;
   if (isFreeOpenHandsModel(model)) return EXEAON_MODELS[model];
-  const cleaned = model.replace(/^(openai|openhands|litellm_proxy)\//, "");
+  const cleaned = (model as string).replace(
+    /^(openai|openhands|litellm_proxy)\//,
+    "",
+  );
   if (isFreeOpenHandsModel(cleaned)) return EXEAON_MODELS[cleaned];
   return null;
 }

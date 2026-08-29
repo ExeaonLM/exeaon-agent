@@ -33,6 +33,8 @@ import {
   shouldUseMainAppCookieAuth,
 } from "#/api/main-app-auth";
 import { getEffectiveLocalBackend } from "#/api/backend-registry/active-store";
+import { refreshCloudModels } from "#/exeaon/cloud-models";
+import { EngineStartingBanner } from "#/exeaon/engine-starting-banner";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import {
   isCloudBackendApiKeyOrNetworkHealthError,
@@ -61,14 +63,6 @@ function ColorThemeApplier() {
   return null;
 }
 
-// Only rendered when the active backend is unreachable; keep the modal out of
-// the default root graph.
-const ManageBackendsModal = React.lazy(() =>
-  import("#/components/features/backends/manage-backends-modal").then((m) => ({
-    default: m.ManageBackendsModal,
-  })),
-);
-
 // Rendered when the backend returns 401 (public mode — user must paste key).
 const ApiKeyEntryScreen = React.lazy(
   () => import("#/components/features/backends/api-key-entry-screen"),
@@ -90,7 +84,27 @@ const BackendFormModal = React.lazy(() =>
   })),
 );
 
+// Canonical in-app cloud sign-in. Consolidated onto the same full-page
+// component the /signin route + account UI use (backend-registry + session
+// store, which is what /me and the PRO badge read), replacing the old parallel
+// modal flow that stored cloud state separately and was invisible to that UI.
+const ExeaonCloudLogin = React.lazy(() =>
+  import("#/components/features/backends/exeaon-cloud-login").then((m) => ({
+    default: m.ExeaonCloudLogin,
+  })),
+);
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  // Cloud model list sync: a restart (or a fresh connection) re-fetches the
+  // gateway's model list so newly published Exeaon models appear without the
+  // user typing a name. Cached locally for instant display; refreshed in the
+  // background when a cloud connection exists.
+  React.useEffect(() => {
+    if (localStorage.getItem("exeaon_cloud_key")) {
+      void refreshCloudModels();
+    }
+  }, []);
+
   return (
     <html lang="en">
       <head>
@@ -118,35 +132,79 @@ function AgentServerBootstrapLoading() {
 }
 
 /**
- * When the active backend is unreachable, the rest of the app cannot
- * render (most queries chain off of `/server_info`). Drop a minimal
- * placeholder behind the Manage Backends modal so the user can edit,
- * add, or pick another backend right away.
+ * When the active backend is unreachable, the rest of the app cannot render
+ * (most queries chain off of `/server_info`). Show the Exeaon splash with a
+ * "Sign in to Exeaon Cloud" entry and auto-retry the probe — the local agent
+ * server can take minutes to install on first launch, so this screen closes
+ * itself once the backend answers. No backend-management UI: end users only
+ * ever see the local agent or the cloud sign-in.
  */
 function MissingAgentServerScreen() {
   const queryClient = useQueryClient();
+  const [cloudSignInOpen, setCloudSignInOpen] = React.useState(false);
 
-  // The modal is the no-backend gate. Selecting or adding a reachable
-  // backend must re-run the /server_info probe; otherwise the app stays
-  // behind the recovery screen because the failed bootstrap query will not
-  // re-fire on its own. Re-fetch only when a backend now exists.
-  const handleClose = React.useCallback(() => {
-    if (getEffectiveLocalBackend()) {
-      clearCachedAgentServerInfo();
-      void queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WEB_CLIENT_CONFIG,
-      });
-    }
+  const retryProbe = React.useCallback(() => {
+    clearCachedAgentServerInfo();
+    void queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.WEB_CLIENT_CONFIG,
+    });
   }, [queryClient]);
+
+  // Poll while this screen is visible so a late-starting backend (uvx
+  // first-install) boots the main app without a manual reload.
+  React.useEffect(() => {
+    const timer = window.setInterval(retryProbe, 3000);
+    return () => window.clearInterval(timer);
+  }, [retryProbe]);
 
   return (
     <main
       data-testid="agent-server-onboarding-screen"
       className="min-h-screen bg-base"
     >
-      <React.Suspense fallback={null}>
-        <ManageBackendsModal onClose={handleClose} recoveryMode />
-      </React.Suspense>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
+        <ExeaonSplash loop />
+        <div className="max-w-md">
+          <h1 className="text-lg font-semibold text-[var(--oh-text)]">
+            Connecting to your local agent…
+          </h1>
+          <p className="mt-2 text-sm text-[var(--oh-text-secondary)]">
+            Exeaon Claw is starting. The first launch installs the agent
+            runtime and can take a minute or two — this screen closes by
+            itself when it is ready.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={retryProbe}
+            className="rounded-lg border border-[var(--oh-border)] px-4 py-2 text-sm font-medium text-[var(--oh-text)] hover:bg-[var(--oh-surface-raised)]"
+          >
+            Retry now
+          </button>
+          <button
+            type="button"
+            onClick={() => setCloudSignInOpen((v) => !v)}
+            className="rounded-lg bg-[#F3CE49] px-4 py-2 text-sm font-semibold text-[#070605] hover:bg-[#F7DA6B]"
+          >
+            {cloudSignInOpen ? "Hide cloud sign in" : "Sign in to Exeaon Cloud"}
+          </button>
+        </div>
+        {cloudSignInOpen && (
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--oh-border)] bg-base-secondary p-6">
+            <React.Suspense
+              fallback={
+                <div className="text-sm text-[var(--oh-muted)]">Loading…</div>
+              }
+            >
+              <ExeaonCloudLogin
+                onSignedIn={() => window.location.reload()}
+                onUseLocal={() => setCloudSignInOpen(false)}
+              />
+            </React.Suspense>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
@@ -231,6 +289,14 @@ export default function App() {
   // reload the baked key is still null, but the registry has the key.
   // So: skip the instant gate when a registered backend already carries
   // an API key — let the normal /server_info probe validate it instead.
+  // Brief branded moment (logo) before the shell opens, so a cold
+  // start feels intentional rather than blank. The app itself then
+  // opens regardless of the agent engine — it boots in the background.
+  const [logoDone, setLogoDone] = React.useState(false);
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setLogoDone(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const bakedKeyMissing = isAuthRequiredAndMissing();
   const hasRegisteredKey = Boolean(getEffectiveLocalBackend()?.apiKey);
   const authMissing = bakedKeyMissing && !hasRegisteredKey;
@@ -342,15 +408,36 @@ export default function App() {
     return <AgentServerBootstrapLoading />;
   }
 
-  // No key at all after onboarding was skipped/completed → auth screen.
-  // Stale key → /server_info 401 → auth screen (public mode only).
-  if (authMissing || isAgentServerAuthError(config.error)) {
-    return (
-      <React.Suspense fallback={<AgentServerBootstrapLoading />}>
-        <ApiKeyEntryScreen />
-      </React.Suspense>
-    );
-  }
+  	// No key at all after onboarding was skipped/completed → auth screen.
+  	// Stale key → /server_info 401 → auth screen (public mode only).
+  	if (authMissing || isAgentServerAuthError(config.error)) {
+  		return (
+  			<React.Suspense fallback={<AgentServerBootstrapLoading />}>
+  				<ApiKeyEntryScreen />
+  			</React.Suspense>
+  		);
+  	}
+
+  	// Backend unreachable → the Manage Backends recovery screen instead of an
+  	// endless splash or a silently blank app shell. The retry policy already
+  	// stops retrying unavailable errors; this branch is what the error must
+  	// surface into (it previously fell through to <Outlet />).
+  	if (config.isError && isAgentServerUnavailableError(config.error)) {
+  		// Engine not up yet: hold the logo for a beat, then open the app shell
+  		// anyway (settings/models stay usable) while the engine boots in the
+  		// background. The banner polls and this branch flips once /server_info
+  		// answers; the key change remounts the routes so their queries re-run.
+  		if (!logoDone) {
+  			return <AgentServerBootstrapLoading />;
+  		}
+  		return (
+  			<>
+  				<Outlet key="booting" />
+  				<EngineStartingBanner />
+  				<TelemetryConsentBanner />
+  			</>
+  		);
+  	}
 
   if (config.isPending || config.isLoading) {
     return <AgentServerBootstrapLoading />;
@@ -358,7 +445,7 @@ export default function App() {
 
   return (
     <>
-      <Outlet />
+      <Outlet key="ready" />
       <TelemetryConsentBanner />
     </>
   );
