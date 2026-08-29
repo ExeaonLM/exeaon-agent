@@ -16,6 +16,24 @@ import { writeCloudUser } from "#/api/cloud/session-store";
 const DEFAULT_CLOUD_HOST = "https://exeaon-claw.fly.dev";
 
 /**
+ * Baseline password policy for new accounts: at least 8 characters with a letter
+ * and a number (cap the length so absurd inputs can't be submitted). Returns a
+ * user-facing message, or "" when the password is acceptable.
+ *
+ * Note on "injection": the gateway hashes passwords and receives credentials as
+ * JSON parameters (no SQL string-building), and React escapes everything it
+ * renders, so there is no prompt/script/SQL-injection surface here — this is a
+ * strength guard, not an input sanitizer.
+ */
+function passwordPolicyIssue(pw: string): string {
+  if (pw.length < 8) return "Password must be at least 8 characters.";
+  if (pw.length > 200) return "Password is too long (max 200 characters).";
+  if (!/[A-Za-z]/.test(pw)) return "Password must include a letter.";
+  if (!/[0-9]/.test(pw)) return "Password must include a number.";
+  return "";
+}
+
+/**
  * In-app sign in / sign up for Exeaon Cloud.
  *
  * The user enters email and password (and a name to sign up) and never sees a
@@ -84,6 +102,13 @@ export function ExeaonCloudLogin({
     if (mode === "signup" && !name.trim()) {
       setError("Enter your name to create an account.");
       return;
+    }
+    if (mode === "signup") {
+      const pwIssue = passwordPolicyIssue(password);
+      if (pwIssue) {
+        setError(pwIssue);
+        return;
+      }
     }
     setBusy(true);
     setError("");

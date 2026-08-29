@@ -189,18 +189,37 @@ export default function ModelsPage() {
     setBusy(true);
     setError("");
     setNotice("");
+    setRunningModel(model.name); // optimistic — the button shows "Starting…"
+    const doStart = () =>
+      invoke("start_local_model", { modelPath: model.path, device });
     try {
-      await invoke("start_local_model", { modelPath: model.path, device });
+      try {
+        await doStart();
+      } catch (e) {
+        // An orphaned server from a previous run can still hold :18002 (status
+        // reads "stopped" but start reports "already running"). Stop it and
+        // retry once so Start is self-healing instead of dead-ending.
+        if (String(e).toLowerCase().includes("already running")) {
+          await invoke("stop_local_model").catch(() => {});
+          await new Promise((r) => setTimeout(r, 800));
+          await doStart();
+        } else {
+          throw e;
+        }
+      }
       await refreshStatus();
       setRunningModel(model.name);
       const activated = await activateForChat(model);
       setNotice(
         activated
-          ? `${model.name} is running on ${device.toUpperCase()} and active for chat.`
-          : `${model.name} is running on ${device.toUpperCase()}. Open a new chat to use it.`,
+          ? `${model.name} is running on ${device.toUpperCase()} at ${LLAMA_ENDPOINT} — active for chat.`
+          : `${model.name} is running on ${device.toUpperCase()} at ${LLAMA_ENDPOINT}. Open a new chat to use it.`,
       );
     } catch (e) {
-      setError(String(e));
+      setRunningModel(null);
+      setError(
+        `Couldn't start ${model.name}: ${String(e)}. Fix the issue and press Start to retry.`,
+      );
     } finally {
       setBusy(false);
     }
