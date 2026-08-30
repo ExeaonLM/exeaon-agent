@@ -59,12 +59,20 @@ export function ProfileActionsMenu({
       const rect = anchorElement.getBoundingClientRect();
       if (!rect) return;
       const gap = 8;
+      // ~5 items + padding. Open downward when there's room; otherwise flip up
+      // so lower rows' menus aren't clipped off the bottom of the window (this
+      // matters more as the model list grows).
+      const menuHeight = 236;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < menuHeight + gap;
       setPortalStyle({
         position: "fixed",
         zIndex: 9999,
-        top: rect.bottom + gap,
         right: window.innerWidth - rect.right,
         width: "max-content",
+        ...(openUp
+          ? { bottom: window.innerHeight - rect.top + gap }
+          : { top: rect.bottom + gap }),
       });
     };
 
