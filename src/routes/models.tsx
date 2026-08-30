@@ -41,12 +41,15 @@ function hasUsableGpu(specs: HardwareSpecs): boolean {
 function recommendations(specs: HardwareSpecs): Recommendation[] {
   const ram = specs.ramGb;
   const vram = specs.vramMb / 1024;
+  // CPU is RAM-bound: a 7–8B Q4 (~5 GB) fits comfortably alongside the OS from
+  // ~15 GB up, so don't demote a 15.8 GB machine to "mini" over a hard 16 GB
+  // cliff. Thresholds are the usable floor for each class, not exact sizes.
   const byRam =
-    ram >= 64
+    ram >= 60
       ? "Aeon-class (27B+) — flagship"
-      : ram >= 32
+      : ram >= 30
         ? "Arc-class (13–14B) — balanced"
-        : ram >= 16
+        : ram >= 15
           ? "Spark-class (7–8B) — fast"
           : "Spark-class mini (1–3B) — lightweight";
   const recs: Recommendation[] = [];
@@ -88,6 +91,7 @@ export default function ModelsPage() {
   const [localModels, setLocalModels] = React.useState<LocalModelEntry[]>([]);
   const [running, setRunning] = React.useState(false);
   const [runningModel, setRunningModel] = React.useState<string | null>(null);
+  const [runningDevice, setRunningDevice] = React.useState<Device | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [startingModel, setStartingModel] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -216,7 +220,11 @@ export default function ModelsPage() {
     return false;
   }, []);
 
-  const startModel = async (model: LocalModelEntry) => {
+  const startModel = async (
+    model: LocalModelEntry,
+    deviceOverride?: Device,
+  ) => {
+    const dev = deviceOverride ?? device;
     setBusy(true);
     setStartingModel(model.name);
     setError("");
@@ -224,7 +232,7 @@ export default function ModelsPage() {
     // start_local_model stops any current server first, so this doubles as a
     // "switch model": clicking Start on a different model swaps to it.
     const doStart = () =>
-      invoke("start_local_model", { modelPath: model.path, device });
+      invoke("start_local_model", { modelPath: model.path, device: dev });
     try {
       try {
         await doStart();
@@ -241,6 +249,7 @@ export default function ModelsPage() {
         }
       }
       setRunningModel(model.name);
+      setRunningDevice(dev);
       try {
         localStorage.setItem(ACTIVE_MODEL_KEY, model.name);
       } catch {
@@ -250,8 +259,8 @@ export default function ModelsPage() {
       const activated = await activateForChat(model);
       setNotice(
         activated
-          ? `${model.name} is running on ${device.toUpperCase()} at ${LLAMA_ENDPOINT} — active for chat.`
-          : `${model.name} is running on ${device.toUpperCase()} at ${LLAMA_ENDPOINT}. Open a new chat to use it.`,
+          ? `${model.name} is running on ${dev.toUpperCase()} at ${LLAMA_ENDPOINT} — active for chat.`
+          : `${model.name} is running on ${dev.toUpperCase()} at ${LLAMA_ENDPOINT}. Open a new chat to use it.`,
       );
     } catch (e) {
       setRunningModel(null);
@@ -265,6 +274,16 @@ export default function ModelsPage() {
   };
 
   const stopModel = async () => {
+    // Confirm: stopping unloads the model and any chat pointed at the local
+    // engine will stop responding until it's started again.
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        "Stop the local model server? Any chat using an on-device model will stop working until you start it again.",
+      )
+    ) {
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -275,12 +294,35 @@ export default function ModelsPage() {
       }
       await invoke("stop_local_model");
       await refreshStatus();
+      setRunningDevice(null);
       setNotice("");
     } catch (e) {
       setError(String(e));
     } finally {
       setBusy(false);
     }
+  };
+
+  // Switching the CPU/GPU toggle while a model runs on the other device would
+  // silently mismatch the label (the server keeps running on the old device
+  // until a restart). Confirm and restart on the new device instead.
+  const selectDevice = (d: Device) => {
+    if (d === device) return;
+    if (running && runningModel && runningDevice && d !== runningDevice) {
+      const entry = localModels.find((m) => m.name === runningModel);
+      if (
+        entry &&
+        typeof window !== "undefined" &&
+        window.confirm(
+          `Restart "${runningModel}" on ${d.toUpperCase()}? The model will reload.`,
+        )
+      ) {
+        setDevice(d);
+        void startModel(entry, d);
+      }
+      return;
+    }
+    setDevice(d);
   };
 
   const openFolder = async () => {
@@ -443,7 +485,7 @@ export default function ModelsPage() {
                 <div className="flex overflow-hidden rounded-lg border border-[var(--oh-border)]">
                   <button
                     type="button"
-                    onClick={() => setDevice("cpu")}
+                    onClick={() => selectDevice("cpu")}
                     className={`px-3 py-1 text-xs font-medium ${
                       device === "cpu"
                         ? "bg-[#F3CE49] text-[#070605]"
@@ -454,7 +496,7 @@ export default function ModelsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => gpuAvailable && setDevice("gpu")}
+                    onClick={() => gpuAvailable && selectDevice("gpu")}
                     disabled={!gpuAvailable}
                     title={
                       gpuAvailable
