@@ -18,10 +18,11 @@ The correct signal is `!isCloudAppServerBackend()`. Grep for `backend.kind` /
 - [x] **Files panel "No files in workspace"** (Claw) — used the cloud file-listing
   endpoint (absent on the gateway) when signed in. Fixed `use-workspace-files.ts`
   + `use-workspace-file-content.ts` to the runtime seam. *Verify after reload.*
-- [ ] **Clone lands in a scratch dir, not a named workspace** (Claw) — the repo
-  modal creates a conversation without a `workingDir`, so clones go to
-  `workspace/project/<hex>`. Clone into a folder named after the repo (or the
-  selected workspace) so it's findable and the Files panel is meaningful.
+- [x] **Clone lands in a scratch dir, not a named workspace** (Claw) — the repo
+  modal now clones into `exeaon-repos/<repo-name>` and persists it as the
+  conversation's `selected_workspace`, so it groups under the repo name and the
+  Files panel anchors to it. *Note: a stopped runtime (old conversation) still
+  can't list files — that's expected; use a fresh clone.*
 - [ ] **API keys leak across users** (GW) — every user sees the admin/owner's API
   keys. Owner/tenant-owner must NOT grant system/admin visibility; scope key
   listing to the caller's own account. Enforce a **50 keys/user** cap. Security.

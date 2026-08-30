@@ -71,6 +71,15 @@ export function GitHubRepoModal({ onClose }: { onClose: () => void }) {
   const launch = async () => {
     if (!selected || isCreating) return;
     const ref = branch || selected.defaultBranch;
+    // Clone into a workspace folder NAMED after the repo (not a random scratch
+    // hex) so it groups under the repo name in the sidebar, shows in the Files
+    // panel, and is findable on disk. `workingDir` is persisted as the
+    // conversation's selected_workspace by createConversation.
+    const repoName = (selected.fullName.split("/").pop() || "repo").replace(
+      /[^A-Za-z0-9._-]/g,
+      "-",
+    );
+    const workingDir = `exeaon-repos/${repoName}`;
     const toastId = toast.loading(
       `Cloning ${selected.fullName}…`,
       TOAST_OPTIONS,
@@ -80,8 +89,8 @@ export function GitHubRepoModal({ onClose }: { onClose: () => void }) {
         // The agent clones using the GITHUB_TOKEN secret exposed to the runtime.
         query:
           `Clone the GitHub repository ${selected.fullName} (branch ${ref}) into ` +
-          `the current workspace, authenticating over HTTPS with the GITHUB_TOKEN ` +
-          `environment variable (e.g. \`git clone --branch ${ref} ` +
+          `the current working directory, authenticating over HTTPS with the ` +
+          `GITHUB_TOKEN environment variable (e.g. \`git clone --branch ${ref} ` +
           `https://x-access-token:$GITHUB_TOKEN@github.com/${selected.fullName}.git .\`). ` +
           `Then give me a short overview of the project structure.`,
         repository: {
@@ -89,6 +98,7 @@ export function GitHubRepoModal({ onClose }: { onClose: () => void }) {
           gitProvider: "github",
           branch: ref,
         },
+        workingDir,
         workspaceMode: "local_repo",
         entryPoint: "github_repo_modal",
       });
