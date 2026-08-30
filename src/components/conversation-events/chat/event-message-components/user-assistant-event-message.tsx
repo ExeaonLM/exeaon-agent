@@ -16,6 +16,7 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useForkConversation } from "#/hooks/mutation/use-fork-conversation";
 import { useConversationStore } from "#/stores/conversation-store";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { useLiveConversationMetrics } from "#/hooks/use-live-conversation-metrics";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 interface UserAssistantEventMessageProps {
@@ -40,6 +41,18 @@ export function UserAssistantEventMessage({
   );
   // Blocks a same-tick double-click, before `isForking` flips.
   const forkInFlightRef = React.useRef(false);
+
+  // Show a compact stats footer under the latest agent reply: total tokens +
+  // cost so far, like Claude Code's message footer. Only meaningful on the last
+  // agent message; the hook is cheap (store selectors) so calling it always is
+  // fine.
+  const showStats = event.source === "agent" && isLastMessage;
+  const metrics = useLiveConversationMetrics(showStats);
+  const totalTokens =
+    (metrics.usage?.prompt_tokens ?? 0) +
+    (metrics.usage?.completion_tokens ?? 0);
+  const formatTokens = (n: number): string =>
+    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`;
 
   const parsed = parseMessageFromEvent(event);
   // Route an inline <think> block (e.g. from a streamed reply) to the thinking
@@ -128,6 +141,14 @@ export function UserAssistantEventMessage({
       </ChatMessage>
       {event.source === "agent" && event.critic_result != null && (
         <CriticResultDisplay criticResult={event.critic_result} />
+      )}
+      {showStats && totalTokens > 0 && (
+        <div className="mt-1 pl-1 font-mono text-[11px] text-[var(--oh-muted)]">
+          {formatTokens(totalTokens)} tokens
+          {(metrics.cost ?? 0) > 0
+            ? ` · $${(metrics.cost ?? 0).toFixed(4)}`
+            : ""}
+        </div>
       )}
     </>
   );
