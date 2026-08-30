@@ -128,18 +128,40 @@ interface TypingIndicatorProps {
   readonly events: readonly OHEvent[];
 }
 
-/** Elapsed time since the agent started working, ticking every second. */
-function useElapsedSeconds(): number {
-  const startRef = useRef<number>(0);
-  const [seconds, setSeconds] = useState(0);
+/**
+ * ISO timestamp (ms) of when the current turn started: the most recent user
+ * message. Derived from event data — not component mount — so the elapsed
+ * clock stays anchored when the indicator unmounts and remounts (it's gated on
+ * `hitBottom`, so scrolling up and back would otherwise restart it from 0).
+ */
+function getTurnStartMs(events: readonly OHEvent[]): number | null {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.source !== "user") continue;
+    const ts = "timestamp" in event ? event.timestamp : undefined;
+    const ms = ts ? Date.parse(ts) : NaN;
+    if (!Number.isNaN(ms)) return ms;
+  }
+  return null;
+}
+
+/**
+ * Elapsed seconds since the turn started, ticking every second. The start is a
+ * data-derived timestamp (see `getTurnStartMs`), so remounts don't reset it;
+ * the `mountFallback` covers a turn with no user message (e.g. a `/goal` loop).
+ */
+function useElapsedSeconds(startMs: number | null): number {
+  const mountFallbackRef = useRef<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    startRef.current = Date.now();
-    const id = setInterval(() => {
-      setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 1000);
+    if (mountFallbackRef.current === null) {
+      mountFallbackRef.current = Date.now();
+    }
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  return seconds;
+  const anchor = startMs ?? mountFallbackRef.current ?? now;
+  return Math.max(0, Math.floor((now - anchor) / 1000));
 }
 
 function formatElapsed(s: number): string {
@@ -150,7 +172,7 @@ function formatElapsed(s: number): string {
 
 export function TypingIndicator({ events }: TypingIndicatorProps) {
   const activity = deriveLiveActivity(events);
-  const elapsed = useElapsedSeconds();
+  const elapsed = useElapsedSeconds(getTurnStartMs(events));
 
   return (
     <div

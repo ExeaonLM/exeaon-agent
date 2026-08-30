@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { CustomChatInput } from "#/components/features/chat/custom-chat-input";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useLocalWorkspaces } from "#/hooks/query/use-local-workspaces";
 import { useModelInterceptor } from "#/hooks/chat/use-model-interceptor";
@@ -34,12 +35,27 @@ import { Plus, Folder, Puzzle } from "lucide-react";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
+import { WorkspacePicker } from "./workspace-picker";
+import { ConnectGitHubButton } from "./connect-github-button";
+import { WorkspaceModeSelector } from "#/components/features/chat/workspace-mode-selector";
+import { useHomeStore } from "#/stores/home-store";
+import {
+  isNativeDialogAvailable,
+  pickWorkspaceFolderNative,
+} from "#/utils/pick-workspace-folder";
 
 export function HomeChatLauncher() {
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const { navigate } = useNavigation();
-  const isLocal = backend.kind === "local";
+  // The Exeaon agent runtime is ALWAYS the local sovereign engine, even when a
+  // cloud backend is "active" for identity/billing (the Exeaon gateway is not an
+  // OpenHands app-server — see isCloudAppServerBackend, the seam for a future
+  // real cloud app-server; false today). Gate the local-workspace flow on the
+  // runtime, not on backend.kind: otherwise signing into Exeaon Cloud
+  // (kind:"cloud") hides the workspace picker even though the agent still writes
+  // to a local folder on this machine.
+  const isLocal = !isCloudAppServerBackend();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingWorkspace, setPendingWorkspace] =
@@ -71,6 +87,52 @@ export function HomeChatLauncher() {
     ? getWorkspacesUnsupportedMessage(workspacesError, t)
     : null;
 
+  const recentWorkspaces = useHomeStore((state) => state.recentWorkspaces);
+  const addRecentWorkspace = useHomeStore((state) => state.addRecentWorkspace);
+
+  // Default a new chat to the most-recent workspace (like Claude: a new chat
+  // opens in your last workspace). Runs once, and only when the user hasn't
+  // already picked one — so clearing to a scratch workspace isn't undone.
+  const didInitWorkspaceRef = useRef(false);
+  useEffect(() => {
+    if (didInitWorkspaceRef.current || !isLocal) return;
+    if (pendingWorkspace) {
+      didInitWorkspaceRef.current = true;
+      return;
+    }
+    if (recentWorkspaces.length > 0) {
+      setPendingWorkspace(recentWorkspaces[0]);
+      setWorkspaceMode("local_repo");
+      didInitWorkspaceRef.current = true;
+    }
+  }, [isLocal, pendingWorkspace, recentWorkspaces]);
+
+  const selectWorkspace = (workspace: LocalWorkspace | null) => {
+    setPendingWorkspace(workspace);
+    setPendingRepository(null);
+    setPendingBranch(null);
+    setPendingProvider(null);
+    setWorkspaceMode("local_repo");
+    if (workspace) addRecentWorkspace(workspace);
+  };
+
+  // "Open folder…" opens the native OS picker (folder create + rename come free
+  // from the OS). Falls back to the in-app browser when the native dialog isn't
+  // available — e.g. web dev, or before the Tauri side is rebuilt with the
+  // dialog plugin.
+  const handleOpenFolder = async () => {
+    if (isNativeDialogAvailable()) {
+      try {
+        const workspace = await pickWorkspaceFolderNative();
+        if (workspace) selectWorkspace(workspace);
+        return;
+      } catch {
+        // Native dialog failed to open — fall through to the in-app browser.
+      }
+    }
+    setIsDialogOpen(true);
+  };
+
   const hasSelection = isLocal
     ? !!pendingWorkspace
     : !!pendingRepository && !!pendingBranch;
@@ -101,6 +163,9 @@ export function HomeChatLauncher() {
       entryPoint: "home_chat_launcher",
     };
     if (isLocal && pendingWorkspace) {
+      // Bump this workspace to the top of the recent list so the next new chat
+      // defaults to it.
+      addRecentWorkspace(pendingWorkspace);
       variables = {
         ...variables,
         workingDir: pendingWorkspace.path,
@@ -234,18 +299,41 @@ export function HomeChatLauncher() {
           />
         </div>
 
-        <div className="flex items-center justify-start gap-2">
-          {hasSelection && (
-            <HomeGitControlBarPreview
-              workspace={pendingWorkspace}
-              repository={pendingRepository}
-              branch={pendingBranch}
-              provider={pendingProvider}
-              workspaceMode={workspaceMode}
-              backendKind={backend.kind}
-              onRepoClick={() => setIsDialogOpen(true)}
-              onWorkspaceModeChange={setWorkspaceMode}
-            />
+        <div className="flex flex-wrap items-center justify-start gap-2">
+          {isLocal ? (
+            <>
+              <WorkspacePicker
+                value={pendingWorkspace}
+                onChange={selectWorkspace}
+                onOpenFolder={handleOpenFolder}
+                disabled={isCreating}
+                unsupportedMessage={workspacesUnsupportedMessage}
+              />
+              {pendingWorkspace && (
+                <WorkspaceModeSelector
+                  value={workspaceMode}
+                  // The Exeaon runtime is always local, so the mode reads
+                  // "Local Repo"/"New Worktree" — never "Cloud Repo", which
+                  // would wrongly imply work runs in the cloud when signed in.
+                  backendKind="local"
+                  onChange={setWorkspaceMode}
+                />
+              )}
+              <ConnectGitHubButton />
+            </>
+          ) : (
+            hasSelection && (
+              <HomeGitControlBarPreview
+                workspace={pendingWorkspace}
+                repository={pendingRepository}
+                branch={pendingBranch}
+                provider={pendingProvider}
+                workspaceMode={workspaceMode}
+                backendKind={backend.kind}
+                onRepoClick={() => setIsDialogOpen(true)}
+                onWorkspaceModeChange={setWorkspaceMode}
+              />
+            )
           )}
           {/* One "+" menu instead of a row of buttons: Add folder (workspace)
               + Plugins. Cleaner, and not the OpenHands two-button layout. */}
@@ -266,19 +354,21 @@ export function HomeChatLauncher() {
                   onClick={() => setPlusMenuOpen(false)}
                 />
                 <div className="absolute left-0 top-full z-50 mt-2 flex w-52 flex-col gap-0.5 rounded-xl border border-[var(--oh-border)] bg-[#141413] p-1.5 shadow-2xl">
-                  <button
-                    type="button"
-                    disabled={Boolean(workspacesUnsupportedMessage)}
-                    title={workspacesUnsupportedMessage || undefined}
-                    onClick={() => {
-                      setPlusMenuOpen(false);
-                      setIsDialogOpen(true);
-                    }}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
-                  >
-                    <Folder className="size-4 text-[var(--oh-muted)]" />
-                    <span>{isLocal ? "Add folder" : "Add repository"}</span>
-                  </button>
+                  {/* Local uses the dedicated workspace picker; only cloud needs
+                      the repository entry here. */}
+                  {!isLocal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlusMenuOpen(false);
+                        setIsDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                    >
+                      <Folder className="size-4 text-[var(--oh-muted)]" />
+                      <span>Add repository</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -316,13 +406,7 @@ export function HomeChatLauncher() {
         <OpenWorkspaceDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onConfirm={(workspace) => {
-            setPendingWorkspace(workspace);
-            setPendingRepository(null);
-            setPendingBranch(null);
-            setPendingProvider(null);
-            setWorkspaceMode("local_repo");
-          }}
+          onConfirm={(workspace) => selectWorkspace(workspace)}
         />
       ) : (
         <OpenRepositoryDialog

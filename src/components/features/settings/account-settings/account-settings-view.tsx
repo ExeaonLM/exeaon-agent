@@ -1,7 +1,17 @@
 import React from "react";
 import { Laptop, LogOut, Sparkles, Cpu, RefreshCw, Pencil } from "lucide-react";
+import { FaGithub } from "react-icons/fa6";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { BrandBadge } from "#/components/shared/badge";
+import { ConnectGitHubButton } from "#/components/features/home/connect-github-button";
+import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
+import { SecretsService } from "#/api/secrets-service";
+import { GITHUB_TOKEN_SECRET } from "#/constants/github-oauth";
+import {
+  clearGitHubAccount,
+  readGitHubAccount,
+} from "#/api/cloud/github-account-store";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
 import {
@@ -50,6 +60,13 @@ export function AccountSettingsView() {
 
   const handleAuthClick = () => {
     if (isCloudConnected) {
+      if (
+        !window.confirm(
+          "Log out of Exeaon Cloud? You'll need to sign in again to use cloud models and your account.",
+        )
+      ) {
+        return;
+      }
       cloudLogout();
       setTick((n) => n + 1);
     } else {
@@ -343,7 +360,93 @@ export function AccountSettingsView() {
             <span>On-device · unmetered</span>
           </div>
         </div>
+
+        {/* GitHub connection (Device Flow). Connect/disconnect the token the
+            git-service uses for real repositories. */}
+        <GitHubConnectionCard />
       </section>
+    </div>
+  );
+}
+
+function GitHubConnectionCard() {
+  const queryClient = useQueryClient();
+  const { data: secrets = [] } = useSearchSecrets();
+  const isConnected = secrets.some((s) => s.name === GITHUB_TOKEN_SECRET);
+  const account = isConnected ? readGitHubAccount() : null;
+  const [isPending, setIsPending] = React.useState(false);
+
+  const disconnect = async () => {
+    if (
+      !window.confirm(
+        "Disconnect GitHub? Exeaon will forget your GitHub token, so cloning, branches, and pull requests stop working until you reconnect.",
+      )
+    ) {
+      return;
+    }
+    setIsPending(true);
+    try {
+      await SecretsService.deleteSecret(GITHUB_TOKEN_SECRET);
+      clearGitHubAccount();
+      await queryClient.invalidateQueries({ queryKey: ["secrets"] });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-[var(--oh-border)] bg-base-secondary p-4">
+      <div className="flex items-center gap-3">
+        {account?.avatar ? (
+          <img
+            src={account.avatar}
+            alt=""
+            className="size-9 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex size-9 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
+            <FaGithub className="size-4" />
+          </div>
+        )}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-white">
+              {account?.name || account?.login || "GitHub"}
+            </span>
+            {isConnected ? (
+              <>
+                <span className="size-2 rounded-full bg-emerald-400" />
+                <span className="text-[11px] text-emerald-400 font-medium">
+                  Connected
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-[var(--oh-muted)]">
+                Not connected
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-[var(--oh-muted)]">
+            {account?.login
+              ? `GitHub · @${account.login}`
+              : "Clone, branch, and open pull requests on your repositories"}
+          </span>
+        </div>
+      </div>
+
+      {isConnected ? (
+        <BrandButton
+          type="button"
+          variant="secondary"
+          className="text-xs"
+          onClick={disconnect}
+          isDisabled={isPending}
+        >
+          {isPending ? "Disconnecting…" : "Disconnect"}
+        </BrandButton>
+      ) : (
+        <ConnectGitHubButton />
+      )}
     </div>
   );
 }

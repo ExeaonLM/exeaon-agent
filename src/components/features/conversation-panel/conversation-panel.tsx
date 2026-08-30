@@ -34,7 +34,6 @@ import { CompactConversationRow } from "./compact-conversation-row";
 import { useConversationPanelPreferencesStore } from "#/stores/conversation-panel-preferences-store";
 import { cn } from "#/utils/utils";
 import { ConversationPanelFilterMenu } from "./conversation-panel-filter-menu";
-import { ConversationPanelNewThreadPicker } from "./conversation-panel-new-thread-picker";
 import { ConversationGroupFolderList } from "./conversation-group-folder-list";
 import { ConversationPanelPinnedSection } from "./conversation-panel-pinned-section";
 import {
@@ -1041,9 +1040,9 @@ export function ConversationPanel({
               {t(I18nKey.SIDEBAR$CONVERSATIONS)}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-0.5">
-              <ConversationPanelNewThreadPicker
-                backendKind={activeBackend.kind}
-              />
+              {/* New-thread "+" removed here: the sidebar's top-level "New Chat"
+                  is the single entry point, so this header button was redundant.
+                  The filter/organize control (now a config-style icon) stays. */}
               <ConversationPanelFilterMenu
                 filterMenuOpen={filterMenuOpen}
                 setFilterMenuOpen={setFilterMenuOpen}

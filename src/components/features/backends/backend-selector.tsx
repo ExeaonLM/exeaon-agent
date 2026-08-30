@@ -2,6 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { Settings, LogOut } from "lucide-react";
 import { isNoBackend } from "#/api/backend-registry/active-store";
+import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
+import { GITHUB_TOKEN_SECRET } from "#/constants/github-oauth";
+import { GitHubAccountChip } from "#/components/features/home/github-account-chip";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { useAllCloudOrganizations } from "#/hooks/query/use-cloud-organizations";
 import { useCloudCurrentUserId } from "#/hooks/query/use-cloud-current-user-id";
@@ -43,6 +46,8 @@ export function BackendSelector({
   const navigate = useNavigate();
   const [, forceAccountRefresh] = React.useState(0);
   const cloudUser = readCloudUser();
+  const { data: secrets = [] } = useSearchSecrets();
+  const githubConnected = secrets.some((s) => s.name === GITHUB_TOKEN_SECRET);
   const accountInitial = (cloudUser?.displayName || cloudUser?.email || "?")
     .trim()
     .charAt(0)
@@ -188,6 +193,13 @@ export function BackendSelector({
               onClick={() => {
                 setProfileMenuOpen(false);
                 if (cloudUser) {
+                  if (
+                    !window.confirm(
+                      "Log out of Exeaon Cloud? You'll need to sign in again to use cloud models and your account.",
+                    )
+                  ) {
+                    return;
+                  }
                   cloudLogout();
                   forceAccountRefresh((n) => n + 1);
                 } else {
@@ -199,6 +211,8 @@ export function BackendSelector({
               <LogOut className="size-4 text-[var(--oh-muted)]" />
               <span>{cloudUser ? "Log out of Cloud" : "Sign in"}</span>
             </button>
+
+            {githubConnected ? <GitHubAccountChip className="px-0.5" /> : null}
 
             <button
               type="button"

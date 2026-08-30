@@ -25,6 +25,9 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
+# HTTP from Rust for the GitHub Device Flow (browser fetch is CORS-blocked by
+# GitHub's device endpoints). rustls avoids a native-TLS toolchain dependency.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # In-app updates from GitHub Releases (signed). The updater fetches latest.json
 # from the repo's releases, verifies the signature against the pubkey in
@@ -32,3 +35,8 @@ tauri-plugin-log = "2"
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+
+# Native OS folder/file picker (Select workspace folder). The OS dialog gives
+# folder creation + rename for free, which the in-app browser cannot.
+[dependencies.tauri-plugin-dialog]
+version = "2"

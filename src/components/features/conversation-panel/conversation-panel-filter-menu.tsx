@@ -10,7 +10,7 @@ import {
   EyeOff,
   Folder,
   GitBranch,
-  ListFilter,
+  SlidersHorizontal,
   MessageCircle,
   MousePointerClick,
   Star,
@@ -24,7 +24,6 @@ import { cn } from "#/utils/utils";
 import {
   dropdownInstantColorClassName,
   dropdownMenuListClassName,
-  dropdownMenuViewportScrollClassName,
 } from "#/utils/dropdown-classes";
 import {
   UNNAMED_AUTOMATION_FACET,
@@ -33,9 +32,9 @@ import {
   type OrganizeMode,
   type ThreadScope,
 } from "./conversation-panel-list-helpers";
-import { MenuHeading } from "./menu-heading";
 import { MenuSeparator } from "./menu-separator";
 import { MenuRow } from "./menu-row";
+import { MenuSubmenuRow } from "./menu-submenu-row";
 
 const capitalizeLabel = (label: string) =>
   label.length > 0 ? label.charAt(0).toUpperCase() + label.slice(1) : label;
@@ -110,6 +109,14 @@ export function ConversationPanelFilterMenu({
       ? t(I18nKey.CONVERSATION_PANEL$BY_WORKSPACE)
       : t(I18nKey.CONVERSATION_PANEL$BY_REPOSITORY);
 
+  const closeMenu = () => setFilterMenuOpen(false);
+  const metadataShownCount = [
+    showRepoBranchMetadata,
+    showLlmProfiles,
+    showTagsMetadata,
+    showHoverMetadata,
+  ].filter(Boolean).length;
+
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const menuContentRef = React.useRef<HTMLDivElement>(null);
 
@@ -176,8 +183,8 @@ export function ConversationPanelFilterMenu({
           dropdownInstantColorClassName,
         )}
       >
-        <ListFilter
-          className="lucide lucide-list-filter shrink-0"
+        <SlidersHorizontal
+          className="lucide lucide-sliders-horizontal shrink-0"
           width={14}
           height={14}
           strokeWidth={2}
@@ -206,73 +213,94 @@ export function ConversationPanelFilterMenu({
           tabIndex={-1}
           data-testid="older-conversations-filter-menu"
           onKeyDown={handleMenuKeyDown}
+          // No overflow/scroll on the container: the collapsed rows keep it
+          // short, and a scroll context would clip the flyout submenus.
           className={cn(
-            "absolute right-0 top-full z-50 mt-1 w-64 rounded-xl border border-[#2B2316] bg-[#0E0C09]/95 backdrop-blur-md p-1.5 text-[#EDE7D8] shadow-2xl custom-scrollbar",
+            "absolute right-0 top-full z-50 mt-1 w-64 rounded-xl border border-[#2B2316] bg-[#0E0C09]/95 backdrop-blur-md p-1.5 text-[#EDE7D8] shadow-2xl",
             dropdownMenuListClassName,
-            dropdownMenuViewportScrollClassName,
           )}
         >
-          <MenuHeading>{t(I18nKey.CONVERSATION_PANEL$ORGANIZE)}</MenuHeading>
-          <MenuRow
+          {/* Group by */}
+          <MenuSubmenuRow
             icon={Folder}
-            label={groupedLabel}
-            selected={organizeMode === "grouped"}
-            onClick={() => {
-              setOrganizeMode("grouped");
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon={Clock3}
-            label={t(I18nKey.CONVERSATION_PANEL$CHRONOLOGICAL)}
-            selected={organizeMode === "chronological"}
-            onClick={() => {
-              setOrganizeMode("chronological");
-              setFilterMenuOpen(false);
-            }}
+            testId="filter-group-by"
+            label={t(I18nKey.CONVERSATION_PANEL$ORGANIZE)}
+            value={
+              organizeMode === "grouped"
+                ? groupedLabel
+                : t(I18nKey.CONVERSATION_PANEL$CHRONOLOGICAL)
+            }
+            onCloseMenu={closeMenu}
+            options={[
+              {
+                label: groupedLabel,
+                icon: Folder,
+                selected: organizeMode === "grouped",
+                onSelect: () => setOrganizeMode("grouped"),
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$CHRONOLOGICAL),
+                icon: Clock3,
+                selected: organizeMode === "chronological",
+                onSelect: () => setOrganizeMode("chronological"),
+              },
+            ]}
           />
 
-          <MenuSeparator />
-          <MenuHeading>{t(I18nKey.CONVERSATION_PANEL$SORT_BY)}</MenuHeading>
-          <MenuRow
-            icon={CalendarArrowDown}
-            label={t(I18nKey.CONVERSATION_PANEL$SORT_CREATED)}
-            selected={conversationSort === "created"}
-            onClick={() => {
-              setConversationSort("created");
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
+          {/* Sort by */}
+          <MenuSubmenuRow
             icon={ClockArrowDown}
-            label={t(I18nKey.CONVERSATION_PANEL$SORT_UPDATED)}
-            selected={conversationSort === "updated"}
-            onClick={() => {
-              setConversationSort("updated");
-              setFilterMenuOpen(false);
-            }}
+            testId="filter-sort-by"
+            label={t(I18nKey.CONVERSATION_PANEL$SORT_BY)}
+            value={
+              conversationSort === "updated"
+                ? t(I18nKey.CONVERSATION_PANEL$SORT_UPDATED)
+                : t(I18nKey.CONVERSATION_PANEL$SORT_CREATED)
+            }
+            onCloseMenu={closeMenu}
+            options={[
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$SORT_UPDATED),
+                icon: ClockArrowDown,
+                selected: conversationSort === "updated",
+                onSelect: () => setConversationSort("updated"),
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$SORT_CREATED),
+                icon: CalendarArrowDown,
+                selected: conversationSort === "created",
+                onSelect: () => setConversationSort("created"),
+              },
+            ]}
           />
 
-          <MenuSeparator />
-          <MenuHeading>{t(I18nKey.CONVERSATION_PANEL$SHOW)}</MenuHeading>
-          <MenuRow
+          {/* Show (thread scope) */}
+          <MenuSubmenuRow
             icon={MessageCircle}
-            label={t(I18nKey.CONVERSATION_PANEL$ALL_THREADS)}
-            selected={threadScope === "all"}
-            onClick={() => {
-              setThreadScope("all");
-              setFilterMenuOpen(false);
-            }}
+            testId="filter-show"
+            label={t(I18nKey.CONVERSATION_PANEL$SHOW)}
+            value={
+              threadScope === "all"
+                ? t(I18nKey.CONVERSATION_PANEL$ALL_THREADS)
+                : t(I18nKey.CONVERSATION_PANEL$RELEVANT_THREADS)
+            }
+            onCloseMenu={closeMenu}
+            options={[
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$ALL_THREADS),
+                icon: MessageCircle,
+                selected: threadScope === "all",
+                onSelect: () => setThreadScope("all"),
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$RELEVANT_THREADS),
+                icon: Star,
+                selected: threadScope === "relevant",
+                onSelect: () => setThreadScope("relevant"),
+              },
+            ]}
           />
-          <MenuRow
-            icon={Star}
-            label={t(I18nKey.CONVERSATION_PANEL$RELEVANT_THREADS)}
-            selected={threadScope === "relevant"}
-            onClick={() => {
-              setThreadScope("relevant");
-              setFilterMenuOpen(false);
-            }}
-          />
+
           <MenuRow
             icon={Archive}
             label={t(I18nKey.CONVERSATION_PANEL$SHOW_ARCHIVED)}
@@ -285,36 +313,43 @@ export function ConversationPanelFilterMenu({
           />
 
           <MenuSeparator />
-          <MenuHeading>{t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS)}</MenuHeading>
-          <MenuRow
-            icon={MessageCircle}
-            label={t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ALL)}
-            selected={automationFilterMode === "all"}
-            testId="automation-filter-all"
-            onClick={() => {
-              setAutomationFilterMode("all");
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon={EyeOff}
-            label={t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_HIDE)}
-            selected={automationFilterMode === "hide-automations"}
-            testId="automation-filter-hide"
-            onClick={() => {
-              setAutomationFilterMode("hide-automations");
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
+
+          {/* Automations */}
+          <MenuSubmenuRow
             icon={Workflow}
-            label={t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ONLY)}
-            selected={automationFilterMode === "only-automations"}
-            testId="automation-filter-only"
-            onClick={() => {
-              setAutomationFilterMode("only-automations");
-              setFilterMenuOpen(false);
-            }}
+            testId="filter-automations"
+            label={t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS)}
+            value={
+              automationFilterMode === "all"
+                ? t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ALL)
+                : automationFilterMode === "hide-automations"
+                  ? t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_HIDE)
+                  : t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ONLY)
+            }
+            onCloseMenu={closeMenu}
+            options={[
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ALL),
+                icon: MessageCircle,
+                selected: automationFilterMode === "all",
+                testId: "automation-filter-all",
+                onSelect: () => setAutomationFilterMode("all"),
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_HIDE),
+                icon: EyeOff,
+                selected: automationFilterMode === "hide-automations",
+                testId: "automation-filter-hide",
+                onSelect: () => setAutomationFilterMode("hide-automations"),
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$AUTOMATIONS_ONLY),
+                icon: Workflow,
+                selected: automationFilterMode === "only-automations",
+                testId: "automation-filter-only",
+                onSelect: () => setAutomationFilterMode("only-automations"),
+              },
+            ]}
           />
           {automationFilterMode === "only-automations"
             ? automationNameFacets.map((facet) => (
@@ -328,67 +363,59 @@ export function ConversationPanelFilterMenu({
                   }
                   selected={selectedAutomationNames.includes(facet)}
                   testId={`automation-name-filter-${facet}`}
-                  // Multi-select name rows keep the menu open (unlike the
-                  // mode radios above) so several names can be toggled in
-                  // one visit.
+                  // Multi-select name rows keep the menu open so several names
+                  // can be toggled in one visit.
                   onClick={() => onToggleAutomationName(facet)}
                 />
               ))
             : null}
 
           <MenuSeparator />
-          <MenuHeading>{t(I18nKey.CONVERSATION_PANEL$METADATA)}</MenuHeading>
-          <MenuRow
-            icon={GitBranch}
-            label={t(I18nKey.CONVERSATION_PANEL$REPO_BRANCH)}
-            selected={showRepoBranchMetadata}
-            testId="toggle-repo-branch-metadata"
-            onClick={() => {
-              toggleShowRepoBranchMetadata();
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon={Bot}
-            label={t(I18nKey.CONVERSATION_PANEL$LLM_MODEL)}
-            selected={showLlmProfiles}
-            testId="toggle-llm-profiles"
-            onClick={() => {
-              toggleShowLlmProfiles();
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon={Tag}
-            label={t(I18nKey.CONVERSATION_PANEL$TAGS)}
-            selected={showTagsMetadata}
-            testId="toggle-tags-metadata"
-            onClick={() => {
-              toggleShowTagsMetadata();
-              setFilterMenuOpen(false);
-            }}
-          />
-          <MenuRow
-            icon={MousePointerClick}
-            label={t(I18nKey.CONVERSATION_PANEL$HOVER_METADATA)}
-            selected={showHoverMetadata}
-            testId="toggle-hover-metadata"
-            onClick={() => {
-              toggleShowHoverMetadata();
-              setFilterMenuOpen(false);
-            }}
+
+          {/* Display (metadata toggles — multi-select, keeps the flyout open) */}
+          <MenuSubmenuRow
+            icon={Eye}
+            testId="filter-display"
+            label={t(I18nKey.CONVERSATION_PANEL$METADATA)}
+            value={String(metadataShownCount)}
+            onCloseMenu={closeMenu}
+            options={[
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$REPO_BRANCH),
+                icon: GitBranch,
+                selected: showRepoBranchMetadata,
+                testId: "toggle-repo-branch-metadata",
+                keepOpen: true,
+                onSelect: toggleShowRepoBranchMetadata,
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$LLM_MODEL),
+                icon: Bot,
+                selected: showLlmProfiles,
+                testId: "toggle-llm-profiles",
+                keepOpen: true,
+                onSelect: toggleShowLlmProfiles,
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$TAGS),
+                icon: Tag,
+                selected: showTagsMetadata,
+                testId: "toggle-tags-metadata",
+                keepOpen: true,
+                onSelect: toggleShowTagsMetadata,
+              },
+              {
+                label: t(I18nKey.CONVERSATION_PANEL$HOVER_METADATA),
+                icon: MousePointerClick,
+                selected: showHoverMetadata,
+                testId: "toggle-hover-metadata",
+                keepOpen: true,
+                onSelect: toggleShowHoverMetadata,
+              },
+            ]}
           />
 
           <MenuSeparator />
-          <MenuHeading
-            suffix={
-              <span className="shrink-0 text-right text-[10px] font-medium normal-case tracking-normal text-[var(--oh-muted)]/70">
-                {t(I18nKey.CONVERSATION_PANEL$OLDER_OVER_ONE_HOUR)}
-              </span>
-            }
-          >
-            {t(I18nKey.CONVERSATION_PANEL$OLDER_SECTION)}
-          </MenuHeading>
           <MenuRow
             testId="toggle-older-conversations"
             icon={showOlderConversations ? EyeOff : Eye}

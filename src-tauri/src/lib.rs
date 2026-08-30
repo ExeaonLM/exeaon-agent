@@ -516,6 +516,80 @@ fn open_models_dir(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Open an http(s) URL in the user's default browser.
+///
+/// The webview's own `window.open` doesn't reliably launch the OS browser, so
+/// the "Connect GitHub" flow opens `github.com/login/device` through here.
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return Err("Refusing to open a non-http(s) URL".into());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer").arg(&url).spawn().ok();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open").arg(&url).spawn().ok();
+    }
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    {
+        Command::new("xdg-open").arg(&url).spawn().ok();
+    }
+    Ok(())
+}
+
+/// Start GitHub's OAuth Device Flow: request a device + user code.
+///
+/// Run from Rust (not the webview) because GitHub's device endpoints send no
+/// CORS headers, so a browser `fetch` is blocked. Returns GitHub's JSON
+/// verbatim (`device_code`, `user_code`, `verification_uri`, `interval`, …).
+#[tauri::command]
+async fn github_device_start(
+    client_id: String,
+    scope: String,
+) -> Result<serde_json::Value, String> {
+    let resp = reqwest::Client::new()
+        .post("https://github.com/login/device/code")
+        .header("Accept", "application/json")
+        .form(&[("client_id", client_id.as_str()), ("scope", scope.as_str())])
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    resp.json::<serde_json::Value>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Poll GitHub for the Device Flow access token. Returns GitHub's JSON verbatim:
+/// `{access_token,…}` once approved, or `{error:"authorization_pending"|
+/// "slow_down"|"expired_token"|"access_denied"}` while waiting/on failure — the
+/// caller drives the polling cadence off `interval` and these errors.
+#[tauri::command]
+async fn github_device_poll(
+    client_id: String,
+    device_code: String,
+) -> Result<serde_json::Value, String> {
+    let resp = reqwest::Client::new()
+        .post("https://github.com/login/oauth/access_token")
+        .header("Accept", "application/json")
+        .form(&[
+            ("client_id", client_id.as_str()),
+            ("device_code", device_code.as_str()),
+            (
+                "grant_type",
+                "urn:ietf:params:oauth:grant-type:device_code",
+            ),
+        ])
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    resp.json::<serde_json::Value>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Stop the local llama.cpp server.
 #[tauri::command]
 fn stop_local_model(state: tauri::State<LlamaProcess>) -> Result<(), String> {
@@ -710,6 +784,7 @@ pub fn run() {
     //    window from opening at all. The backend sidecar is spawned inside
     //    setup (below) so it gets a head start before the window loads.
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(ServerProcess(child_handle.clone()))
         .manage(AutomationProcess(automation_handle.clone()))
         .manage(LlamaProcess(llama_handle.clone()))
@@ -721,6 +796,9 @@ pub fn run() {
             models_dir,
             list_local_models,
             open_models_dir,
+            open_external,
+            github_device_start,
+            github_device_poll,
         ])
         .setup(move |app| {
             // 2. Spawn the bundled agent-server (or dev uvx fallback) so the

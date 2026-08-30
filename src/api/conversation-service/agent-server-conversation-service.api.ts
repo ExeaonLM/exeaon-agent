@@ -478,15 +478,34 @@ class AgentServerConversationService {
     // on the active backend's host (not its id): the seeded `default-local`
     // entry is mutable, so a user can edit it to point at a remote host while
     // its id stays `default-local`.
+    // When launching a child (parentConversationId set) without an explicit
+    // workspace, inherit the parent's working_dir. The agent-server rejects a
+    // parent whose workspace differs from the child's, so a child that carries
+    // its own fresh `workspace/project/<newhex>` 422s ("Parent conversation …
+    // belongs to a different workspace"). This is the common case for Plan
+    // mode, whose planning sub-conversation links to its parent but passes no
+    // workingDir (see use-handle-plan-click). Inheriting the parent's dir also
+    // means the planner shares — and can read — the same files.
+    const inheritedWorkingDir =
+      !workingDirOverride && parentConversationId
+        ? await this.resolveConversationWorkingDir(parentConversationId)
+        : undefined;
+    const effectiveWorkingDirOverride =
+      workingDirOverride ?? inheritedWorkingDir;
+
     const baseWorkingDir =
-      workingDirOverride ??
+      effectiveWorkingDirOverride ??
       buildConversationWorkingDirForBackend(
         conversationId,
         getActiveBackend().backend.host,
       );
     const workingDir = await resolveAbsoluteAgentServerPath(baseWorkingDir);
+    // Share the parent's directory (local_repo) rather than cutting a worktree:
+    // a scratch parent dir has no commit for `git worktree add` to branch from,
+    // which fails the launch. An explicit user workspace still worktrees.
     const resolvedWorkspaceMode =
-      workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
+      workspaceMode ??
+      (effectiveWorkingDirOverride ? "local_repo" : "new_worktree");
 
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
