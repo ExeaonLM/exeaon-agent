@@ -1,9 +1,6 @@
-import { LLMMetadataClient } from "@openhands/typescript-client/clients";
-import { getAgentServerClientOptions } from "../agent-server-client-options";
 import { getActiveBackend } from "../backend-registry/active-store";
 import { callCloudProxy } from "../cloud/proxy";
 import type {
-  LLMModel,
   LLMModelPage,
   LLMProvider,
   ProviderPage,
@@ -63,82 +60,16 @@ class ConfigService {
    *   each returned item).
    */
   static async searchModels(
-    params: SearchModelsParams = {},
-    verifiedByProvider?: Record<string, string[]>,
+    _params: SearchModelsParams = {},
+    _verifiedByProvider?: Record<string, string[]>,
   ): Promise<LLMModelPage> {
-    const active = getActiveBackend();
-
-    if (active.backend.kind === "cloud") {
-      // Return our curated Exeaon model list regardless of cloud/local.
-      // Both Exeaon and Exeaon Cloud serve the same real Exeaon model roster.
-      const provider = params.provider__eq ?? null;
-      const cloudNames: string[] =
-        provider === "exeaon" ||
-        provider === "openhands" ||
-        provider === "openai"
-          ? [
-              "exeaon1-claw-32b",
-              "exeaon1-kese-30b-a3b",
-              "exeaon1-kese-32b",
-              "exeaon1-nunya-14b",
-              "exeaon1-nunya-8b",
-              "exeaon1-dzo-4b",
-              "exeaon-27b",
-              "exeaon-72b",
-            ]
-          : [];
-      const items: LLMModel[] = cloudNames.map((name) => ({
-        provider,
-        name,
-        verified: true,
-      }));
-      return { items, next_page_id: null };
-    }
-
-    const llmClient = new LLMMetadataClient(getAgentServerClientOptions());
-    const verifiedFetch =
-      verifiedByProvider !== undefined
-        ? Promise.resolve(verifiedByProvider)
-        : llmClient.getVerifiedModels();
-    const [models, verifiedMap] = await Promise.all([
-      llmClient.getModels(),
-      verifiedFetch,
-    ]);
-
-    const provider = params.provider__eq ?? null;
-    const verifiedNames = new Set<string>();
-    // Both Exeaon and Exeaon Cloud serve real Exeaon models
-    if (
-      provider === "exeaon" ||
-      provider === "openhands" ||
-      provider === "openai"
-    ) {
-      verifiedNames.add("exeaon1-claw-32b");
-      verifiedNames.add("exeaon1-kese-30b-a3b");
-      verifiedNames.add("exeaon1-kese-32b");
-      verifiedNames.add("exeaon1-nunya-14b");
-      verifiedNames.add("exeaon1-nunya-8b");
-      verifiedNames.add("exeaon1-dzo-4b");
-      verifiedNames.add("exeaon-27b");
-      verifiedNames.add("exeaon-72b");
-    }
-    const verifiedItems: LLMModel[] = [...verifiedNames].map((name) => ({
-      provider,
-      name,
-      verified: true,
-    }));
-
-    const prefixedItems: LLMModel[] = [];
-
-    const items = limitItems(
-      filterByVerified(
-        filterByQuery([...verifiedItems, ...prefixedItems], params.query),
-        params.verified__eq,
-      ),
-      params.limit,
-    );
-
-    return { items, next_page_id: null };
+    // No hardcoded Exeaon model roster. The real cloud roster is served by the
+    // gateway catalog (GET /ai/gateway/models → the Cloud models section) and
+    // on-device models by the local GGUF server, so the "Add model" verified-
+    // model search injects nothing — users add external/custom models by typing
+    // the model id directly. (The previous getModels()/getVerifiedModels() fetch
+    // here was dead code — its results were never used.)
+    return { items: [], next_page_id: null };
   }
 
   /**
@@ -149,7 +80,7 @@ class ConfigService {
    */
   static async searchProviders(
     params: SearchProvidersParams = {},
-    verifiedByProvider?: Record<string, string[]>,
+    _verifiedByProvider?: Record<string, string[]>,
   ): Promise<ProviderPage> {
     const active = getActiveBackend();
 
