@@ -76,9 +76,18 @@ export function useModelInChat() {
         displayErrorToast("Sign in to Exeaon Cloud to use cloud models.");
         return;
       }
-      // LiteLLM sends the model minus the "openai/" prefix; the gateway matches
-      // that against its virtual-model catalog.
-      await run(displayName, `openai/${displayName}`, `${host}/ai/v1`, key);
+      // Route via the `litellm_proxy/` provider (not `openai/`): the gateway is
+      // an OpenAI-compatible PROXY, so this passes params — including `tools`
+      // (function calling) — straight through to the real upstream model
+      // instead of applying OpenAI's per-model capability checks (which reject
+      // tool calling for an unrecognized model id). LiteLLM sends the model
+      // minus the prefix; the gateway matches it against its virtual catalog.
+      await run(
+        displayName,
+        `litellm_proxy/${displayName}`,
+        `${host}/ai/v1`,
+        key,
+      );
     },
     [run],
   );
@@ -87,9 +96,12 @@ export function useModelInChat() {
   const activateLocalModel = useCallback(
     async (displayName: string, fileName: string) => {
       // llama.cpp ignores the key, but the profile requires a non-empty one.
+      // `litellm_proxy/` (not `openai/`) passes `tools` through to llama.cpp so
+      // tool calling depends on the GGUF's real capability, not LiteLLM's
+      // built-in per-model check.
       await run(
         displayName,
-        `openai/${fileName}`,
+        `litellm_proxy/${fileName}`,
         LOCAL_MODEL_ENDPOINT,
         "sk-local",
       );
