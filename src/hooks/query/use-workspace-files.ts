@@ -1,12 +1,8 @@
-import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import AgentServerRuntimeService from "#/api/runtime-service/agent-server-runtime-service";
 import { listCloudConversationFiles } from "#/api/cloud/conversation-service.api";
-import {
-  getSnapshot,
-  subscribeActiveBackend,
-} from "#/api/backend-registry/active-store";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
@@ -181,12 +177,12 @@ function useCloudWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
  * and the cloud `/files` call never fires.
  */
 export function useWorkspaceFiles(): WorkspaceFilesResult {
-  const snapshot = useSyncExternalStore(
-    subscribeActiveBackend,
-    getSnapshot,
-    getSnapshot,
-  );
-  const isCloud = snapshot.active.backend.kind === "cloud";
+  // Use the RUNTIME seam, not backend.kind: on Exeaon the agent-server is always
+  // local even when a cloud backend is "active" for identity (backend.kind flips
+  // to "cloud" on sign-in). The transport (executeCommand) already targets the
+  // local engine; keying off backend.kind here would run the cloud file-listing
+  // endpoint — which the Exeaon gateway doesn't implement — and show "No files".
+  const isCloud = isCloudAppServerBackend();
 
   const local = useLocalWorkspaceFiles(!isCloud);
   const cloud = useCloudWorkspaceFiles(isCloud);
