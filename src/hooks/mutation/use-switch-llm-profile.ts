@@ -2,12 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import SettingsService from "#/api/settings-service/settings-service.api";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import {
   LLM_PROFILES_QUERY_KEYS,
   SETTINGS_QUERY_KEYS,
 } from "#/hooks/query/query-keys";
-import { getLastRenderableEventId } from "#/hooks/chat/model-command-event-anchor";
-import { recordModelSwitchMessage } from "#/hooks/chat/record-model-switch-message";
 import {
   getStoredConversationMetadata,
   setStoredConversationMetadata,
@@ -57,27 +56,20 @@ export const useSwitchLlmProfile = () => {
     mutationFn: ({ conversationId, profileName }: SwitchLlmProfileVars) =>
       AgentServerConversationService.switchProfile(conversationId, profileName),
     meta: { disableToast: true },
-    // Anchor the inline message where the user issued the switch; captured
-    // synchronously here because the menu unmounts before the switch resolves.
-    onMutate: ({ conversationId }) => ({
-      anchorEventId: conversationId ? getLastRenderableEventId() : null,
-    }),
     onError: (error, { profileName }) => {
       const fallback = t(I18nKey.MODEL$SWITCH_FAILED, { name: profileName });
       displayErrorToast(retrieveAxiosErrorMessage(error) || fallback);
     },
-    onSuccess: (_data, { conversationId, profileName }, context) => {
+    onSuccess: (_data, { conversationId, profileName }) => {
       queryClient.invalidateQueries({
         queryKey: LLM_PROFILES_QUERY_KEYS.all,
       });
       if (conversationId) {
         invalidateConversationQueries(queryClient, conversationId);
-        recordModelSwitchMessage(
-          conversationId,
-          profileName,
-          context?.anchorEventId ?? null,
-        );
-        // Keep the per-conversation profile identity fresh so the chat-header
+        // Switching is silent — no "Switched to profile" chat bubble (it read
+        // as a sent message and cluttered the thread; the model pill already
+        // shows the active model). Just keep the per-conversation profile
+        // identity fresh so the chat-header
         // switcher shows the right name after a reload (the agent-server only
         // round-trips the model string). #1082
         const prev = getStoredConversationMetadata(conversationId);
@@ -90,14 +82,32 @@ export const useSwitchLlmProfile = () => {
           plugins: prev?.plugins ?? null,
         });
       } else {
-        // Home-page activate path (same server endpoint as
-        // useActivateLlmProfile): clear the SettingsService cache so the next
-        // conversation-start reads the newly activated profile's LLM config
-        // instead of the stale encrypted settings.
-        SettingsService.invalidateCache();
-        queryClient.invalidateQueries({
-          queryKey: SETTINGS_QUERY_KEYS.personal(),
-        });
+        // Home-page activate path. Activation is pointer-only, so a NEW
+        // conversation would still launch from the stale global agent_settings
+        // (reverting to the old model, e.g. Groq). Push the picked profile's
+        // LLM config into agent_settings so the next conversation actually runs
+        // THIS model. Encrypted secrets round-trip through the same path the
+        // conversation-start already uses.
+        (async () => {
+          try {
+            const detail = await ProfilesService.getProfile(
+              profileName,
+              "encrypted",
+            );
+            await SettingsService.saveSettings({
+              agent_settings_diff: {
+                llm: detail.config as Record<string, unknown>,
+              },
+            });
+          } catch {
+            // Best-effort: activation already succeeded; never block the switch.
+          } finally {
+            SettingsService.invalidateCache();
+            queryClient.invalidateQueries({
+              queryKey: SETTINGS_QUERY_KEYS.personal(),
+            });
+          }
+        })();
       }
     },
   });

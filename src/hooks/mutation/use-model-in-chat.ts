@@ -35,7 +35,17 @@ export function useModelInChat() {
       setPending(displayName);
       try {
         const request = {
-          llm: { model, base_url: baseUrl, api_key: apiKey },
+          llm: {
+            model,
+            base_url: baseUrl,
+            api_key: apiKey,
+            // Use prompt-based (non-native) tool calling so NO model hard-fails
+            // with "tool calling is not supported": models that lack native
+            // function calling still do agentic work via prompted tools, and
+            // capable ones still work. Never blocks a model from at least
+            // talking.
+            native_tool_calling: false,
+          },
           include_secrets: true,
         } as unknown as SaveProfileRequest;
         await save.mutateAsync({ name, request });
