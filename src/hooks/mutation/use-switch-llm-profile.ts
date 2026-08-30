@@ -2,6 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import SettingsService from "#/api/settings-service/settings-service.api";
+import AgentProfilesService, {
+  type AgentProfileSaveInput,
+} from "#/api/agent-profiles-service/agent-profiles-service.api";
+import { mergeAgentProfileSaveInput } from "#/components/features/settings/agent-profiles/merge-agent-profile-save-input";
 import {
   LLM_PROFILES_QUERY_KEYS,
   SETTINGS_QUERY_KEYS,
@@ -81,15 +85,39 @@ export const useSwitchLlmProfile = () => {
           plugins: prev?.plugins ?? null,
         });
       } else {
-        // Home-page activate path. Per the Add-model flow, activateProfile
-        // already syncs agent_settings.llm server-side (conversation start reads
-        // agent_settings.llm, not the profile row), so a new conversation runs
-        // the picked model. Just clear the local settings cache so the next read
-        // reflects it.
+        // Home-page activate path. activateProfile syncs agent_settings.llm
+        // server-side, but a NEW conversation launches from the ACTIVE AGENT
+        // profile (its llm_profile_ref), which otherwise keeps its old model
+        // (e.g. Groq) — so the chat ignores the pick. Repoint that agent
+        // profile's llm_profile_ref at the picked LLM profile so new chats run
+        // it. Uses the profile-ref mechanism (agent-server resolves secrets), so
+        // it never touches the api-key state. Best-effort.
         SettingsService.invalidateCache();
         queryClient.invalidateQueries({
           queryKey: SETTINGS_QUERY_KEYS.personal(),
         });
+        (async () => {
+          try {
+            const list = await AgentProfilesService.listProfiles();
+            const active = list.profiles.find(
+              (p) => p.id != null && p.id === list.active_agent_profile_id,
+            );
+            if (
+              active?.agent_kind === "openhands" &&
+              active.llm_profile_ref !== profileName
+            ) {
+              const detail = await AgentProfilesService.getProfile(active.name);
+              const input = mergeAgentProfileSaveInput(detail.profile, {
+                agent_kind: "openhands",
+                llm_profile_ref: profileName,
+              } as AgentProfileSaveInput);
+              await AgentProfilesService.saveProfile(active.name, input);
+              queryClient.invalidateQueries({ queryKey: ["agent-profiles"] });
+            }
+          } catch {
+            // Best-effort: never block or fail the switch on the repoint.
+          }
+        })();
       }
     },
   });
