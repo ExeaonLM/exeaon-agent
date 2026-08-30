@@ -84,13 +84,15 @@ export function ChatInputLlmProfileMenuContent({
     onClose();
   };
 
-  const handleCloudSelect = (displayName: string) => {
-    activateCloudModel(displayName);
+  // Await so the popover stays open showing the row's "Setting up…" state while
+  // the key-fetch / profile-save runs, instead of closing to a silent pause.
+  const handleCloudSelect = async (displayName: string) => {
+    await activateCloudModel(displayName);
     onClose();
   };
 
-  const handleGgufSelect = (displayName: string, fileName: string) => {
-    activateLocalModel(displayName, fileName);
+  const handleGgufSelect = async (displayName: string, fileName: string) => {
+    await activateLocalModel(displayName, fileName);
     onClose();
   };
 
