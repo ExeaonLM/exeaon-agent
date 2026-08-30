@@ -4,6 +4,7 @@ import { useActivateLlmProfile } from "#/hooks/mutation/use-activate-llm-profile
 import type { SaveProfileRequest } from "#/api/profiles-service/profiles-service.api";
 import { fetchMyGatewayKey, cloudHost } from "#/api/cloud/exeaon-models.api";
 import { LOCAL_MODEL_ENDPOINT } from "#/hooks/query/use-local-gguf-models";
+import { sanitizeProfileName } from "#/utils/format-model-name";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -22,8 +23,16 @@ export function useModelInChat() {
   const [pending, setPending] = useState<string | null>(null);
 
   const run = useCallback(
-    async (name: string, model: string, baseUrl: string, apiKey: string) => {
-      setPending(name);
+    async (
+      displayName: string,
+      model: string,
+      baseUrl: string,
+      apiKey: string,
+    ) => {
+      // The profile NAME must satisfy the agent-server's pattern (no spaces);
+      // pending/toast key on the human displayName for the UI.
+      const name = sanitizeProfileName(displayName);
+      setPending(displayName);
       try {
         const request = {
           llm: { model, base_url: baseUrl, api_key: apiKey },
@@ -31,11 +40,20 @@ export function useModelInChat() {
         } as unknown as SaveProfileRequest;
         await save.mutateAsync({ name, request });
         await activate.mutateAsync(name);
-        displaySuccessToast(`${name} is now active in chat`);
-      } catch {
-        displayErrorToast(
-          "Couldn't set that model. Make sure the local engine is running.",
-        );
+        displaySuccessToast(`${displayName} is now active in chat`);
+      } catch (e) {
+        // Surface the real cause — a gateway/key error, a validation reject, or
+        // the engine being unreachable — instead of a blanket "engine running?".
+        const err = e as {
+          response?: { data?: { detail?: string; msg?: string } };
+          message?: string;
+        };
+        const detail =
+          err?.response?.data?.detail ||
+          err?.response?.data?.msg ||
+          err?.message ||
+          "unknown error";
+        displayErrorToast(`Couldn't set "${displayName}": ${detail}`);
       } finally {
         setPending(null);
       }

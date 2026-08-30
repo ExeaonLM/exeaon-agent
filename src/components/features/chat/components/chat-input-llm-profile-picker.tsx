@@ -14,9 +14,11 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
 import {
+  cleanModelDescription,
   formatModelNameForDisplay,
   formatNativeModelName,
   getExeaonModelMeta,
+  sanitizeProfileName,
 } from "#/utils/format-model-name";
 import { useCloudModels } from "#/hooks/query/use-cloud-models";
 import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
@@ -72,11 +74,15 @@ export function ChatInputLlmProfileMenuContent({
   const { activateCloudModel, activateLocalModel, pending } = useModelInChat();
   const profileNames = new Set(profiles.map((p) => p.name));
   const cloudRows = canSwitchProfile
-    ? (cloudModels ?? []).filter((m) => !profileNames.has(m.name))
+    ? (cloudModels ?? []).filter(
+        (m) => !profileNames.has(sanitizeProfileName(m.name)),
+      )
     : [];
   const ggufRows =
     canSwitchProfile && localGguf.hasTauri
-      ? localGguf.models.filter((m) => !profileNames.has(m.displayName))
+      ? localGguf.models.filter(
+          (m) => !profileNames.has(sanitizeProfileName(m.displayName)),
+        )
       : [];
 
   const handleSelect = (profileName: string) => {
@@ -203,11 +209,13 @@ export function ChatInputLlmProfileMenuContent({
                     </span>
                   )}
                 </span>
-                {m.description && (
+                {busy || cleanModelDescription(m.description) ? (
                   <span className="block truncate text-xs leading-4 text-[var(--oh-muted)]">
-                    {busy ? "Setting up…" : m.description}
+                    {busy
+                      ? "Setting up…"
+                      : cleanModelDescription(m.description)}
                   </span>
-                )}
+                ) : null}
               </ContextMenuListItem>
             );
           })}

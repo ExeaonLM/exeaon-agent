@@ -12,6 +12,7 @@ import ProfilesService, {
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useCloudModels } from "#/hooks/query/use-cloud-models";
 import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
+import { sanitizeProfileName } from "#/utils/format-model-name";
 import { useProviderConnections } from "#/hooks/query/use-provider-connections";
 import { useActivateLlmProfile } from "#/hooks/mutation/use-activate-llm-profile";
 import { useSaveLlmProfile } from "#/hooks/mutation/use-save-llm-profile";
@@ -60,8 +61,10 @@ export function LlmProfilesManager({
   const gguf = useLocalGgufModels();
   const catalogNames = useMemo(() => {
     const names = new Set<string>();
-    for (const m of cloudModels ?? []) names.add(m.name);
-    if (gguf.hasTauri) for (const m of gguf.models) names.add(m.displayName);
+    for (const m of cloudModels ?? []) names.add(sanitizeProfileName(m.name));
+    if (gguf.hasTauri)
+      for (const m of gguf.models)
+        names.add(sanitizeProfileName(m.displayName));
     return names;
   }, [cloudModels, gguf.hasTauri, gguf.models]);
   const profiles = useMemo(

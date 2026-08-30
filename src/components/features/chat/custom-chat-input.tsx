@@ -8,13 +8,18 @@ import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
-import { ArrowRight, Pencil, Trash2, ChevronDown, Terminal as TerminalIcon, Square } from "lucide-react";
+import {
+  ArrowRight,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  Terminal as TerminalIcon,
+  Square,
+} from "lucide-react";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
 import { useSendMessage } from "#/hooks/use-send-message";
-import { useAgentState } from "#/hooks/use-agent-state";
-import { AgentState } from "#/types/agent-state";
 import { useCommandStore } from "#/stores/command-store";
 import { useUnifiedPauseConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { useConversationStore } from "#/stores/conversation-store";
@@ -198,22 +203,20 @@ export function CustomChatInput({
     [pendingMessages, conversationId],
   );
 
-  const { curAgentState } = useAgentState();
   const commands = useCommandStore((state) => state.commands);
   const [isTaskExpanded, setIsTaskExpanded] = React.useState(true);
   const unifiedPauseMutation = useUnifiedPauseConversation();
 
-  const isTaskRunning =
-    Boolean(conversationId) &&
-    (curAgentState === AgentState.RUNNING || curAgentState === AgentState.LOADING);
-
-  const activeCommand = React.useMemo(() => {
-    const inputCommands = commands.filter((c) => c.type === "input");
-    return (
-      inputCommands[inputCommands.length - 1]?.content ||
-      "Agent execution in progress..."
-    );
-  }, [commands]);
+  // Show the task bar ONLY for an actual terminal/background command the agent
+  // is running — i.e. the last terminal event is an `input` (a command sent)
+  // with no `output` yet. This deliberately does NOT track the general agent
+  // "running" state (that's the send-button pill's job); the bar is for the
+  // long-running terminal task so the user can see and stop it.
+  const runningCommand = React.useMemo(() => {
+    if (!conversationId) return null;
+    const last = commands[commands.length - 1];
+    return last?.type === "input" ? last.content : null;
+  }, [commands, conversationId]);
 
   const handleStopRunningTask = async () => {
     if (conversationId) {
@@ -245,8 +248,8 @@ export function CustomChatInput({
         onChange={handleFileInputChange}
       />
 
-      {/* Running Tasks Bar (Antigravity-Style) */}
-      {isTaskRunning && (
+      {/* Terminal/background task bar — only while a command is actually running */}
+      {runningCommand && (
         <div className="mb-2 w-full overflow-hidden rounded-xl border border-[var(--oh-border)] bg-[var(--oh-bg-editor-sidebar)]/95 backdrop-blur-md shadow-xl transition-all">
           <div
             onClick={() => setIsTaskExpanded((prev) => !prev)}
@@ -258,7 +261,7 @@ export function CustomChatInput({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
               <span className="text-xs font-medium text-[var(--cool-grey-100)]">
-                1 task running
+                Terminal task running
               </span>
             </div>
             <ChevronDown
@@ -273,7 +276,7 @@ export function CustomChatInput({
             <div className="border-t border-[var(--oh-border)] px-3.5 py-2 bg-[var(--oh-surface-raised)]/30 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0 font-mono text-xs text-[var(--cool-grey-200)]">
                 <TerminalIcon className="w-3.5 h-3.5 text-[var(--cool-grey-400)] shrink-0" />
-                <span className="truncate">{activeCommand}</span>
+                <span className="truncate">{runningCommand}</span>
               </div>
               <button
                 type="button"
@@ -311,7 +314,9 @@ export function CustomChatInput({
                 key={msg.id}
                 className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-[var(--cool-grey-200)] hover:bg-[var(--oh-surface-raised)] group transition-colors"
               >
-                <span className="truncate flex-1 mr-3 font-normal">{msg.text}</span>
+                <span className="truncate flex-1 mr-3 font-normal">
+                  {msg.text}
+                </span>
                 <div className="flex items-center gap-1 text-[var(--cool-grey-400)]">
                   <button
                     type="button"

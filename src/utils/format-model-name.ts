@@ -145,6 +145,34 @@ export function getModelOriginLabel(origin: ModelOrigin): string {
   return "Local";
 }
 
+/**
+ * Turn a model display name into a valid agent-server profile name. The server
+ * enforces `^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$` (letters/digits/dot/underscore/
+ * hyphen, must start alphanumeric, ≤64 chars), so a name like "Exeaon Spark 1.0"
+ * (spaces) is rejected with a 422. Any run of invalid chars becomes a single
+ * hyphen. Deterministic, so callers can match a catalog model to its profile.
+ */
+export function sanitizeProfileName(name: string): string {
+  let s = name
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^[^A-Za-z0-9]+/, "")
+    .slice(0, 64);
+  if (!s) s = "model";
+  return s;
+}
+
+/**
+ * Strip a trailing "(provider…)" hint from a catalog model's description so the
+ * UI doesn't leak which upstream a branded Exeaon model routes to (e.g.
+ * "Fast everyday (Groq Qwen)" → "Fast everyday").
+ */
+export function cleanModelDescription(
+  description: string | null | undefined,
+): string {
+  if (!description) return "";
+  return description.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
 export function formatNativeModelName(
   model: string | null | undefined,
 ): string | null {

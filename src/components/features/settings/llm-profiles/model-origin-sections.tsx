@@ -15,7 +15,11 @@ import {
   type LocalGgufModel,
 } from "#/hooks/query/use-local-gguf-models";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
-import { formatNativeModelName } from "#/utils/format-model-name";
+import {
+  cleanModelDescription,
+  formatNativeModelName,
+  sanitizeProfileName,
+} from "#/utils/format-model-name";
 import {
   settingsListContainerClassName,
   settingsListDividerClassName,
@@ -239,18 +243,14 @@ export function ModelOriginSections() {
                     <span className="truncate text-sm font-medium text-white">
                       {formatNativeModelName(m.name) || m.name}
                     </span>
-                    {m.description ? (
+                    {cleanModelDescription(m.description) ? (
                       <span className="hidden truncate text-xs text-[var(--oh-muted)] sm:inline">
-                        {m.description}
-                      </span>
-                    ) : m.provider ? (
-                      <span className="truncate text-xs text-[var(--oh-muted)]">
-                        {m.provider}
+                        {cleanModelDescription(m.description)}
                       </span>
                     ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {activeProfile === m.name ? (
+                    {activeProfile === sanitizeProfileName(m.name) ? (
                       <span className="rounded-full bg-[#FFD026] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black">
                         Default
                       </span>
@@ -301,7 +301,9 @@ export function ModelOriginSections() {
                   isRunning={isRunning}
                   endpoint={local.endpoint}
                   onRename={local.rename}
-                  isActive={activeProfile === m.displayName}
+                  isActive={
+                    activeProfile === sanitizeProfileName(m.displayName)
+                  }
                 />
               );
             })}
