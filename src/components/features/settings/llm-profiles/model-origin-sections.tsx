@@ -5,7 +5,6 @@ import {
   Cpu,
   HardDrive,
   Lock,
-  MessageSquarePlus,
   Pencil,
   RefreshCw,
   X,
@@ -15,7 +14,6 @@ import {
   useLocalGgufModels,
   type LocalGgufModel,
 } from "#/hooks/query/use-local-gguf-models";
-import { useModelInChat } from "#/hooks/mutation/use-model-in-chat";
 import { formatNativeModelName } from "#/utils/format-model-name";
 import {
   settingsListContainerClassName,
@@ -91,47 +89,17 @@ function OriginBadge({
   );
 }
 
-/** "Use in chat" — creates + activates a profile for this model. */
-function UseInChatButton({
-  onClick,
-  busy,
-  disabled,
-}: {
-  onClick: () => void;
-  busy?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={busy || disabled}
-      title={
-        disabled ? "Upgrade to Pro to use this model" : "Use this model in chat"
-      }
-      className="flex shrink-0 items-center gap-1 rounded-md border border-[#F3CE49]/30 bg-[#F3CE49]/10 px-2 py-1 text-[11px] font-medium text-[#F3CE49] hover:bg-[#F3CE49]/20 disabled:opacity-40"
-    >
-      <MessageSquarePlus className="size-3.5" aria-hidden />
-      {busy ? "Setting…" : "Use in chat"}
-    </button>
-  );
-}
-
 /** One on-device GGUF row with inline display-name rename (name-edit only). */
 function LocalGgufRow({
   model,
   isRunning,
   endpoint,
   onRename,
-  onUse,
-  busy,
 }: {
   model: LocalGgufModel;
   isRunning: boolean;
   endpoint: string;
   onRename: (path: string, name: string) => void;
-  onUse: () => void;
-  busy: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(model.displayName);
@@ -191,20 +159,17 @@ function LocalGgufRow({
             </button>
           </>
         ) : (
-          <>
-            <UseInChatButton onClick={onUse} busy={busy} />
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(model.displayName);
-                setEditing(true);
-              }}
-              className="text-[var(--oh-muted)] hover:text-white"
-              title="Rename (display name only)"
-            >
-              <Pencil className="size-3.5" />
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(model.displayName);
+              setEditing(true);
+            }}
+            className="text-[var(--oh-muted)] hover:text-white"
+            title="Rename (display name only)"
+          >
+            <Pencil className="size-3.5" />
+          </button>
         )}
         <OriginBadge label="Local" tone="local" />
       </div>
@@ -226,7 +191,6 @@ export function ModelOriginSections() {
     isFetching,
   } = useCloudModels();
   const local = useLocalGgufModels();
-  const { activateCloudModel, activateLocalModel, pending } = useModelInChat();
 
   const hasCloud = (cloudModels?.length ?? 0) > 0;
   const hasLocal = local.hasTauri && local.models.length > 0;
@@ -276,11 +240,6 @@ export function ModelOriginSections() {
                     ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <UseInChatButton
-                      onClick={() => activateCloudModel(m.name)}
-                      busy={pending === m.name}
-                      disabled={locked}
-                    />
                     {m.requiresPro ? (
                       <span
                         className={cn(
@@ -327,8 +286,6 @@ export function ModelOriginSections() {
                   isRunning={isRunning}
                   endpoint={local.endpoint}
                   onRename={local.rename}
-                  onUse={() => activateLocalModel(m.displayName, m.name)}
-                  busy={pending === m.displayName}
                 />
               );
             })}
