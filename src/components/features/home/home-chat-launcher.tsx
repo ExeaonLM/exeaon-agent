@@ -37,6 +37,7 @@ import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
 import { WorkspacePicker } from "./workspace-picker";
 import { ConnectGitHubButton } from "./connect-github-button";
+import { GitHubRepoButton } from "./github-repo-button";
 import { WorkspaceModeSelector } from "#/components/features/chat/workspace-mode-selector";
 import { useHomeStore } from "#/stores/home-store";
 import {
@@ -320,6 +321,7 @@ export function HomeChatLauncher() {
                 />
               )}
               <ConnectGitHubButton />
+              <GitHubRepoButton />
             </>
           ) : (
             hasSelection && (
