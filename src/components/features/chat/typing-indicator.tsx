@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Trans } from "react-i18next";
 import type { OHEvent } from "#/stores/use-event-store";
 import type { UserRejectObservation } from "#/types/agent-server/core";
@@ -127,8 +128,29 @@ interface TypingIndicatorProps {
   readonly events: readonly OHEvent[];
 }
 
+/** Elapsed time since the agent started working, ticking every second. */
+function useElapsedSeconds(): number {
+  const startRef = useRef<number>(0);
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    startRef.current = Date.now();
+    const id = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return seconds;
+}
+
+function formatElapsed(s: number): string {
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  return `${m}m ${s % 60}s`;
+}
+
 export function TypingIndicator({ events }: TypingIndicatorProps) {
   const activity = deriveLiveActivity(events);
+  const elapsed = useElapsedSeconds();
 
   return (
     <div
@@ -155,6 +177,9 @@ export function TypingIndicator({ events }: TypingIndicatorProps) {
             }}
           />
         )}
+      </span>
+      <span className="shrink-0 font-mono text-[11px] tabular-nums text-[#B8AE93]">
+        {formatElapsed(elapsed)}
       </span>
     </div>
   );
