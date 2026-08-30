@@ -308,6 +308,18 @@ export function ChatInputLlmProfilePicker() {
     triggerRef,
   );
 
+  // The popover opens upward from the trigger. Cap its height to the space
+  // actually above the trigger (minus a margin) so it never runs off the top of
+  // the window — however many models the list grows to — and scrolls inside.
+  const [maxHeight, setMaxHeight] = React.useState<number | undefined>(
+    undefined,
+  );
+  React.useLayoutEffect(() => {
+    if (!isPopoverOpen) return;
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) setMaxHeight(Math.max(180, Math.floor(rect.top - 16)));
+  }, [isPopoverOpen]);
+
   // No LLM profiles yet (or the agent-server lacks the surface): stay out of
   // the way, exactly like the ACP/AgentProfile pickers.
   if (isLoading || profiles.length === 0) {
@@ -355,7 +367,8 @@ export function ChatInputLlmProfilePicker() {
           position="top"
           alignment="left"
           spacing="none"
-          className="z-[60] mb-2 min-w-[200px] max-w-[320px] max-h-[60vh] overflow-y-auto"
+          className="z-[60] mb-2 min-w-[200px] max-w-[320px] overflow-y-auto"
+          style={maxHeight ? { maxHeight } : undefined}
         >
           <ChatInputLlmProfileMenuContent
             onClose={() => setIsPopoverOpen(false)}
