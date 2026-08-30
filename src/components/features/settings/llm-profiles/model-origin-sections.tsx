@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Check, Cloud, Cpu, HardDrive, Lock, Pencil, X } from "lucide-react";
+import {
+  Check,
+  Cloud,
+  Cpu,
+  HardDrive,
+  Lock,
+  Pencil,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { useCloudModels } from "#/hooks/query/use-cloud-models";
 import {
   useLocalGgufModels,
@@ -22,10 +31,14 @@ function SectionHeader({
   icon,
   title,
   hint,
+  onRefresh,
+  refreshing,
 }: {
   icon: React.ReactNode;
   title: string;
   hint?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -35,6 +48,21 @@ function SectionHeader({
       </h2>
       {hint ? (
         <span className="text-xs text-[var(--oh-muted)]">{hint}</span>
+      ) : null}
+      {onRefresh ? (
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshing}
+          title="Refresh"
+          className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--oh-muted)] hover:bg-[var(--oh-interactive-hover)] hover:text-white disabled:opacity-50"
+        >
+          <RefreshCw
+            className={cn("size-3.5", refreshing && "animate-spin")}
+            aria-hidden
+          />
+          {refreshing ? "Refreshing…" : "Refresh"}
+        </button>
       ) : null}
     </div>
   );
@@ -157,7 +185,11 @@ function LocalGgufRow({
  * the profile list is unchanged when neither applies (e.g. on the web build).
  */
 export function ModelOriginSections() {
-  const { data: cloudModels } = useCloudModels();
+  const {
+    data: cloudModels,
+    refetch: refetchCloud,
+    isFetching,
+  } = useCloudModels();
   const local = useLocalGgufModels();
 
   const hasCloud = (cloudModels?.length ?? 0) > 0;
@@ -173,6 +205,8 @@ export function ModelOriginSections() {
             icon={<Cloud className="size-4 text-[#FFD026]" />}
             title="Cloud models"
             hint="served by Exeaon Cloud · read-only"
+            onRefresh={() => refetchCloud()}
+            refreshing={isFetching}
           />
           <div className={listClassName}>
             {cloudModels!.map((m) => {
@@ -238,6 +272,7 @@ export function ModelOriginSections() {
                 ? `server running · ${local.endpoint}`
                 : "server stopped · start from the Models page"
             }
+            onRefresh={() => local.refresh()}
           />
           <div className={listClassName}>
             {local.models.map((m) => {
