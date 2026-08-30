@@ -10,6 +10,8 @@ import ProfilesService, {
   type SaveProfileRequest,
 } from "#/api/profiles-service/profiles-service.api";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { useCloudModels } from "#/hooks/query/use-cloud-models";
+import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
 import { useProviderConnections } from "#/hooks/query/use-provider-connections";
 import { useActivateLlmProfile } from "#/hooks/mutation/use-activate-llm-profile";
 import { useSaveLlmProfile } from "#/hooks/mutation/use-save-llm-profile";
@@ -46,8 +48,27 @@ export function LlmProfilesManager({
     null,
   );
 
-  const profiles = data?.profiles ?? [];
+  const allProfiles = data?.profiles ?? [];
   const active = data?.active_profile ?? null;
+
+  // A model picked from the Cloud / On-device sections auto-registers a profile
+  // named after it. Hide those from "Your models" so they don't duplicate the
+  // catalog rows above (which already show the active/Default state); only
+  // genuinely user-added profiles (Groq, custom keys, the seeded Exeaon ones)
+  // remain here.
+  const { data: cloudModels } = useCloudModels();
+  const gguf = useLocalGgufModels();
+  const catalogNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const m of cloudModels ?? []) names.add(m.name);
+    if (gguf.hasTauri) for (const m of gguf.models) names.add(m.displayName);
+    return names;
+  }, [cloudModels, gguf.hasTauri, gguf.models]);
+  const profiles = useMemo(
+    () => allProfiles.filter((p) => !catalogNames.has(p.name)),
+    [allProfiles, catalogNames],
+  );
+
   const connectionList = useMemo(() => connections ?? [], [connections]);
 
   const connectionNamesById = useMemo(

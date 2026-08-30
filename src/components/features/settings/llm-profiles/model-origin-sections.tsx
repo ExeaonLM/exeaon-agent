@@ -14,6 +14,7 @@ import {
   useLocalGgufModels,
   type LocalGgufModel,
 } from "#/hooks/query/use-local-gguf-models";
+import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { formatNativeModelName } from "#/utils/format-model-name";
 import {
   settingsListContainerClassName,
@@ -95,11 +96,13 @@ function LocalGgufRow({
   isRunning,
   endpoint,
   onRename,
+  isActive,
 }: {
   model: LocalGgufModel;
   isRunning: boolean;
   endpoint: string;
   onRename: (path: string, name: string) => void;
+  isActive: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(model.displayName);
@@ -139,6 +142,11 @@ function LocalGgufRow({
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {isActive && !editing ? (
+          <span className="rounded-full bg-[#FFD026] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black">
+            Default
+          </span>
+        ) : null}
         {editing ? (
           <>
             <button
@@ -191,6 +199,8 @@ export function ModelOriginSections() {
     isFetching,
   } = useCloudModels();
   const local = useLocalGgufModels();
+  const { data: profileData } = useLlmProfiles();
+  const activeProfile = profileData?.active_profile ?? null;
 
   const hasCloud = (cloudModels?.length ?? 0) > 0;
   const hasLocal = local.hasTauri && local.models.length > 0;
@@ -240,6 +250,11 @@ export function ModelOriginSections() {
                     ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {activeProfile === m.name ? (
+                      <span className="rounded-full bg-[#FFD026] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black">
+                        Default
+                      </span>
+                    ) : null}
                     {m.requiresPro ? (
                       <span
                         className={cn(
@@ -286,6 +301,7 @@ export function ModelOriginSections() {
                   isRunning={isRunning}
                   endpoint={local.endpoint}
                   onRename={local.rename}
+                  isActive={activeProfile === m.displayName}
                 />
               );
             })}
