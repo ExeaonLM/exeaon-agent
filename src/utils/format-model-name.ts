@@ -108,26 +108,6 @@ export function formatProviderModelNameForDisplay(
  */
 export type ModelOrigin = "cloud" | "api" | "local";
 
-/** External providers reached via a user-supplied API key (not the gateway). */
-const API_PROVIDER_PREFIXES = new Set([
-  "groq",
-  "openrouter",
-  "anthropic",
-  "mistral",
-  "together",
-  "fireworks",
-  "deepseek",
-  "xai",
-  "google",
-  "gemini",
-  "cohere",
-  "perplexity",
-  "azure",
-  "ollama",
-]);
-
-const CLOUD_PROXY_PREFIXES = new Set(["openai", "openhands", "litellm_proxy"]);
-
 /** Lowercased provider segment of a model id (`groq/qwen…` → `groq`), or null. */
 export function getModelProviderPrefix(
   model: string | null | undefined,
@@ -141,22 +121,21 @@ export function getModelOrigin(
   model: string | null | undefined,
   baseUrl?: string | null,
 ): ModelOrigin {
-  // An explicit on-device base URL is decisive regardless of the model id.
+  // NOTE: LLM *profiles* are never "cloud". Real cloud models come only from
+  // the gateway catalog (GET /ai/gateway/models), shown as their own read-only
+  // section. A profile is either an on-device model ("local") or a hosted /
+  // external-API model the user manages ("api") — including the Exeaon-branded
+  // hosted models, which are served over an OpenAI-compatible endpoint, not the
+  // gateway. So this classifier only ever returns "api" or "local".
+
+  // An explicit on-device base URL, or a bare model id with no provider prefix,
+  // is a local model.
   if (baseUrl && /(127\.0\.0\.1|localhost)/.test(baseUrl)) return "local";
-
   const prefix = getModelProviderPrefix(model);
-  const isExeaon = !!getExeaonModelMeta(model);
-
-  // Exeaon model behind a proxy prefix = served by the Exeaon Cloud gateway.
-  if (isExeaon && prefix && CLOUD_PROXY_PREFIXES.has(prefix)) return "cloud";
-  // Bare Exeaon id (no proxy prefix) = the local GGUF build of that model.
-  if (isExeaon && !prefix) return "local";
-
-  if (prefix && API_PROVIDER_PREFIXES.has(prefix)) return "api";
-
-  // Unknown provider prefix → an external key the user manages; no prefix at
-  // all → treat as a local model.
-  return prefix ? "api" : "local";
+  if (!prefix) return "local";
+  // Everything with a provider prefix (groq/…, openai/…, openhands/…) is a
+  // hosted/external model reached with a key the user owns.
+  return "api";
 }
 
 /** Short badge label for a model's origin. */
