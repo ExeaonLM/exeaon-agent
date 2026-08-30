@@ -9,6 +9,33 @@ export interface LocalGgufModel {
   name: string;
   path: string;
   sizeGb: number;
+  /** User-set display name (falls back to the file name). */
+  displayName: string;
+}
+
+const GGUF_NAMES_KEY = "exeaon-gguf-display-names";
+
+function readNameOverrides(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(GGUF_NAMES_KEY) || "{}") as Record<
+      string,
+      string
+    >;
+  } catch {
+    return {};
+  }
+}
+
+function writeNameOverride(path: string, name: string): void {
+  try {
+    const all = readNameOverrides();
+    const trimmed = name.trim();
+    if (trimmed) all[path] = trimmed;
+    else delete all[path];
+    localStorage.setItem(GGUF_NAMES_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore: rename is a convenience, never load-bearing */
+  }
 }
 
 export interface LocalGgufState {
@@ -25,6 +52,8 @@ export interface LocalGgufState {
   /** True only inside the Tauri desktop app (invokes are unavailable on web). */
   hasTauri: boolean;
   refresh: () => void;
+  /** Set a GGUF's display name (name-edit only; the file itself is untouched). */
+  rename: (path: string, name: string) => void;
 }
 
 const readActiveModel = (): string | null => {
@@ -59,8 +88,11 @@ export function useLocalGgufModels(): LocalGgufState {
         invoke<LocalGgufModel[]>("list_local_models"),
         invoke<boolean>("local_model_status"),
       ]);
+      const overrides = readNameOverrides();
       setModelsDir(dir);
-      setModels(list);
+      setModels(
+        list.map((m) => ({ ...m, displayName: overrides[m.path] || m.name })),
+      );
       setRunning(status);
       setRunningModel(status ? readActiveModel() : null);
     } catch {
@@ -70,6 +102,14 @@ export function useLocalGgufModels(): LocalGgufState {
       setRunningModel(null);
     }
   }, []);
+
+  const rename = React.useCallback(
+    (path: string, name: string) => {
+      writeNameOverride(path, name);
+      refresh();
+    },
+    [refresh],
+  );
 
   React.useEffect(() => {
     refresh();
@@ -83,5 +123,6 @@ export function useLocalGgufModels(): LocalGgufState {
     endpoint: LOCAL_MODEL_ENDPOINT,
     hasTauri,
     refresh,
+    rename,
   };
 }

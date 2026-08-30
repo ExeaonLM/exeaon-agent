@@ -6,8 +6,10 @@ import {
   useLocation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Plug, RefreshCw, TriangleAlert } from "lucide-react";
 import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
+import { isAgentServerUnavailableError } from "#/api/agent-server-compatibility";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { SidebarMobileNavProvider } from "#/components/features/sidebar/sidebar-mobile-nav-context";
@@ -42,31 +44,53 @@ export function ErrorBoundary() {
   const error = useRouteError();
   const { t } = useTranslation("openhands");
 
-  if (isRouteErrorResponse(error)) {
-    return (
-      <div>
-        <h1>{error.status}</h1>
-        <p>{error.statusText}</p>
-        <pre>
-          {error.data instanceof Object
-            ? JSON.stringify(error.data)
-            : error.data}
-        </pre>
-      </div>
-    );
-  }
-  if (error instanceof Error) {
-    return (
-      <div>
-        <h1>{t(I18nKey.ERROR$GENERIC)}</h1>
-        <pre>{error.message}</pre>
-      </div>
-    );
-  }
+  const engineDown = isAgentServerUnavailableError(error);
+  const title = engineDown
+    ? "Engine not reachable"
+    : isRouteErrorResponse(error)
+      ? `${error.status} ${error.statusText}`.trim()
+      : t(I18nKey.ERROR$GENERIC);
+  const message = engineDown
+    ? "The local engine isn't responding yet. It may still be starting up — give it a moment and reload. If this persists, restart Exeaon Claw."
+    : isRouteErrorResponse(error)
+      ? typeof error.data === "string"
+        ? error.data
+        : JSON.stringify(error.data)
+      : error instanceof Error
+        ? error.message
+        : t(I18nKey.ERROR$UNKNOWN);
 
   return (
-    <div>
-      <h1>{t(I18nKey.ERROR$UNKNOWN)}</h1>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-5 bg-base px-6 text-center">
+      <div
+        className={`flex size-14 items-center justify-center rounded-2xl border ${
+          engineDown
+            ? "border-[#FFD026]/30 bg-[#FFD026]/10 text-[#FFD026]"
+            : "border-red-500/30 bg-red-500/10 text-red-400"
+        }`}
+      >
+        {engineDown ? (
+          <Plug className="size-7" aria-hidden />
+        ) : (
+          <TriangleAlert className="size-7" aria-hidden />
+        )}
+      </div>
+      <div className="flex max-w-md flex-col gap-2">
+        <h1 className="text-lg font-semibold text-white">{title}</h1>
+        <p className="text-sm leading-relaxed text-[var(--oh-muted)]">
+          {message}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2 rounded-lg bg-[#F3CE49] px-4 py-2 text-sm font-semibold text-[#070605] hover:bg-[#F7DA6B]"
+        >
+          <RefreshCw className="size-4" aria-hidden />
+          Reload
+        </button>
+      </div>
     </div>
   );
 }
