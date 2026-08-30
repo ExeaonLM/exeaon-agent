@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import SettingsService from "#/api/settings-service/settings-service.api";
-import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import {
   LLM_PROFILES_QUERY_KEYS,
   SETTINGS_QUERY_KEYS,
@@ -82,32 +81,15 @@ export const useSwitchLlmProfile = () => {
           plugins: prev?.plugins ?? null,
         });
       } else {
-        // Home-page activate path. Activation is pointer-only, so a NEW
-        // conversation would still launch from the stale global agent_settings
-        // (reverting to the old model, e.g. Groq). Push the picked profile's
-        // LLM config into agent_settings so the next conversation actually runs
-        // THIS model. Encrypted secrets round-trip through the same path the
-        // conversation-start already uses.
-        (async () => {
-          try {
-            const detail = await ProfilesService.getProfile(
-              profileName,
-              "encrypted",
-            );
-            await SettingsService.saveSettings({
-              agent_settings_diff: {
-                llm: detail.config as Record<string, unknown>,
-              },
-            });
-          } catch {
-            // Best-effort: activation already succeeded; never block the switch.
-          } finally {
-            SettingsService.invalidateCache();
-            queryClient.invalidateQueries({
-              queryKey: SETTINGS_QUERY_KEYS.personal(),
-            });
-          }
-        })();
+        // Home-page activate path. Per the Add-model flow, activateProfile
+        // already syncs agent_settings.llm server-side (conversation start reads
+        // agent_settings.llm, not the profile row), so a new conversation runs
+        // the picked model. Just clear the local settings cache so the next read
+        // reflects it.
+        SettingsService.invalidateCache();
+        queryClient.invalidateQueries({
+          queryKey: SETTINGS_QUERY_KEYS.personal(),
+        });
       }
     },
   });
