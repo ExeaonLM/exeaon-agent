@@ -1,6 +1,7 @@
-import { Cloud, Cpu, HardDrive } from "lucide-react";
+import { Cloud, Cpu, HardDrive, Lock } from "lucide-react";
 import { useCloudModels } from "#/hooks/query/use-cloud-models";
 import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
+import { formatNativeModelName } from "#/utils/format-model-name";
 import {
   settingsListContainerClassName,
   settingsListDividerClassName,
@@ -82,32 +83,55 @@ export function ModelOriginSections() {
             hint="served by Exeaon Cloud · read-only"
           />
           <div className={listClassName}>
-            {cloudModels!.map((m) => (
-              <div
-                key={m.id}
-                className={cn(
-                  settingsListRowClassName,
-                  "justify-between gap-3",
-                )}
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="truncate text-sm font-medium text-white">
-                    {m.name}
-                  </span>
-                  {m.provider ? (
-                    <span className="truncate text-xs text-[var(--oh-muted)]">
-                      {m.provider}
+            {cloudModels!.map((m) => {
+              const locked = !m.available;
+              return (
+                <div
+                  key={m.id}
+                  className={cn(
+                    settingsListRowClassName,
+                    "justify-between gap-3",
+                    locked && "opacity-60",
+                  )}
+                  title={
+                    locked
+                      ? "Pro model — upgrade your plan to use it"
+                      : undefined
+                  }
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="truncate text-sm font-medium text-white">
+                      {formatNativeModelName(m.name) || m.name}
                     </span>
-                  ) : null}
-                  {m.description ? (
-                    <span className="hidden truncate text-xs text-[var(--oh-muted)] sm:inline">
-                      {m.description}
-                    </span>
-                  ) : null}
+                    {m.description ? (
+                      <span className="hidden truncate text-xs text-[var(--oh-muted)] sm:inline">
+                        {m.description}
+                      </span>
+                    ) : m.provider ? (
+                      <span className="truncate text-xs text-[var(--oh-muted)]">
+                        {m.provider}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {m.requiresPro ? (
+                      <span
+                        className={cn(
+                          "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          locked
+                            ? "bg-white/5 text-[var(--oh-muted)] border border-white/10"
+                            : "bg-[#FFD026]/10 text-[#FFD026] border border-[#FFD026]/30",
+                        )}
+                      >
+                        {locked ? <Lock className="size-3" /> : null}
+                        Pro
+                      </span>
+                    ) : null}
+                    <OriginBadge label="Cloud" tone="cloud" />
+                  </div>
                 </div>
-                <OriginBadge label="Cloud" tone="cloud" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : null}

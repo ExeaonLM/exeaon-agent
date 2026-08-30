@@ -14,6 +14,12 @@ export interface CloudModel {
   contextWindow: number;
   isDefault: boolean;
   description: string;
+  /** "free" | "pro" — the plan tier required to use this model. */
+  minTier: string;
+  /** True when this is a pro-only model. */
+  requiresPro: boolean;
+  /** Whether the current caller's plan may actually use it (else: locked). */
+  available: boolean;
 }
 
 /** The stored cloud backend (host + session-token apiKey), if signed in. */
@@ -49,5 +55,8 @@ export async function fetchCloudModels(): Promise<CloudModel[]> {
     contextWindow: Number(d.contextWindow ?? 0),
     isDefault: Boolean(d.isDefault),
     description: String(d.description ?? ""),
+    minTier: String(d.minTier ?? "free"),
+    requiresPro: Boolean(d.requiresPro),
+    available: d.available === undefined ? true : Boolean(d.available),
   }));
 }
