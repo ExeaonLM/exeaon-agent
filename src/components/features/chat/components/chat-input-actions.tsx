@@ -25,6 +25,8 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useChatInputModelState } from "#/hooks/use-chat-input-model-state";
 import { useConversationStore } from "#/stores/conversation-store";
+import { useConversationStateStore } from "#/stores/conversation-state-store";
+import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
 import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
@@ -84,6 +86,9 @@ export function ChatInputActions({
   const showChangeAgentButton = isCloud && !modelState.isAcpContext;
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { curAgentState } = useAgentState();
+  const setLocalExecutionStatus = useConversationStateStore(
+    (state) => state.setExecutionStatus,
+  );
   const { conversationMode, setConversationMode } = useConversationStore();
   const { handlePlanClick, isCreatingConversation } = useHandlePlanClick();
 
@@ -161,7 +166,16 @@ export function ChatInputActions({
 
   const handlePauseAgent = () => {
     if (!conversationId) return;
-    pauseConversationMutation.mutate({ conversationId });
+    pauseConversationMutation.mutate(
+      { conversationId },
+      {
+        // If the stop can't reach the runtime (disconnected/dead sandbox), the
+        // WS-driven agent state stays stuck on RUNNING and the button does
+        // nothing. Force the local state to PAUSED so the composer unblocks; a
+        // later poll reconciles if the agent turns out to be alive.
+        onError: () => setLocalExecutionStatus(ExecutionStatus.PAUSED),
+      },
+    );
   };
 
   const handleResumeAgentClick = () => {

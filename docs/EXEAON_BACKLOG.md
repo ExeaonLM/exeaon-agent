@@ -23,16 +23,20 @@ The correct signal is `!isCloudAppServerBackend()`. Grep for `backend.kind` /
   conversation's `selected_workspace`, so it groups under the repo name and the
   Files panel anchors to it. *Note: a stopped runtime (old conversation) still
   can't list files — that's expected; use a fresh clone.*
-- [ ] **API keys leak across users** (GW) — every user sees the admin/owner's API
-  keys. Owner/tenant-owner must NOT grant system/admin visibility; scope key
-  listing to the caller's own account. Enforce a **50 keys/user** cap. Security.
+- [x] **API keys leak across users** (GW) — `ListVirtualKeys` had no owner filter,
+  so every authenticated user saw every key. Now scoped to `created_by = caller`
+  for non-platform-admins (platform admin still sees all), and `CreateVirtualKey`
+  enforces a **50-key/user** cap (`ErrKeyLimitReached`). *Needs a gateway deploy
+  to take effect — the fix is server-side.*
 - [ ] **Automations backend unavailable** (Claw/Rust) — Flows shows "Automations
   Unavailable"; dev shows repeated `vite ws proxy error ECONNABORTED`. Fix the
   automation sidecar spawn/health once and for all (or gate Flows cleanly when
   it's genuinely off).
-- [ ] **Usage shows 0 everywhere** (GW + Claw + Console) — requests/tokens/spend
-  read 0 in Settings and on the cloud console even after real usage. Usage
-  accounting/rollup isn't reaching the UI.
+- [~] **Usage shows 0 everywhere** (GW) — `/me` summed usage by the user's primary
+  tenant, but usage rolls up under the *key's* tenant (can differ) → 0. Now sums
+  over the user's owned keys (`created_by`), tenant-independent. *Deploy needed. If
+  it's STILL 0 after deploy, no rollup rows are being written at all (settlement
+  path) — needs runtime logs. Console Usage page (admin/tenant-scoped) is separate.*
 - [ ] **Public share fails** (Claw/GW) — "Failed to update public sharing /
   Disconnected". Decide: implement or hide until deploy.
 
@@ -47,8 +51,10 @@ The correct signal is `!isCloudAppServerBackend()`. Grep for `backend.kind` /
   session drive browser commands? — evaluate.)
 - [ ] **Agent Tools: add/open more tools** (Claw) — the Agent Tools page is
   read-only/limited (5 registered); restore add/configure as before.
-- [ ] **Settings cleanup** (Claw) — remove or repurpose "Integrations" and "All
-  Cloud Settings" (→ an "Open cloud console" link) — they're leftovers.
+- [x] **Settings cleanup** (Claw) — removed the dead "Integrations" settings link
+  and repointed "All Cloud Settings" → "Cloud console" at `/console/` (both had
+  pointed at OpenHands `/settings*` paths that 404 on the gateway). The top-level
+  Integrations nav (MCP page) is real and stays.
 - [ ] **Real Help routes** (Claw) — "Learn more", "Get help", "View changelog"
   must go to real in-app/hosted pages, not GitHub redirects.
 
