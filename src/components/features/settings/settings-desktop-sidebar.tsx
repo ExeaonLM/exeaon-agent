@@ -7,7 +7,6 @@ import { SidebarNavLink } from "#/components/features/sidebar/sidebar-nav-link";
 import { AgentCanvasUpdateCard } from "#/components/features/settings/agent-canvas-update-card";
 import { BackendSyncedSettingsBadge } from "#/components/features/settings/backend-synced-settings-badge";
 import { CloudSettingsLink } from "#/components/features/settings/cloud-settings-link";
-import { IntegrationsSettingsLink } from "#/components/features/settings/integrations-settings-link";
 
 interface SettingsDesktopSidebarProps {
   navigationItems: SettingsNavRenderedItem[];
@@ -53,7 +52,6 @@ export function SettingsDesktopSidebar({
             icon={renderedItem.item.icon}
           />
         ))}
-        <IntegrationsSettingsLink />
         <CloudSettingsLink />
       </div>
       <div className="flex flex-col gap-2 px-2 pt-3">

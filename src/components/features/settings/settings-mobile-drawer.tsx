@@ -12,7 +12,6 @@ import { navInteractiveTransitionClassName } from "#/components/features/sidebar
 import { AgentCanvasUpdateCard } from "#/components/features/settings/agent-canvas-update-card";
 import { BackendSyncedSettingsBadge } from "#/components/features/settings/backend-synced-settings-badge";
 import { CloudSettingsLink } from "#/components/features/settings/cloud-settings-link";
-import { IntegrationsSettingsLink } from "#/components/features/settings/integrations-settings-link";
 
 interface SettingsMobileDrawerProps {
   isMobileMenuOpen: boolean;
@@ -88,7 +87,6 @@ export function SettingsMobileDrawer({
               />
             );
           })}
-          <IntegrationsSettingsLink />
           <CloudSettingsLink />
         </div>
 

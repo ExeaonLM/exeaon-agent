@@ -29512,11 +29512,11 @@
     "uk": "Інтеграції"
   },
   "SETTINGS$CLOUD_SETTINGS_LINK": {
-    "en": "All Cloud Settings",
-    "ja": "All Cloud Settings",
-    "zh-CN": "All Cloud Settings",
-    "zh-TW": "All Cloud Settings",
-    "ko-KR": "All Cloud Settings",
+    "en": "Cloud console",
+    "ja": "Cloud console",
+    "zh-CN": "云控制台",
+    "zh-TW": "雲端主控台",
+    "ko-KR": "Cloud console",
     "no": "All Cloud Settings",
     "it": "All Cloud Settings",
     "pt": "All Cloud Settings",
