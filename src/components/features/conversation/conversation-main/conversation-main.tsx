@@ -116,8 +116,11 @@ export function ConversationMain() {
               transitionProperty: isDragging ? "opacity, transform" : "all",
             }}
           >
-            <div className="flex h-full w-full flex-col">
-              <div className="flex flex-col flex-1 min-h-0 bg-[var(--oh-surface)] border-l border-[var(--oh-border)] overflow-hidden">
+            {/* Inset padding + a fully-bordered rounded card make the right
+                panel read as a soft floating surface (Claude-style) instead of
+                a flat edge-to-edge area split by a hard divider. */}
+            <div className="flex h-full w-full flex-col py-2 pr-2 pl-0.5">
+              <div className="flex flex-col flex-1 min-h-0 bg-[var(--oh-surface)] border border-[var(--oh-border)] rounded-2xl shadow-lg overflow-hidden">
                 <div className="flex-1 min-h-0 flex flex-col">
                   <ConversationTabContent />
                 </div>
