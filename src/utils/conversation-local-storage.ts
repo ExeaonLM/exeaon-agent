@@ -61,7 +61,9 @@ export interface ConversationState {
 
 const DEFAULT_CONVERSATION_STATE: ConversationState = {
   selectedTab: "files",
-  unpinnedTabs: [],
+  // Only Changes / Terminal / Browser stay pinned inline (Claude-style); the
+  // rest live in the "…" overflow menu by default. Users can re-pin any of them.
+  unpinnedTabs: ["files", "planner", "usage", "tasklist"],
   unpinnedOverviewSections: [...DEFAULT_UNPINNED_OVERVIEW_SECTIONS],
   unpinnedOverviewGitParts: [...DEFAULT_UNPINNED_OVERVIEW_GIT_PARTS],
   conversationMode: "code",
