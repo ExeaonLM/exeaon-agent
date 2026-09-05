@@ -90,7 +90,7 @@ const appBuildConfig = {
 
 export default defineConfig(({ mode }) => {
   const {
-    VITE_BACKEND_HOST = "127.0.0.1:8000",
+    VITE_BACKEND_HOST = "127.0.0.1:18000",
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
     VITE_INSECURE_SKIP_VERIFY = "false",
@@ -112,6 +112,11 @@ export default defineConfig(({ mode }) => {
   const WS_PROTOCOL = USE_TLS ? "wss" : "ws";
 
   const API_URL = `${PROTOCOL}://${VITE_BACKEND_HOST}/`;
+  // The automation backend runs on its own port (18001 by default), separate
+  // from the agent-server. /api/automation must proxy there, not to the
+  // agent-server (which 404s it). Derive from the backend host by swapping the
+  // port so it follows whatever host the agent-server is on.
+  const AUTOMATION_URL = API_URL.replace(/:\d+\/?$/, ":18001/");
   const WS_URL = `${WS_PROTOCOL}://${VITE_BACKEND_HOST}/`;
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
   const base = normalizeBasePath(VITE_BASE_PATH);
@@ -300,7 +305,6 @@ export default defineConfig(({ mode }) => {
         // Terminal dependencies - added to prevent runtime optimization
         "@xterm/addon-fit",
         "@xterm/xterm",
-        "@xterm/xterm/css/xterm.css",
         // OpenHands typescript client
         "@openhands/typescript-client",
         "@openhands/typescript-client/client/http-client",
@@ -388,11 +392,21 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
+      hmr: {
+        overlay: false,
+      },
       port: FE_PORT,
       strictPort: true, // Fail if port is busy (dynamic allocation handles fallback)
-      host: true,
+      host: "0.0.0.0",
       allowedHosts: true,
       proxy: {
+        // More specific than "/api" and declared first so /api/automation is
+        // routed to the automation backend, not the agent-server.
+        "/api/automation": {
+          target: AUTOMATION_URL,
+          changeOrigin: true,
+          secure: !INSECURE_SKIP_VERIFY,
+        },
         "/api": {
           target: API_URL,
           changeOrigin: true,
@@ -463,7 +477,18 @@ export default defineConfig(({ mode }) => {
           : {}),
       },
       watch: {
-        ignored: ["**/node_modules/**", "**/.git/**"],
+        // Ignore the Rust build tree: `tauri dev` recompiles into
+        // src-tauri/target/, and every build writes hundreds of files. Without
+        // this, the dev watcher treats that as a change storm and react-router
+        // logs "Config changed" hundreds of times per build, reload-thrashing
+        // the webview so the app never settles (the x276 burst that lined up
+        // exactly with each `cargo` finish).
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/src-tauri/target/**",
+          "**/src-tauri/gen/**",
+        ],
       },
     },
     ssr: {

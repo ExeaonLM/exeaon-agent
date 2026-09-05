@@ -1,10 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Sparkles, Bug, Code2, Workflow, BookOpen, Boxes } from "lucide-react";
 import { I18nKey } from "#/i18n/declaration";
-import TachometerFastIcon from "#/icons/tachometer-fast.svg?react";
-import PrStatusIcon from "#/icons/pr-status.svg?react";
-import DocumentIcon from "#/icons/document.svg?react";
-import WaterIcon from "#/icons/u-water.svg?react";
 
 export type Suggestion = { label: I18nKey | string; value: string };
 
@@ -19,31 +16,50 @@ export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   const itemIcon = useMemo(() => {
     switch (suggestion.label) {
       case "INCREASE_TEST_COVERAGE":
-        return <TachometerFastIcon width={24} height={24} color="#fff" />;
+        return (
+          <Sparkles className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
       case "AUTO_MERGE_PRS":
-        return <PrStatusIcon width={19} height={20} color="#fff" />;
+        return (
+          <Bug className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
       case "FIX_README":
-        return <DocumentIcon width={24} height={24} color="#fff" />;
+        return (
+          <Code2 className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
       case "CLEAN_DEPENDENCIES":
-        return <WaterIcon width={24} height={24} color="#fff" />;
+        return (
+          <Workflow className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
+      case "ADD_DOCS":
+        return (
+          <BookOpen className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
+      case "ADD_DOCKERFILE":
+        return (
+          <Boxes className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
       default:
-        return null;
+        return (
+          <Sparkles className="size-4 text-[#FFD026] group-hover:scale-110 transition-transform duration-200 shrink-0" />
+        );
     }
   }, [suggestion]);
 
   return (
     <button
       type="button"
-      className="list-none border border-[var(--oh-border)] rounded-[15px] hover:bg-surface-raised hover:border-[var(--oh-interactive-hover)] transition-colors flex-1 flex items-center justify-center cursor-pointer gap-[10px] h-[55px] px-4"
+      className="group list-none border border-[#2B2316] bg-[#120F0A]/90 hover:bg-[#1C1812] hover:border-[#FFD026]/40 hover:shadow-[0_0_20px_rgba(255,208,38,0.06)] rounded-[14px] transition-all duration-200 flex items-center justify-center cursor-pointer gap-2.5 h-[52px] px-5 min-w-[210px]"
       onClick={() => onClick(suggestion.value)}
     >
       {itemIcon}
       <span
         data-testid="suggestion"
-        className="text-[15px] font-normal leading-5 text-white text-center cursor-pointer"
+        className="text-[14px] font-medium leading-5 text-[#EDEDED] group-hover:text-white transition-colors cursor-pointer select-none"
       >
         {t(suggestion.label)}
       </span>
     </button>
   );
 }
+

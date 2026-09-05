@@ -16,34 +16,39 @@ Object.entries(i18n).forEach(([key, transMap]) => {
   });
 });
 
-// remove old locales directory
-const localesPath = path.join(__dirname, "../public/locales");
-if (fs.existsSync(localesPath)) {
-  fs.rmSync(localesPath, { recursive: true });
+function writeIfChanged(filePath, content) {
+  const next = typeof content === "string" ? content : String(content);
+  try {
+    const current = fs.readFileSync(filePath, "utf8");
+    if (current === next) {
+      return false;
+    }
+  } catch {
+    // file missing -> write it
+  }
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, next);
+  return true;
 }
 
-// write translation files
+// Write translation files. Important: do NOT delete public/locales on every
+// run — that churn alone makes React Router/Vite think config inputs changed
+// and it restarts in a loop. Only touch files whose contents actually differ.
 Object.entries(translationMap).forEach(([lang, transMap]) => {
   const filePath = path.join(
     __dirname,
     `../public/locales/${lang}/${namespace}.json`,
   );
-  if (!fs.existsSync(filePath)) {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  }
-  fs.writeFileSync(filePath, JSON.stringify(transMap, null, 2));
+  writeIfChanged(filePath, JSON.stringify(transMap, null, 2));
 });
 
-// write translation key enum
+// Write translation key enum only when it actually changed.
 const transKeys = Object.keys(translationMap.en);
 const transKeyDeclareFilePath = path.join(
   __dirname,
   "../src/i18n/declaration.ts",
 );
-if (!fs.existsSync(transKeyDeclareFilePath)) {
-  fs.mkdirSync(path.dirname(transKeyDeclareFilePath), { recursive: true });
-}
-fs.writeFileSync(
+writeIfChanged(
   transKeyDeclareFilePath,
   `
 // this file generate by script, don't modify it manually!!!

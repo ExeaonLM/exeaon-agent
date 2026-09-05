@@ -54,7 +54,7 @@ export function ViewToggle({
           className={tabButtonClass(view === "basic", isDisabled)}
           onClick={() => setView("basic")}
         >
-          {t(I18nKey.SETTINGS$BASIC)}
+          Exeaon
         </button>
       ) : null}
       {showAdvanced ? (

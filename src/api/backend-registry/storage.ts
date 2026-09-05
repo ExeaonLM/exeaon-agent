@@ -46,7 +46,8 @@ function isLoopbackUrl(value: string): boolean {
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
       hostname === "::1" ||
-      hostname === "[::1]"
+      hostname === "[::1]" ||
+      hostname === "tauri.localhost"
     );
   } catch {
     return false;
@@ -73,16 +74,31 @@ function syncLauncherDefaultLocalBackend(backends: Backend[]): Backend[] {
 
   let didSync = false;
   const syncedBackends = backends.map((backend) => {
+    // Heal stale tauri.localhost origins from initial WebView boot
+    if (
+      backend.host.includes("tauri.localhost") ||
+      backend.host.startsWith("tauri://") ||
+      backend.host.startsWith("asset://")
+    ) {
+      didSync = true;
+      return {
+        ...backend,
+        host: defaultBackend.host,
+        apiKey: defaultBackend.apiKey || backend.apiKey,
+      };
+    }
+
     if (!shouldSyncLauncherDefaultLocalBackend(backend, defaultBackend)) {
       return backend;
     }
 
-    if (backend.apiKey === defaultBackend.apiKey) return backend;
+    if (backend.apiKey === defaultBackend.apiKey && backend.host === defaultBackend.host) return backend;
 
     didSync = true;
     return {
       ...backend,
-      apiKey: defaultBackend.apiKey,
+      host: defaultBackend.host,
+      apiKey: defaultBackend.apiKey || backend.apiKey,
     };
   });
 

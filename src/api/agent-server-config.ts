@@ -183,7 +183,16 @@ export function getAgentServerBaseUrl(): string | null {
   if (configuredUrl) return configuredUrl;
 
   if (typeof window !== "undefined") {
-    return window.location.origin;
+    const origin = window.location.origin;
+    if (
+      !origin ||
+      origin.includes("tauri.localhost") ||
+      origin.startsWith("tauri://") ||
+      origin.startsWith("asset://")
+    ) {
+      return "http://127.0.0.1:18000";
+    }
+    return origin;
   }
 
   return null;

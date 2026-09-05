@@ -23,7 +23,7 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useHomeStore } from "#/stores/home-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { getStoredConversationMetadata } from "#/api/conversation-metadata-store";
-import { useActiveBackend } from "#/contexts/active-backend-context";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useOptionalScrollContext } from "#/context/scroll-context";
 
@@ -44,8 +44,12 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
   const markPendingMessageError = useOptimisticUserMessageStore(
     (state) => state.markPendingMessageError,
   );
-  const { backend } = useActiveBackend();
-  const isLocalBackend = backend.kind === "local";
+  // The Exeaon runtime is always local (isCloudAppServerBackend is the seam for
+  // a future real cloud app-server; false today). Gate the remote-repo
+  // "Connect Repo" flow on the runtime, not on backend.kind: signing into
+  // Exeaon Cloud flips kind to "cloud" and would otherwise surface the cloud
+  // repo-search modal, which the Exeaon gateway has no API for (it 404s).
+  const isLocalBackend = !isCloudAppServerBackend();
   const { providers } = useUserProviders();
   const providerTokensReady = isLocalBackend || providers.length > 0;
 

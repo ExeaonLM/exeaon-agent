@@ -54,17 +54,17 @@ function ConnectionBanner({
       <div
         role="status"
         data-testid="onboarding-backend-connected"
-        className={cn(
-          "flex items-start gap-3 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3",
-        )}
+        className="flex items-center gap-3.5 rounded-2xl border border-emerald-500/30 bg-[#0F1410] px-4 py-3.5 shadow-md"
       >
-        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-400" />
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-green-200">
-            {t(I18nKey.ONBOARDING$BACKEND_CONNECTED_TITLE)}
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+          <CheckCircle2 className="size-4" />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-emerald-300">
+            Agent Server Connected
           </span>
-          <span className="text-xs text-green-200/80">
-            {t(I18nKey.ONBOARDING$BACKEND_CONNECTED_BODY)}
+          <span className="text-xs text-[var(--oh-muted)]">
+            Exeaon is connected to your agent runtime backend. You can manage or add backends anytime.
           </span>
         </div>
       </div>
@@ -80,15 +80,17 @@ function ConnectionBanner({
       <div
         role="alert"
         data-testid="onboarding-backend-disconnected"
-        className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3"
+        className="flex items-center gap-3.5 rounded-2xl border border-rose-500/30 bg-[#160E0E] px-4 py-3.5 shadow-md"
       >
-        <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-400" />
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-red-200">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-rose-400">
+          <AlertCircle className="size-4" />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-rose-300">
             {statusLabel}
           </span>
-          <span className="text-xs text-red-200/80">
-            {t(I18nKey.ONBOARDING$BACKEND_DISCONNECTED_BODY)}
+          <span className="text-xs text-[var(--oh-muted)]">
+            Update your connection settings or launch your Exeaon agent server to connect.
           </span>
         </div>
       </div>
@@ -224,7 +226,7 @@ export function CheckBackendStep({
   );
 
   const actionRowClassName = cn(
-    "sticky bottom-0 mt-2 flex items-center gap-2 bg-base-secondary pt-4 pb-7",
+    "sticky bottom-0 mt-2 flex items-center gap-2 bg-[#0E0D0A] pt-4 pb-7",
     onBack ? "justify-between" : "justify-end",
   );
   const titleKey = treatAsNoBackend
@@ -238,16 +240,14 @@ export function CheckBackendStep({
       data-testid="onboarding-step-check-backend"
       className="flex flex-col gap-6"
     >
-      <header className="flex flex-col gap-2">
-        <h2 className="text-2xl font-medium text-white">{t(titleKey)}</h2>
-        {treatAsNoBackend ? null : (
-          <p
-            data-testid="onboarding-backend-subtitle"
-            className="text-sm text-[var(--oh-muted)]"
-          >
-            {t(I18nKey.ONBOARDING$BACKEND_SUBTITLE)}
-          </p>
-        )}
+      <header className="flex flex-col items-center text-center gap-2">
+        <h2 className="text-2xl font-medium text-white">Backend Check Status</h2>
+        <p
+          data-testid="onboarding-backend-subtitle"
+          className="text-sm text-[var(--oh-muted)]"
+        >
+          Exeaon talks to an agent server. Make sure the default backend is reachable.
+        </p>
       </header>
 
       {treatAsNoBackend ? null : (

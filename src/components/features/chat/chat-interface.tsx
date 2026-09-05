@@ -4,6 +4,7 @@ import { useTracking } from "#/hooks/use-tracking";
 import { useTranslation } from "react-i18next";
 import { isAcpAuthErrorCode } from "#/utils/acp-error-codes";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { motion, AnimatePresence } from "framer-motion";
 import { createChatMessage } from "#/services/chat-service";
 import { BtwMessages } from "./btw-messages";
 import { GoalStatusBanner } from "./goal-status-banner";
@@ -51,6 +52,9 @@ import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { hasConversationStarted } from "./components/resolve-picker-kind";
+import { buildEngineeringDirective } from "#/utils/engineering-labs";
+import { useEngineeringMcpReconcile } from "#/hooks/use-engineering-mcp-reconcile";
+import { useSwarmAutoOpen } from "#/hooks/use-swarm-auto-open";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -63,8 +67,19 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { trackInitialQuerySubmitted, trackUserMessageSent } = useTracking();
-  const { setMessageToSend, conversationMode, planContent } =
-    useConversationStore();
+  const {
+    setMessageToSend,
+    conversationMode,
+    planContent,
+    engineeringField,
+    executionMode,
+    cyberSwarm,
+  } = useConversationStore();
+
+  // Keep the agent's managed field MCP servers in sync with field + mode.
+  useEngineeringMcpReconcile();
+  // Auto-open the Swarm war-room when a cyber swarm starts.
+  useSwarmAutoOpen();
   const {
     errorMessage,
     errorCode,
@@ -359,8 +374,20 @@ export function ChatInterface() {
     skippedFiles.forEach((f) => displayErrorToast(f.reason));
 
     const filePrompt = `${t(I18nKey.CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE)}: ${uploadedFiles.join("\n\n")}`;
-    const prompt =
+    const basePrompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
+    // Prepend the Exeaon Engineering Labs directive (field + execution mode +
+    // safety posture) to the SERVER content only — the visible `text` bubble is
+    // unchanged. Empty for the general (none) field, so ordinary chats are
+    // untouched. This is the Phase 0 context-injection scaffold.
+    const engineeringDirective = buildEngineeringDirective(
+      engineeringField,
+      executionMode,
+      cyberSwarm,
+    );
+    const prompt = engineeringDirective
+      ? `${engineeringDirective}\n\n${basePrompt}`
+      : basePrompt;
 
     // Enqueue the message into the local pending queue with status "sending"
     // so the user immediately sees it in the chat with a faded treatment. The
@@ -638,11 +665,20 @@ export function ChatInterface() {
                       <ScrollToBottomButton onClick={scrollDomToBottom} />
                     </div>
                   ) : (
-                    curAgentState === AgentState.RUNNING && (
-                      <div className="pointer-events-none absolute inset-x-9 bottom-0 flex justify-center">
-                        <TypingIndicator events={allConversationEvents} />
-                      </div>
-                    )
+                    <AnimatePresence>
+                      {curAgentState === AgentState.RUNNING && (
+                        <motion.div
+                          key="live-typing-indicator"
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="pointer-events-none absolute inset-x-9 bottom-0 flex justify-center z-30"
+                        >
+                          <TypingIndicator events={allConversationEvents} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   )}
                 </div>
               </div>

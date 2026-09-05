@@ -16,8 +16,10 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalCloseButton } from "#/components/shared/modals/modal-close-button";
 import DockerIcon from "#/icons/docker.svg?react";
 import NpmIcon from "#/icons/npm.svg?react";
+import { Download, RotateCcw } from "lucide-react";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { useUpdater, isTauriRuntime } from "#/exeaon/updater";
 
 const COPY_FEEDBACK_MS = 2000;
 
@@ -56,6 +58,14 @@ export function AgentCanvasVersionModal({
   onClose,
 }: AgentCanvasVersionModalProps) {
   const { t } = useTranslation("openhands");
+  const tauri = isTauriRuntime();
+  const {
+    status: updaterStatus,
+    progress: updaterProgress,
+    error: updaterError,
+    checkAndUpdate,
+    relaunch,
+  } = useUpdater();
   const [selectedTab, setSelectedTab] = React.useState<UpdateCommandTab>("npm");
   const [copied, setCopied] = React.useState(false);
   const copiedTimeoutRef = React.useRef<number | null>(null);
@@ -176,7 +186,58 @@ export function AgentCanvasVersionModal({
           )}
         </div>
 
-        {updateAvailable ? (
+        {tauri ? (
+          <div className="flex flex-col gap-2">
+            {updaterStatus === "ready" ? (
+              <button
+                type="button"
+                onClick={() => void relaunch()}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#F3CE49] px-4 py-2 text-sm font-semibold text-[#070605] hover:bg-[#F7DA6B]"
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Restart now to finish updating
+              </button>
+            ) : updaterStatus === "downloading" ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-black/40 border border-white/5">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#FFD026] to-[#FF7A00] transition-all"
+                    style={{ width: `${Math.round(updaterProgress * 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs text-[var(--oh-muted)]">
+                  Downloading update… {Math.round(updaterProgress * 100)}%
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void checkAndUpdate()}
+                disabled={updaterStatus === "checking"}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#F3CE49] px-4 py-2 text-sm font-semibold text-[#070605] hover:bg-[#F7DA6B] disabled:opacity-60"
+              >
+                <Download className="size-4" aria-hidden />
+                {updaterStatus === "checking"
+                  ? "Checking…"
+                  : updateAvailable
+                    ? "Download & install update"
+                    : "Check for updates"}
+              </button>
+            )}
+            {updaterStatus === "uptodate" ? (
+              <span className="text-xs text-[var(--oh-status-success)]">
+                You’re on the latest version.
+              </span>
+            ) : null}
+            {updaterStatus === "error" ? (
+              <span className="text-xs text-red-400">
+                Update failed: {updaterError}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {updateAvailable && !tauri ? (
           <div>
             <div className="flex justify-center">
               {UPDATE_COMMAND_TABS.map((tab) => (
@@ -224,7 +285,7 @@ export function AgentCanvasVersionModal({
           </div>
         ) : null}
 
-        {!updateAvailable ? (
+        {!updateAvailable && !tauri ? (
           <div className="flex flex-wrap gap-x-8 gap-y-3">
             <button
               type="button"

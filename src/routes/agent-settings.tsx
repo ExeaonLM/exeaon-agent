@@ -594,9 +594,8 @@ export function AgentSettingsScreen({
         items={[
           {
             key: "openhands",
-            label: t(I18nKey.SETTINGS$AGENT_TYPE_OPENHANDS),
+            label: "Exeaon",
           },
-          { key: "acp", label: t(I18nKey.SETTINGS$AGENT_TYPE_ACP) },
         ]}
         selectedKey={agentType}
         onSelectionChange={(key) => {

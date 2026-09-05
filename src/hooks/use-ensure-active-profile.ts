@@ -2,36 +2,42 @@ import { useEffect, useRef } from "react";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useActivateLlmProfile } from "#/hooks/mutation/use-activate-llm-profile";
+import { syncCloudModelProfiles } from "#/api/cloud/exeaon-models.api";
+import { readCloudUser } from "#/api/cloud/session-store";
 
 /**
- * Local-mode UX policy: keep an LLM profile active whenever at least one
+ * Local-mode & Exeaon Cloud UX policy: keep an LLM profile active whenever at least one
  * exists, so the agent always has a usable LLM without a manual "activate"
- * step. This lives in the client on purpose — the agent-server is a neutral
- * API that returns `active_profile` as stored (possibly pointing at a deleted
- * profile); other consumers (e.g. SaaS) own the LLM differently.
- *
- * When profiles exist but none is the active one — never activated, or the
- * active profile was deleted — it activates the first profile that has an API
- * key (falling back to the first profile). With zero profiles it does nothing:
- * that genuine "no LLM" state is surfaced by the gate/banner.
+ * step. Automatically syncs Exeaon Cloud virtual keys into cloud profiles on mount.
  */
 export function useEnsureActiveProfile(): void {
   const { backend } = useActiveBackend();
-  const isLocal = backend.kind === "local";
-  const { data: profilesData } = useLlmProfiles();
+  const { data: profilesData, refetch } = useLlmProfiles();
   const { mutate: activate, isPending } = useActivateLlmProfile();
 
   // Remember the last profile we tried to activate so we don't re-fire while
   // the mutation + refetch settle, or hammer a profile whose activation fails.
   const attemptedRef = useRef<string | null>(null);
+  const cloudSyncedRef = useRef(false);
 
   // A backend switch is a clean slate for the above guard.
   useEffect(() => {
     attemptedRef.current = null;
+    cloudSyncedRef.current = false;
   }, [backend.id]);
 
+  // On mount or cloud login, auto-sync the user's gateway virtual key into Cloud profiles
   useEffect(() => {
-    if (!isLocal || isPending || !profilesData) return;
+    const cloudUser = readCloudUser();
+    if (!cloudUser || cloudSyncedRef.current) return;
+    cloudSyncedRef.current = true;
+    syncCloudModelProfiles({ activateDefault: false }).then(() => {
+      refetch();
+    });
+  }, [backend.id, refetch]);
+
+  useEffect(() => {
+    if (isPending || !profilesData) return;
 
     const { profiles, active_profile: activeProfile } = profilesData;
     const activeValid =
@@ -47,5 +53,5 @@ export function useEnsureActiveProfile(): void {
     if (attemptedRef.current === target.name) return;
     attemptedRef.current = target.name;
     activate(target.name);
-  }, [isLocal, profilesData, isPending, activate]);
+  }, [profilesData, isPending, activate]);
 }

@@ -1,12 +1,8 @@
 import { useTranslation } from "react-i18next";
+import { Sparkles, Bug, Code2, Workflow } from "lucide-react";
 import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
-
-import TachometerFastIcon from "#/icons/tachometer-fast.svg?react";
-import PrStatusIcon from "#/icons/pr-status.svg?react";
-import DocumentIcon from "#/icons/document.svg?react";
-import WaterIcon from "#/icons/u-water.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { useConversationStore } from "#/stores/conversation-store";
 import { REPO_SUGGESTIONS } from "#/utils/suggestions/repo-suggestions";
@@ -46,7 +42,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         className={submenuListItemClassName}
       >
         <ToolsContextMenuIconText
-          icon={<TachometerFastIcon width={16} height={16} />}
+          icon={<Sparkles className="size-4 text-[#FFD026]" />}
           text={t(I18nKey.INCREASE_TEST_COVERAGE)}
         />
       </ContextMenuListItem>
@@ -57,7 +53,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         className={submenuListItemClassName}
       >
         <ToolsContextMenuIconText
-          icon={<DocumentIcon width={16} height={16} />}
+          icon={<Code2 className="size-4 text-[#FFD026]" />}
           text={t(I18nKey.FIX_README)}
         />
       </ContextMenuListItem>
@@ -68,7 +64,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         className={submenuListItemClassName}
       >
         <ToolsContextMenuIconText
-          icon={<PrStatusIcon width={16} height={16} />}
+          icon={<Bug className="size-4 text-[#FFD026]" />}
           text={t(I18nKey.AUTO_MERGE_PRS)}
         />
       </ContextMenuListItem>
@@ -79,10 +75,11 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         className={submenuListItemClassName}
       >
         <ToolsContextMenuIconText
-          icon={<WaterIcon width={16} height={16} />}
+          icon={<Workflow className="size-4 text-[#FFD026]" />}
           text={t(I18nKey.CLEAN_DEPENDENCIES)}
         />
       </ContextMenuListItem>
     </ContextMenu>
   );
 }
+

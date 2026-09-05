@@ -7,15 +7,15 @@
  * query hook or the settings update card.
  */
 const NPM_LATEST_VERSION_URL =
-  "https://registry.npmjs.org/@openhands/agent-canvas/latest";
+  "https://registry.npmjs.org/@exeaon/claw/latest";
 
 export const AGENT_CANVAS_RELEASE_NOTES_URL =
-  "https://github.com/OpenHands/OpenHands/releases";
+  "https://github.com/ExeaonLM/exeaon-agent/releases";
 
 /** Literal shell commands — intentionally not localized. */
 export const AGENT_CANVAS_UPDATE_COMMANDS = {
-  npm: "npm install -g @openhands/agent-canvas@latest",
-  docker: "docker pull ghcr.io/openhands/agent-canvas:latest",
+  npm: "npm install -g @exeaon/claw@latest",
+  docker: "docker pull ghcr.io/exeaon/claw:latest",
 } as const;
 
 export async function fetchLatestAgentCanvasVersion(

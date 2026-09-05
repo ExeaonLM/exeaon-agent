@@ -16,21 +16,11 @@ export function ConversationCardHeader({
   title,
   titleMode,
   onTitleSave,
-  executionStatus,
   sandboxStatus,
 }: ConversationCardHeaderProps) {
   const isArchived = isArchivedSandboxStatus(sandboxStatus);
   return (
-    <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-      {executionStatus !== undefined && (
-        <div className="flex w-[18px] shrink-0 items-center justify-center">
-          <ConversationStatusDot
-            executionStatus={executionStatus}
-            sandboxStatus={sandboxStatus}
-            showTooltip={false}
-          />
-        </div>
-      )}
+    <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
       <ConversationCardTitle
         title={title}
         titleMode={titleMode}

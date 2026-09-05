@@ -43,3 +43,18 @@ build-fresh/
 /resources/bin/
 # Downloaded Node.js distribution (populated by `npm run download-node` before packaging)
 /resources/node/
+
+# Tauri bundled runtimes (python-runtime + llama, populated at build time; far
+# too large for git — mirrors the Electron /resources/ excludes above).
+/src-tauri/resources/
+
+# Build logs & incremental caches
+tauri-build.log
+/tsconfig.tsbuildinfo
+
+# local dev
+.env
+vendor/
+run-build.bat
+schtasks-create.bat
+start-build.ps1

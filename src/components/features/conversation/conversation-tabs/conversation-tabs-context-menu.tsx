@@ -10,7 +10,7 @@ import {
   type ConversationTab,
 } from "#/stores/conversation-store";
 import { I18nKey } from "#/i18n/declaration";
-import { Gauge, Globe, ListTodo, SquareChevronRight } from "lucide-react";
+import { Gauge, Globe, ListTodo, Network, SquareChevronRight } from "lucide-react";
 import { LuFileDiff } from "react-icons/lu";
 import DocumentIcon from "#/icons/document.svg?react";
 import PillIcon from "#/icons/pill.svg?react";
@@ -81,7 +81,7 @@ export function ConversationTabsContextMenu({
     setUnpinnedTabs,
     setSelectedTab: setPersistedSelectedTab,
   } = useConversationLocalStorageState(conversationId);
-  const { selectedTab, isRightPanelShown, setSelectedTab } =
+  const { selectedTab, isRightPanelShown, setSelectedTab, engineeringField, cyberSwarm } =
     useConversationStore();
 
   const { navigateToTab } = useSelectConversationTab();
@@ -90,7 +90,12 @@ export function ConversationTabsContextMenu({
   const { backend } = useActiveBackend();
   const isArchivedConversation = useIsArchivedConversation();
 
-  const tabConfig = [
+  const tabConfig: Array<{
+    tab: string;
+    icon: React.ComponentType<{ className?: string }>;
+    i18nKey?: I18nKey;
+    label?: string;
+  }> = [
     {
       tab: "planner",
       icon: ListTodo,
@@ -109,6 +114,7 @@ export function ConversationTabsContextMenu({
     },
     { tab: "browser", icon: Globe, i18nKey: I18nKey.COMMON$BROWSER },
     { tab: "usage", icon: Gauge, i18nKey: I18nKey.COMMON$USAGE },
+    { tab: "swarm", icon: Network, label: "Cyber Graph" },
   ];
 
   if (hasTaskList) {
@@ -119,9 +125,18 @@ export function ConversationTabsContextMenu({
     });
   }
 
-  const visibleTabConfig = tabConfig.filter(
-    ({ tab }) => tab !== "planner" || backend.kind === "cloud",
-  );
+  const visibleTabConfig = tabConfig.filter(({ tab }) => {
+    if (tab === "planner" && backend.kind !== "cloud") return false;
+    if (
+      tab === "swarm" &&
+      engineeringField !== "cyber" &&
+      !cyberSwarm &&
+      selectedTab !== "swarm"
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   const handleOpenTab = (tab: string) => {
     if (isArchivedConversation) {
@@ -172,7 +187,7 @@ export function ConversationTabsContextMenu({
       spacing={isPortaled ? "none" : "default"}
       className={cn("z-[9999] w-fit", isPortaled ? "mt-0" : "mt-2")}
     >
-      {visibleTabConfig.map(({ tab, icon: Icon, i18nKey }) => {
+      {visibleTabConfig.map(({ tab, icon: Icon, i18nKey, label }) => {
         const pinned = !state.unpinnedTabs.includes(tab);
         return (
           <li key={tab} className="list-none">
@@ -204,7 +219,7 @@ export function ConversationTabsContextMenu({
                   >
                     <Icon className="h-4 w-4" />
                   </span>
-                  <span className="text-sm">{t(i18nKey)}</span>
+                  <span className="text-sm">{i18nKey ? t(i18nKey) : label}</span>
                 </button>
                 <button
                   type="button"

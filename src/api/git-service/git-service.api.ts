@@ -5,7 +5,7 @@ import { GitChange, GitChangeDiff } from "../open-hands.types";
 import AgentServerConversationService from "../conversation-service/agent-server-conversation-service.api";
 import { getAgentServerClientOptions } from "../agent-server-client-options";
 import { mapAnyGitStatusToClientStatus } from "#/utils/git-status-mapper";
-import { getActiveBackend } from "../backend-registry/active-store";
+import { isCloudAppServerBackend } from "../backend-registry/active-store";
 import {
   getCloudInstallations,
   getCloudRepositoryBranches,
@@ -14,7 +14,7 @@ import {
 
 const safeProvider = (value: string): Provider => value as Provider;
 
-const isCloudActive = () => getActiveBackend().backend.kind === "cloud";
+const isCloudActive = () => isCloudAppServerBackend();
 
 /**
  * Guard against null/undefined provider values that would result in

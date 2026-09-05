@@ -127,21 +127,27 @@ export function AgentStatus({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 min-w-0",
+        "flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#120F0A]/90 border border-[#2B2316] text-[#E0D8C3] min-w-0 shadow-sm",
         isTransientCheckStatus && "transition-opacity duration-500",
         shouldFadeDoneStatus && "opacity-0",
         className,
       )}
     >
+      {shouldShownAgentStop && (
+        <span className="relative flex size-1.5 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FFD026] opacity-75 duration-1000" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-[#FFD026]" />
+        </span>
+      )}
       <span
-        className="text-[11px] text-[var(--oh-muted)] font-normal leading-5 min-w-0 max-w-full truncate"
+        className="text-[11px] font-medium leading-4 text-[#D1C7B7] min-w-0 max-w-full truncate"
         title={t(statusCode)}
       >
         {t(statusCode)}
       </span>
       <div
         className={cn(
-          "box-border content-stretch flex flex-row gap-[3px] items-center justify-center overflow-clip px-0.5 py-1 relative rounded-[100px] shrink-0 size-6 transition-all duration-200 active:scale-95 bg-transparent text-[var(--oh-muted)] hover:bg-white/10 hover:text-white",
+          "flex items-center justify-center shrink-0 size-5 rounded-full transition-all duration-150 text-[#B8A88A] hover:text-[#FFD026] hover:bg-[#1C1812]",
           isInteractive ? "cursor-pointer" : "cursor-default",
         )}
       >
@@ -157,7 +163,7 @@ export function AgentStatus({
         )}
         {!isLoading && shouldShownAgentError && (
           <CircleErrorIcon
-            className="w-4 h-4 text-current"
+            className="w-3.5 h-3.5 text-red-400"
             data-testid="circle-error-icon"
           />
         )}
@@ -166,9 +172,9 @@ export function AgentStatus({
           !shouldShownAgentResume &&
           !shouldShownAgentError &&
           (isTransientCheckStatus ? (
-            <CircleCheck className="w-4 h-4 text-current" />
+            <CircleCheck className="w-3.5 h-3.5 text-[#FFD026]" />
           ) : (
-            <ClockIcon className="w-4 h-4 text-current" />
+            <ClockIcon className="w-3.5 h-3.5 text-current" />
           ))}
       </div>
     </div>

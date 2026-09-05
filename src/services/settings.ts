@@ -1,14 +1,15 @@
 import { Settings } from "#/types/settings";
+import { BRAND } from "#/exeaon/brand";
 
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  llm_model: "openhands/kimi-k3",
-  llm_base_url: "",
+  llm_model: BRAND.model.id,
+  llm_base_url: BRAND.model.baseUrl,
   agent: "CodeActAgent",
   language: "en",
-  llm_api_key: null,
-  llm_api_key_set: false,
+  llm_api_key: BRAND.model.apiKey,
+  llm_api_key_set: true,
   search_api_key_set: false,
   confirmation_mode: false,
   security_analyzer: "llm",
@@ -28,8 +29,8 @@ export const DEFAULT_SETTINGS: Settings = {
   max_budget_per_task: null,
   email: "",
   email_verified: true,
-  git_user_name: "openhands",
-  git_user_email: "openhands@all-hands.dev",
+  git_user_name: "exeaon",
+  git_user_email: "support@exeaon.dev",
   title_llm_profile: null,
   agent_settings_schema: null,
   agent_settings: {
@@ -37,7 +38,9 @@ export const DEFAULT_SETTINGS: Settings = {
     agent_kind: "openhands",
     agent: "CodeActAgent",
     llm: {
-      model: "openhands/kimi-k3",
+      model: BRAND.model.id,
+      base_url: BRAND.model.baseUrl,
+      api_key: BRAND.model.apiKey,
     },
     condenser: {
       enabled: true,

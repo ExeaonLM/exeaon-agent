@@ -1,12 +1,8 @@
-import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import AgentServerRuntimeService from "#/api/runtime-service/agent-server-runtime-service";
 import { listCloudConversationFiles } from "#/api/cloud/conversation-service.api";
-import {
-  getSnapshot,
-  subscribeActiveBackend,
-} from "#/api/backend-registry/active-store";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
@@ -38,12 +34,10 @@ const EXCLUDED_DIRS = [
   "target",
 ];
 
-// Build a `find` invocation that lists files relative to the workspace root.
-function buildListCommand(): string {
-  const pruneExpr = EXCLUDED_DIRS.map((dir) => `-name '${dir}' -prune`).join(
-    " -o ",
-  );
-  return `find . \\( ${pruneExpr} \\) -o -type f -print 2>/dev/null | sort | head -n ${MAX_FILES}`;
+// Build a cross-platform file listing command that works on both Windows and Linux.
+function buildListCommand(pyBin = "python"): string {
+  const excluded = EXCLUDED_DIRS.map((d) => `'${d}'`).join(",");
+  return `${pyBin} -c "import os; ex = {${excluded}}; files = [os.path.relpath(os.path.join(r, f), '.').replace(chr(92), '/') for r, d, fs in os.walk('.') if not any(x in r.replace(chr(92), '/').split('/') for x in ex) for f in fs]; [print(f) for f in sorted(files)[:${MAX_FILES}]]"`;
 }
 
 function normalizePath(path: string): string {
@@ -80,13 +74,24 @@ function useLocalWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
       workingDir,
     ],
     queryFn: async () => {
-      const result = await AgentServerRuntimeService.executeCommand(
+      let result = await AgentServerRuntimeService.executeCommand(
         conversationUrl,
         sessionApiKey,
-        buildListCommand(),
+        buildListCommand("python"),
         workingDir,
         30,
       );
+
+      // Fallback: try python3 if python failed (e.g. Linux environments without python symlink)
+      if (result.exit_code !== 0) {
+        result = await AgentServerRuntimeService.executeCommand(
+          conversationUrl,
+          sessionApiKey,
+          buildListCommand("python3"),
+          workingDir,
+          30,
+        );
+      }
 
       if (result.exit_code !== 0) {
         throw new Error(
@@ -183,12 +188,12 @@ function useCloudWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
  * and the cloud `/files` call never fires.
  */
 export function useWorkspaceFiles(): WorkspaceFilesResult {
-  const snapshot = useSyncExternalStore(
-    subscribeActiveBackend,
-    getSnapshot,
-    getSnapshot,
-  );
-  const isCloud = snapshot.active.backend.kind === "cloud";
+  // Use the RUNTIME seam, not backend.kind: on Exeaon the agent-server is always
+  // local even when a cloud backend is "active" for identity (backend.kind flips
+  // to "cloud" on sign-in). The transport (executeCommand) already targets the
+  // local engine; keying off backend.kind here would run the cloud file-listing
+  // endpoint — which the Exeaon gateway doesn't implement — and show "No files".
+  const isCloud = isCloudAppServerBackend();
 
   const local = useLocalWorkspaceFiles(!isCloud);
   const cloud = useCloudWorkspaceFiles(isCloud);

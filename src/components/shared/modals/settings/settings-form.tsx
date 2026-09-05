@@ -101,9 +101,9 @@ export function SettingsForm({ settings, onClose }: SettingsFormProps) {
 
           <HelpLink
             testId="llm-api-key-help-anchor"
-            text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-            linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-            href="https://docs.openhands.dev/usage/local-setup#getting-an-api-key"
+            text="Don't know your API key?"
+            linkText="Click here for instructions"
+            href="https://docs.exeaon.dev/usage/getting-an-api-key"
             size="settings"
             linkColor="white"
           />

@@ -36,7 +36,16 @@ export const isNoBackendAvailableError = (
     error.name === "NoBackendAvailableError");
 
 function normalizeHost(host: string): string {
-  return host.replace(/\/+$/, "");
+  const cleaned = host.replace(/\/+$/, "");
+  if (
+    !cleaned ||
+    cleaned.includes("tauri.localhost") ||
+    cleaned.startsWith("tauri://") ||
+    cleaned.startsWith("asset://")
+  ) {
+    return "http://127.0.0.1:18000";
+  }
+  return cleaned;
 }
 
 function resolveHost(

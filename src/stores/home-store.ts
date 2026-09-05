@@ -2,9 +2,14 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { GitRepository } from "#/types/git";
 import { Provider } from "#/types/settings";
+import { LocalWorkspace } from "#/types/workspace";
 
 interface HomeState {
   recentRepositories: GitRepository[];
+  // Local workspaces the user has recently launched from, most-recent first.
+  // Powers the home workspace picker's "Recent" list and the default-to-last
+  // behavior (a new chat pre-selects the most recent workspace, like Claude).
+  recentWorkspaces: LocalWorkspace[];
   lastSelectedProvider: Provider | null;
 }
 
@@ -12,6 +17,8 @@ interface HomeActions {
   addRecentRepository: (repository: GitRepository) => void;
   clearRecentRepositories: () => void;
   getRecentRepositories: () => GitRepository[];
+  addRecentWorkspace: (workspace: LocalWorkspace) => void;
+  clearRecentWorkspaces: () => void;
   setLastSelectedProvider: (provider: Provider | null) => void;
   getLastSelectedProvider: () => Provider | null;
 }
@@ -20,6 +27,7 @@ type HomeStore = HomeState & HomeActions;
 
 const initialState: HomeState = {
   recentRepositories: [],
+  recentWorkspaces: [],
   lastSelectedProvider: null,
 };
 
@@ -49,6 +57,23 @@ export const useHomeStore = create<HomeStore>()(
         })),
 
       getRecentRepositories: () => get().recentRepositories,
+
+      addRecentWorkspace: (workspace: LocalWorkspace) =>
+        set((state) => {
+          // Dedupe by path (the stable identity — ids can be regenerated when a
+          // workspace is re-derived from a parent). Newest first, keep top 5.
+          const filtered = state.recentWorkspaces.filter(
+            (w) => w.path !== workspace.path,
+          );
+          return {
+            recentWorkspaces: [workspace, ...filtered].slice(0, 5),
+          };
+        }),
+
+      clearRecentWorkspaces: () =>
+        set(() => ({
+          recentWorkspaces: [],
+        })),
 
       setLastSelectedProvider: (provider: Provider | null) =>
         set(() => ({

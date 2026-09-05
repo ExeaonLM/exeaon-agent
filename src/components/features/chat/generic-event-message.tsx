@@ -61,31 +61,30 @@ export function GenericEventMessage({
   ) : null;
 
   return (
-    <div className="flex flex-col gap-1.5 my-1 py-1 text-sm w-full">
-      <div className="flex items-center justify-between font-normal text-[var(--oh-muted)]">
-        <div className="flex items-center">
+    <div className="flex flex-col gap-2 my-1.5 p-3 rounded-xl border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]/70 backdrop-blur-sm text-sm w-full transition-all hover:border-[var(--oh-border)] shadow-sm">
+      <div className="flex items-center justify-between font-normal text-[var(--cool-grey-300)]">
+        <div className="flex items-center gap-1.5">
           {chevronPosition === "before" && chevron}
           {titleIcon}
-          {/* Wrap the title in a span so any whitespace inside Trans-rendered
-              fragments (e.g. "Editing <path>...</path>") is preserved by
-              normal inline flow instead of being collapsed between
-              anonymous flex items. */}
-          <span>{title}</span>
+          <span className="font-medium text-xs text-[var(--cool-grey-100)]">{title}</span>
           {chevronPosition === "after" && chevron}
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {titleTrailing}
           {success && <SuccessIndicator status={success} />}
         </div>
       </div>
 
-      {showDetails &&
-        (typeof details === "string" ? (
-          <MarkdownRenderer>{details}</MarkdownRenderer>
-        ) : (
-          details
-        ))}
+      {showDetails && (
+        <div className="mt-1 pt-2 border-t border-[var(--oh-border)] font-mono text-xs text-[var(--cool-grey-200)]">
+          {typeof details === "string" ? (
+            <MarkdownRenderer>{details}</MarkdownRenderer>
+          ) : (
+            details
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import { resolveAbsoluteAgentServerPath } from "../agent-server-home";
 import {
   getActiveBackend,
   getEffectiveLocalBackend,
+  isCloudAppServerBackend,
 } from "../backend-registry/active-store";
 import { callCloudProxy } from "../cloud/proxy";
 import ProfilesService from "../profiles-service/profiles-service.api";
@@ -352,6 +353,14 @@ export interface CreateConversationOptions {
   // encrypted-settings builder; cloud sends it as a flat request field.
   agentProfileId?: string;
   agentProfileKind?: AgentKind;
+  /**
+   * Exeaon Engineering Labs contract (field + execution mode + safety posture)
+   * to append to the agent's persistent `system_message_suffix` at creation, so
+   * it applies from the very FIRST turn and stays invisible to the user (it is
+   * not a chat message). Empty/undefined for ordinary conversations. See
+   * `buildEngineeringDirective`.
+   */
+  engineeringDirective?: string;
 }
 
 class AgentServerConversationService {
@@ -364,7 +373,7 @@ class AgentServerConversationService {
     let conversationUrl = runtime?.conversationUrl ?? null;
     let sessionApiKey = runtime?.sessionApiKey ?? null;
 
-    if (active.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       if (!conversationUrl || !sessionApiKey) {
         const [conversation] = await batchGetCloudConversations([
           conversationId,
@@ -416,9 +425,10 @@ class AgentServerConversationService {
       sandboxId,
       agentProfileId,
       agentProfileKind,
+      engineeringDirective,
     } = options;
 
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // Cloud path mirrors OpenHands' frontend: build a flat
       // AppConversationStartRequest, POST /api/v1/app-conversations
       // (returns a WORKING task), and let the conversation route's
@@ -477,15 +487,34 @@ class AgentServerConversationService {
     // on the active backend's host (not its id): the seeded `default-local`
     // entry is mutable, so a user can edit it to point at a remote host while
     // its id stays `default-local`.
+    // When launching a child (parentConversationId set) without an explicit
+    // workspace, inherit the parent's working_dir. The agent-server rejects a
+    // parent whose workspace differs from the child's, so a child that carries
+    // its own fresh `workspace/project/<newhex>` 422s ("Parent conversation …
+    // belongs to a different workspace"). This is the common case for Plan
+    // mode, whose planning sub-conversation links to its parent but passes no
+    // workingDir (see use-handle-plan-click). Inheriting the parent's dir also
+    // means the planner shares — and can read — the same files.
+    const inheritedWorkingDir =
+      !workingDirOverride && parentConversationId
+        ? await this.resolveConversationWorkingDir(parentConversationId)
+        : undefined;
+    const effectiveWorkingDirOverride =
+      workingDirOverride ?? inheritedWorkingDir;
+
     const baseWorkingDir =
-      workingDirOverride ??
+      effectiveWorkingDirOverride ??
       buildConversationWorkingDirForBackend(
         conversationId,
         getActiveBackend().backend.host,
       );
     const workingDir = await resolveAbsoluteAgentServerPath(baseWorkingDir);
+    // Share the parent's directory (local_repo) rather than cutting a worktree:
+    // a scratch parent dir has no commit for `git worktree add` to branch from,
+    // which fails the launch. An explicit user workspace still worktrees.
     const resolvedWorkspaceMode =
-      workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
+      workspaceMode ??
+      (effectiveWorkingDirOverride ? "local_repo" : "new_worktree");
 
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
@@ -504,6 +533,7 @@ class AgentServerConversationService {
       agentProfileId,
       agentProfileKind,
       titleLlmProfile,
+      engineeringDirective,
     });
 
     const telemetryDistinctId = await getTelemetryDistinctId();
@@ -553,7 +583,7 @@ class AgentServerConversationService {
   static async getStartTask(
     taskId: string,
   ): Promise<AppConversationStartTask | null> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return getCloudAppConversationStartTask(taskId);
     }
     // Local agent-server creates conversations synchronously — every
@@ -625,7 +655,7 @@ class AgentServerConversationService {
   ): Promise<(AppConversation | null)[]> {
     if (ids.length === 0) return [];
 
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return batchGetCloudConversations(ids);
     }
 
@@ -675,7 +705,7 @@ class AgentServerConversationService {
     conversationId: string,
     filePath?: string,
   ): Promise<string> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // Cloud exposes a per-conversation file endpoint; the sandbox
       // working dir is fixed (`/workspace/project`), so PLAN.md lives at
       // a known absolute path. Mirrors OpenHands' readConversationFile.
@@ -695,7 +725,7 @@ class AgentServerConversationService {
   }
 
   static async downloadConversation(conversationId: string): Promise<Blob> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return downloadCloudConversation(conversationId);
     }
 
@@ -751,7 +781,7 @@ class AgentServerConversationService {
   ): Promise<void> {
     const active = getActiveBackend().backend;
 
-    if (active.kind === "cloud" && conversationUrl) {
+    if (isCloudAppServerBackend() && conversationUrl) {
       await callCloudProxy({
         backend: active,
         method: "POST",
@@ -772,7 +802,7 @@ class AgentServerConversationService {
     limit: number = 20,
     pageId?: string,
   ): Promise<AppConversationPage> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return searchCloudConversations(limit, pageId);
     }
 
@@ -788,7 +818,7 @@ class AgentServerConversationService {
   }
 
   static async deleteConversation(conversationId: string): Promise<void> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await deleteCloudConversation(conversationId);
     } else {
       await new ConversationClient(
@@ -823,7 +853,7 @@ class AgentServerConversationService {
     fromEventId: string,
     title?: string,
   ): Promise<DirectConversationInfo> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       throw new Error(
         "Branching a conversation isn't supported on the cloud backend yet.",
       );
@@ -888,7 +918,7 @@ class AgentServerConversationService {
   ): Promise<void> {
     const { backend } = getActiveBackend();
 
-    if (backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       // No conversation (home page): activate globally so the next
       // conversation starts with it. ProfilesService routes to the cloud
       // activate endpoint.
@@ -951,7 +981,7 @@ class AgentServerConversationService {
     model: string,
   ): Promise<void> {
     const { backend } = getActiveBackend();
-    if (backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await callCloudProxy({
         backend,
         method: "POST",

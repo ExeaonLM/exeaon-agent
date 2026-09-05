@@ -1,4 +1,4 @@
-import { AppWindow, Brain, Shield } from "lucide-react";
+import { AppWindow, Brain, Shield, Sparkles, User, Wrench } from "lucide-react";
 import KeyIcon from "#/icons/key.svg?react";
 import MemoryIcon from "#/icons/memory_icon.svg?react";
 import CircuitIcon from "#/icons/u-circuit.svg?react";
@@ -14,55 +14,63 @@ export interface SettingsNavItem {
 
 export const OSS_NAV_ITEMS: SettingsNavItem[] = [
   {
-    // "Agent" is the Agent Profile library: it lists the user's agent profiles
-    // and its create/edit view is the reused Agent settings form plus a name.
-    // The active profile is the current agent (#1571). Replaces the old split
-    // of a global "Agent" form + a separate "Agent profiles" library.
     icon: <RobotIcon width={16} height={16} />,
     to: "/settings/agents",
-    text: "SETTINGS$NAV_AGENT",
-    subtitle: "SETTINGS$PAGE_AGENT_PROFILES_SUBLINE",
+    text: "Agent Profiles",
+    subtitle: "Create and manage reusable agent setups",
   },
   {
     icon: <CircuitIcon width={16} height={16} />,
     to: "/settings/llm",
-    text: "SETTINGS$NAV_LLM",
-    subtitle: "SETTINGS$PAGE_LLM_SUBLINE",
+    text: "Models",
+    subtitle: "Exeaon cluster models & capabilities",
+  },
+  {
+    icon: <Sparkles className="size-4" strokeWidth={2} aria-hidden />,
+    to: "/settings/skills",
+    text: "Skills",
+    subtitle: "Microagent capabilities, knowledge packages and tool integrations",
+  },
+  {
+    icon: <Wrench className="size-4" strokeWidth={2} aria-hidden />,
+    to: "/settings/tools",
+    text: "Agent Tools",
+    subtitle: "Inspect registered runtime tools, schemas and system protocols",
   },
   {
     icon: <MemoryIcon width={16} height={16} />,
     to: "/settings/condenser",
-    text: "SETTINGS$NAV_CONDENSER",
-    subtitle: "SETTINGS$PAGE_CONDENSER_SUBLINE",
+    text: "Compactor",
+    subtitle: "Configure automatic conversation compaction",
   },
   {
-    // The agent's ``agent_context`` section, whatever the schema exposes in it
-    // — today only persistent memory (``agent_context.load_memory``). Not
-    // ``disabledByAcp``: the stored flag rides the shared agent_settings
-    // record into ACP conversations too — inline launches spread it into
-    // ``agent_context``, and profile launches (the normal ACP path) have the
-    // agent-server stamp it onto the profile-resolved agent.
     icon: <Brain className="size-4" strokeWidth={2} aria-hidden />,
     to: "/settings/agent-context",
-    text: "SETTINGS$NAV_AGENT_CONTEXT",
-    subtitle: "SETTINGS$PAGE_AGENT_CONTEXT_SUBLINE",
+    text: "Context",
+    subtitle: "Persistent memory, instructions & workspace rules",
   },
   {
     icon: <Shield className="size-4" strokeWidth={2} aria-hidden />,
     to: "/settings/verification",
-    text: "SETTINGS$NAV_VERIFICATION",
-    subtitle: "SETTINGS$PAGE_VERIFICATION_SUBLINE",
+    text: "Validation",
+    subtitle: "Validation workflows and security boundaries",
   },
   {
     icon: <AppWindow className="size-4" strokeWidth={2} aria-hidden />,
     to: "/settings/app",
-    text: "SETTINGS$NAV_APPLICATION",
-    subtitle: "SETTINGS$PAGE_APPLICATION_SUBLINE",
+    text: "Appearance",
+    subtitle: "Themes, UI customizations, and workspace display",
+  },
+  {
+    icon: <User className="size-4" strokeWidth={2} aria-hidden />,
+    to: "/settings/account",
+    text: "Account & Cloud",
+    subtitle: "Organization, usage quotas, and execution clusters",
   },
   {
     icon: <KeyIcon width={16} height={16} />,
     to: "/settings/secrets",
-    text: "SETTINGS$NAV_SECRETS",
-    subtitle: "SETTINGS$PAGE_SECRETS_SUBLINE",
+    text: "Secrets",
+    subtitle: "Manage API keys and environment variables",
   },
 ];

@@ -6,7 +6,6 @@ import { SidebarNavLink } from "#/components/features/sidebar/sidebar-nav-link";
 import { AgentCanvasUpdateCard } from "#/components/features/settings/agent-canvas-update-card";
 import { BackendSyncedSettingsBadge } from "#/components/features/settings/backend-synced-settings-badge";
 import { CloudSettingsLink } from "#/components/features/settings/cloud-settings-link";
-import { IntegrationsSettingsLink } from "#/components/features/settings/integrations-settings-link";
 
 interface SettingsMobileHubProps {
   navigationItems: SettingsNavRenderedItem[];
@@ -37,7 +36,6 @@ export function SettingsMobileHub({ navigationItems }: SettingsMobileHubProps) {
             icon={renderedItem.item.icon}
           />
         ))}
-        <IntegrationsSettingsLink />
         <CloudSettingsLink />
       </nav>
       <AgentCanvasUpdateCard />

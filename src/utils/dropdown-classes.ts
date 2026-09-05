@@ -27,18 +27,18 @@ export const dropdownTriggerShellClassName = cn(
 
 /** Standard white-label menu row. */
 export const dropdownMenuRowClassName = cn(
-  "group flex w-full cursor-pointer items-center rounded px-2 py-2 text-left text-sm font-normal text-white",
+  "group flex w-full cursor-pointer items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-white",
   dropdownMenuRowGapClassName,
-  "hover:bg-[var(--oh-interactive-hover)] disabled:cursor-not-allowed disabled:opacity-60",
+  "hover:bg-[#201C15] hover:text-[#FFF4B8] transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
   dropdownInstantColorClassName,
 );
 
 /** Menu row using foreground token (context menus). */
 export const dropdownMenuRowForegroundClassName = cn(
-  "group flex w-full cursor-pointer items-center rounded px-2 py-2 text-start text-sm font-normal",
+  "group flex w-full cursor-pointer items-center rounded-lg px-2.5 py-2 text-start text-xs font-medium",
   dropdownMenuRowGapClassName,
-  "text-[var(--oh-foreground)] hover:bg-[var(--oh-interactive-hover)]",
-  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
+  "text-[#E8E2D4] hover:bg-[#201C15] hover:text-[#FFF4B8] transition-colors duration-150",
+  "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent",
   dropdownInstantColorClassName,
 );
 

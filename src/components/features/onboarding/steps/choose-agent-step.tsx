@@ -46,8 +46,8 @@ export function AgentOptionIcon({ id, muted }: { id: string; muted: boolean }) {
     return (
       <AgentBrandIcon
         kind="openhands"
-        size={16}
-        className={cn("text-white", muted && "opacity-55")}
+        size={20}
+        className={cn(muted && "opacity-55")}
         data-testid="onboarding-agent-icon-openhands"
       />
     );
@@ -71,13 +71,12 @@ interface AgentOption {
 
 // Onboarding tile list is *derived* from the ACP registry so adding a
 // new provider (or changing a display name) only needs one edit in
-// ``acp-providers.ts``. The OpenHands tile is the only synthetic
-// entry — it isn't an ACP provider, just the canonical default.
+// ``acp-providers.ts``. The Exeaon tile is the primary default entry.
 function getAgentOptions(): AgentOption[] {
   return [
     {
       id: "openhands",
-      label: "OpenHands",
+      label: "Exeaon",
       descriptionKey: I18nKey.ONBOARDING$AGENT_OPENHANDS_DESCRIPTION,
     },
     ...ACP_PROVIDERS.map<AgentOption>((provider) => ({
@@ -145,58 +144,42 @@ export function ChooseAgentStep({
         </p>
       </header>
 
-      <div
-        role="radiogroup"
-        aria-label={t(I18nKey.ONBOARDING$AGENT_TITLE)}
-        className="flex flex-col gap-3"
-      >
-        {getAgentOptions().map((option) => {
-          const isSelected = option.id === selectedAgentId;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              data-testid={`onboarding-agent-option-${option.id}`}
-              data-selected={isSelected}
-              onClick={() => onSelect(option.id)}
-              className={cn(
-                "flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer",
-                isSelected
-                  ? "border-white/45 bg-white/[0.09] shadow-none hover:border-white/45 hover:bg-white/[0.09]"
-                  : "border-white/30 bg-white/5 hover:border-white/40 hover:bg-white/[0.08]",
-              )}
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <AgentOptionIcon id={option.id} muted={false} />
-                  <span className="truncate text-base font-normal text-white">
-                    {option.label}
-                  </span>
-                </div>
-                <span className="text-xs text-[var(--oh-muted)]">
-                  {t(option.descriptionKey)}
-                </span>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                {isSelected ? (
-                  <Check
-                    width={18}
-                    height={18}
-                    className="mt-1 shrink-0 text-white"
-                    aria-hidden
-                  />
-                ) : null}
-              </div>
-            </button>
-          );
-        })}
+      {/* Single Exeaon tile — centered, always selected */}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          role="radio"
+          aria-checked
+          data-testid="onboarding-agent-option-openhands"
+          data-selected="true"
+          onClick={() => onSelect("openhands")}
+          className="exo-flow-card flex items-start justify-between gap-4 px-4 py-3.5 text-left transition-all cursor-pointer w-full max-w-sm"
+        >
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <AgentOptionIcon id="openhands" muted={false} />
+              <span className="truncate text-base font-normal text-white">
+                Exeaon
+              </span>
+            </div>
+            <span className="text-xs text-[var(--oh-muted)]">
+              Exeaon agent. For coding, research and discoveries.
+            </span>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Check
+              width={18}
+              height={18}
+              className="mt-1 shrink-0 text-[#FFD026]"
+              aria-hidden
+            />
+          </div>
+        </button>
       </div>
 
       <div
         className={cn(
-          "sticky bottom-0 flex items-center gap-2 bg-base-secondary pt-4 pb-7",
+          "sticky bottom-0 flex items-center gap-2 bg-[#0E0D0A] pt-4 pb-7",
           onBack ? "justify-between" : "justify-end",
         )}
       >

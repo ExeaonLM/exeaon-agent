@@ -26,7 +26,7 @@ import type {
   ExposeSecretsMode,
 } from "@openhands/typescript-client";
 import { getAgentServerClientOptions } from "../agent-server-client-options";
-import { getActiveBackend } from "../backend-registry/active-store";
+import { isCloudAppServerBackend } from "../backend-registry/active-store";
 import {
   listCloudAgentProfiles,
   getCloudAgentProfile,
@@ -37,7 +37,7 @@ import {
 } from "../cloud/agent-profiles-service.api";
 
 function isCloud(): boolean {
-  return getActiveBackend().backend.kind === "cloud";
+  return isCloudAppServerBackend();
 }
 
 /**

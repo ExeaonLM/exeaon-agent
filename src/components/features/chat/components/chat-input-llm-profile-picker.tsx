@@ -13,7 +13,16 @@ import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
-import { formatModelNameForDisplay } from "#/utils/format-model-name";
+import {
+  cleanModelDescription,
+  formatModelNameForDisplay,
+  formatNativeModelName,
+  getExeaonModelMeta,
+  sanitizeProfileName,
+} from "#/utils/format-model-name";
+import { useCloudModels } from "#/hooks/query/use-cloud-models";
+import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
+import { useModelInChat } from "#/hooks/mutation/use-model-in-chat";
 
 const PROFILE_LABEL_MAX_CHARS = 18;
 
@@ -56,8 +65,40 @@ export function ChatInputLlmProfileMenuContent({
   const showProfileList = canSwitchProfile && profiles.length > 0;
   const readOnlyProfileName = canSwitchProfile ? null : currentProfileName;
 
+  // Cloud + on-device catalog models, surfaced directly in the picker: selecting
+  // one auto-registers a profile for it (via useModelInChat) and activates it.
+  // Models already added as a profile are dropped here so they don't duplicate
+  // the Available Profiles rows above.
+  const { data: cloudModels } = useCloudModels();
+  const localGguf = useLocalGgufModels();
+  const { activateCloudModel, activateLocalModel, pending } = useModelInChat();
+  const profileNames = new Set(profiles.map((p) => p.name));
+  const cloudRows = canSwitchProfile
+    ? (cloudModels ?? []).filter(
+        (m) => !profileNames.has(sanitizeProfileName(m.name)),
+      )
+    : [];
+  const ggufRows =
+    canSwitchProfile && localGguf.hasTauri
+      ? localGguf.models.filter(
+          (m) => !profileNames.has(sanitizeProfileName(m.displayName)),
+        )
+      : [];
+
   const handleSelect = (profileName: string) => {
     selectProfile(profileName);
+    onClose();
+  };
+
+  // Await so the popover stays open showing the row's "Setting up…" state while
+  // the key-fetch / profile-save runs, instead of closing to a silent pause.
+  const handleCloudSelect = async (displayName: string) => {
+    await activateCloudModel(displayName);
+    onClose();
+  };
+
+  const handleGgufSelect = async (displayName: string, fileName: string) => {
+    await activateLocalModel(displayName, fileName);
     onClose();
   };
 
@@ -74,7 +115,17 @@ export function ChatInputLlmProfileMenuContent({
           </li>
           {profiles.map((profile) => {
             const isCurrent = profile.name === currentProfileName;
-            const displayModel = formatModelNameForDisplay(profile.model);
+            const meta =
+              getExeaonModelMeta(profile.model) ||
+              getExeaonModelMeta(profile.name);
+            const title = meta
+              ? meta.name
+              : formatModelNameForDisplay(profile.name);
+            const subtitle = meta
+              ? meta.subtitle
+              : profile.model
+                ? formatModelNameForDisplay(profile.model)
+                : null;
             return (
               <ContextMenuListItem
                 key={profile.name}
@@ -89,29 +140,29 @@ export function ChatInputLlmProfileMenuContent({
                   handleSelect(profile.name);
                 }}
                 className={cn(
-                  "flex flex-col items-stretch gap-0.5",
+                  "flex flex-col items-stretch gap-0.5 py-2 px-3",
                   isCurrent && "bg-[var(--oh-interactive-hover)]",
                 )}
               >
                 <span className="flex items-center gap-2">
                   <span
-                    className="flex-1 truncate text-sm leading-5"
-                    title={profile.model ?? profile.name}
+                    className="flex-1 truncate text-sm font-medium leading-5 text-white"
+                    title={title ?? profile.name}
                   >
-                    {profile.name}
+                    {title}
                   </span>
                   {isCurrent && (
                     <CheckIcon
                       width={14}
                       height={14}
-                      className="shrink-0"
+                      className="shrink-0 text-[#FFD026]"
                       aria-hidden
                     />
                   )}
                 </span>
-                {displayModel && (
+                {subtitle && (
                   <span className="block truncate text-xs leading-4 text-[var(--oh-muted)]">
-                    {displayModel}
+                    {subtitle}
                   </span>
                 )}
               </ContextMenuListItem>
@@ -119,6 +170,93 @@ export function ChatInputLlmProfileMenuContent({
           })}
         </>
       )}
+
+      {cloudRows.length > 0 && (
+        <>
+          <li role="presentation" className="px-2 pt-2 pb-0.5">
+            <Typography.Text className="text-[11px] font-medium text-[var(--oh-text-dim)] uppercase tracking-wide leading-4">
+              Cloud models
+            </Typography.Text>
+          </li>
+          {cloudRows.map((m) => {
+            const locked = !m.available;
+            const busy = pending === m.name;
+            return (
+              <ContextMenuListItem
+                key={`cloud-${m.id}`}
+                testId={`chat-input-cloud-model-${m.id}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (locked || busy) return;
+                  handleCloudSelect(m.name);
+                }}
+                className={cn(
+                  "flex flex-col items-stretch gap-0.5 py-2 px-3",
+                  locked && "opacity-50",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <span
+                    className="flex-1 truncate text-sm font-medium leading-5 text-white"
+                    title={m.name}
+                  >
+                    {formatNativeModelName(m.name) || m.name}
+                  </span>
+                  {m.requiresPro && (
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#FFD026]">
+                      Pro
+                    </span>
+                  )}
+                </span>
+                {busy || cleanModelDescription(m.description) ? (
+                  <span className="block truncate text-xs leading-4 text-[var(--oh-muted)]">
+                    {busy
+                      ? "Setting up…"
+                      : cleanModelDescription(m.description)}
+                  </span>
+                ) : null}
+              </ContextMenuListItem>
+            );
+          })}
+        </>
+      )}
+
+      {ggufRows.length > 0 && (
+        <>
+          <li role="presentation" className="px-2 pt-2 pb-0.5">
+            <Typography.Text className="text-[11px] font-medium text-[var(--oh-text-dim)] uppercase tracking-wide leading-4">
+              On-device
+            </Typography.Text>
+          </li>
+          {ggufRows.map((m) => {
+            const busy = pending === m.displayName;
+            return (
+              <ContextMenuListItem
+                key={`gguf-${m.path}`}
+                testId={`chat-input-gguf-model-${m.name}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (busy) return;
+                  handleGgufSelect(m.displayName, m.name);
+                }}
+                className="flex flex-col items-stretch gap-0.5 py-2 px-3"
+              >
+                <span className="flex-1 truncate text-sm font-medium leading-5 text-white">
+                  {m.displayName}
+                </span>
+                <span className="block truncate text-xs leading-4 text-[var(--oh-muted)]">
+                  {busy
+                    ? "Setting up…"
+                    : `On-device · ${m.sizeGb.toFixed(1)} GB`}
+                </span>
+              </ContextMenuListItem>
+            );
+          })}
+        </>
+      )}
+
       {readOnlyProfileName && (
         <li className="text-sm" data-testid="chat-input-llm-profile-current">
           <div className="flex flex-col gap-0.5 p-2 leading-5 text-[var(--oh-foreground)]">
@@ -133,9 +271,10 @@ export function ChatInputLlmProfileMenuContent({
           </div>
         </li>
       )}
-      {(showProfileList || readOnlyProfileName) && (
-        <Divider inset={dividerInset} />
-      )}
+      {(showProfileList ||
+        readOnlyProfileName ||
+        cloudRows.length > 0 ||
+        ggufRows.length > 0) && <Divider inset={dividerInset} />}
       <li className="text-sm">
         <NavigationLink
           to="/settings/llm"
@@ -151,7 +290,7 @@ export function ChatInputLlmProfileMenuContent({
             className={cn("shrink-0", settingsIconClassName)}
             aria-hidden
           />
-          <span>{t(I18nKey.SETTINGS$LLM_PROFILES)}</span>
+          <span>Models</span>
         </NavigationLink>
       </li>
     </>
@@ -169,13 +308,34 @@ export function ChatInputLlmProfilePicker() {
     triggerRef,
   );
 
+  // The popover opens upward from the trigger. Cap its height to the space
+  // actually above the trigger (minus a margin) so it never runs off the top of
+  // the window — however many models the list grows to — and scrolls inside.
+  const [maxHeight, setMaxHeight] = React.useState<number | undefined>(
+    undefined,
+  );
+  React.useLayoutEffect(() => {
+    if (!isPopoverOpen) return;
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) setMaxHeight(Math.max(180, Math.floor(rect.top - 16)));
+  }, [isPopoverOpen]);
+
   // No LLM profiles yet (or the agent-server lacks the surface): stay out of
   // the way, exactly like the ACP/AgentProfile pickers.
   if (isLoading || profiles.length === 0) {
     return null;
   }
 
-  const label = currentProfileName ?? t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER);
+  const currentProfile = profiles.find((p) => p.name === currentProfileName);
+  const modelToFormat = currentProfile?.model ?? currentProfileName;
+  const meta =
+    (modelToFormat ? getExeaonModelMeta(modelToFormat) : null) ||
+    (currentProfileName ? getExeaonModelMeta(currentProfileName) : null);
+  const label = meta
+    ? meta.name
+    : currentProfileName
+      ? formatModelNameForDisplay(currentProfileName)
+      : t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER);
 
   return (
     <div className="relative min-w-0">
@@ -196,7 +356,7 @@ export function ChatInputLlmProfilePicker() {
           setIsPopoverOpen((open) => !open);
         }}
       >
-        <span className="truncate">{truncateLabel(label)}</span>
+        <span className="truncate">{truncateLabel(label ?? "")}</span>
         <ComboboxCaretInline isOpen={isPopoverOpen} />
       </button>
 
@@ -207,7 +367,8 @@ export function ChatInputLlmProfilePicker() {
           position="top"
           alignment="left"
           spacing="none"
-          className="z-[60] mb-2 min-w-[200px] max-w-[320px] max-h-[60vh] overflow-y-auto"
+          className="z-[60] mb-2 min-w-[200px] max-w-[320px] overflow-y-auto"
+          style={maxHeight ? { maxHeight } : undefined}
         >
           <ChatInputLlmProfileMenuContent
             onClose={() => setIsPopoverOpen(false)}

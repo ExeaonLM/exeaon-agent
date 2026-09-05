@@ -7,7 +7,6 @@ import { SidebarNavLink } from "#/components/features/sidebar/sidebar-nav-link";
 import { AgentCanvasUpdateCard } from "#/components/features/settings/agent-canvas-update-card";
 import { BackendSyncedSettingsBadge } from "#/components/features/settings/backend-synced-settings-badge";
 import { CloudSettingsLink } from "#/components/features/settings/cloud-settings-link";
-import { IntegrationsSettingsLink } from "#/components/features/settings/integrations-settings-link";
 
 interface SettingsDesktopSidebarProps {
   navigationItems: SettingsNavRenderedItem[];
@@ -35,7 +34,7 @@ export function SettingsDesktopSidebar({
         "md:sticky md:top-8 md:self-start md:pl-8",
       )}
     >
-      <Typography.Text className="px-2 text-sm font-normal text-white">
+      <Typography.Text className="px-2 text-xs font-medium uppercase tracking-wider text-[var(--cool-grey-400)]">
         {t(I18nKey.SETTINGS$TITLE)}
       </Typography.Text>
       <div className="flex flex-col gap-0.5 pt-0.5">
@@ -43,13 +42,16 @@ export function SettingsDesktopSidebar({
           <SidebarNavLink
             key={renderedItem.item.to}
             to={renderedItem.item.to}
-            label={t(renderedItem.item.text as I18nKey)}
+            label={
+              renderedItem.item.text.startsWith("SETTINGS$")
+                ? t(renderedItem.item.text as I18nKey)
+                : renderedItem.item.text
+            }
             end
             testId={`sidebar-settings-${renderedItem.item.to}`}
             icon={renderedItem.item.icon}
           />
         ))}
-        <IntegrationsSettingsLink />
         <CloudSettingsLink />
       </div>
       <div className="flex flex-col gap-2 px-2 pt-3">

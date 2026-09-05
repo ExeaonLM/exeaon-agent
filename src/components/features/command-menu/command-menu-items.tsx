@@ -30,6 +30,9 @@ export const COMMAND_MENU_ROUTE = {
   settings: "/settings",
   agentSettings: "/settings/agents",
   llmSettings: "/settings/llm",
+  skillsSettings: "/settings/skills",
+  toolsSettings: "/settings/tools",
+  accountSettings: "/settings/account",
   condenserSettings: "/settings/condenser",
   verificationSettings: "/settings/verification",
   appSettings: "/settings/app",
@@ -45,6 +48,9 @@ export type CommandMenuItemId =
   | "settings"
   | "agent-settings"
   | "llm-settings"
+  | "skills-settings"
+  | "tools-settings"
+  | "account-settings"
   | "condenser-settings"
   | "verification-settings"
   | "app-settings"
@@ -107,30 +113,6 @@ export const createCommandMenuItems = ({
     to: COMMAND_MENU_ROUTE.conversations,
   },
   {
-    id: "customize",
-    group: "navigation",
-    titleKey: I18nKey.COMMAND_MENU$CUSTOMIZE_TITLE,
-    descriptionKey: I18nKey.COMMAND_MENU$CUSTOMIZE_DESCRIPTION,
-    keywordsKey: I18nKey.COMMAND_MENU$CUSTOMIZE_KEYWORDS,
-    icon: <Sparkles size={ICON_SIZE} />,
-    to: COMMAND_MENU_ROUTE.customize,
-  },
-  // The automation interface owns this entry's copy, so an absent manifest
-  // leaves the command menu without it rather than with host copy.
-  ...(hasAutomationInterface()
-    ? [
-        {
-          id: "automations" as const,
-          group: "navigation" as const,
-          title: getInterfaceCopy().commandMenuTitle,
-          description: getInterfaceCopy().commandMenuDescription,
-          keywords: getInterfaceCopy().commandMenuKeywords,
-          icon: <Zap size={ICON_SIZE} />,
-          to: COMMAND_MENU_ROUTE.automations,
-        },
-      ]
-    : []),
-  {
     id: "mcp",
     group: "navigation",
     titleKey: I18nKey.COMMAND_MENU$MCP_TITLE,
@@ -140,31 +122,40 @@ export const createCommandMenuItems = ({
     to: COMMAND_MENU_ROUTE.mcp,
   },
   {
-    id: "settings",
-    group: "settings",
-    titleKey: I18nKey.COMMAND_MENU$SETTINGS_TITLE,
-    descriptionKey: I18nKey.COMMAND_MENU$SETTINGS_DESCRIPTION,
-    keywordsKey: I18nKey.COMMAND_MENU$SETTINGS_KEYWORDS,
-    icon: <Settings size={ICON_SIZE} />,
-    to: COMMAND_MENU_ROUTE.settings,
-  },
-  {
-    id: "agent-settings",
-    group: "settings",
-    titleKey: I18nKey.COMMAND_MENU$AGENT_SETTINGS_TITLE,
-    descriptionKey: I18nKey.COMMAND_MENU$AGENT_SETTINGS_DESCRIPTION,
-    keywordsKey: I18nKey.COMMAND_MENU$AGENT_SETTINGS_KEYWORDS,
-    icon: <Bot size={ICON_SIZE} />,
-    to: COMMAND_MENU_ROUTE.agentSettings,
-  },
-  {
     id: "llm-settings",
     group: "settings",
-    titleKey: I18nKey.COMMAND_MENU$LLM_SETTINGS_TITLE,
-    descriptionKey: I18nKey.COMMAND_MENU$LLM_SETTINGS_DESCRIPTION,
-    keywordsKey: I18nKey.COMMAND_MENU$LLM_SETTINGS_KEYWORDS,
+    title: "Models",
+    description: "Exeaon cluster models, capabilities and inference",
+    keywords: "llm model provider exeaon coder nunya kese dzo",
     icon: <Search size={ICON_SIZE} />,
     to: COMMAND_MENU_ROUTE.llmSettings,
+  },
+  {
+    id: "skills-settings",
+    group: "settings",
+    title: "Skills",
+    description: "Browse and configure microagent skills and extensions",
+    keywords: "skills microagents tools plugins",
+    icon: <Sparkles size={ICON_SIZE} />,
+    to: COMMAND_MENU_ROUTE.skillsSettings,
+  },
+  {
+    id: "tools-settings",
+    group: "settings",
+    title: "Agent Tools",
+    description: "Inspect registered tool schemas, parameters and runtime metadata",
+    keywords: "tools agent metadata schemas system prompt",
+    icon: <Wrench size={ICON_SIZE} />,
+    to: COMMAND_MENU_ROUTE.toolsSettings,
+  },
+  {
+    id: "account-settings",
+    group: "settings",
+    title: "Account & Cloud",
+    description: "Manage organization, GPU usage quotas and cloud clusters",
+    keywords: "account cloud billing usage quota organization",
+    icon: <PanelsTopLeft size={ICON_SIZE} />,
+    to: COMMAND_MENU_ROUTE.accountSettings,
   },
   {
     id: "condenser-settings",

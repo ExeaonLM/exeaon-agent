@@ -40,26 +40,29 @@ export function SecretListItem({
   onEdit,
   onDelete,
 }: SecretListItemProps) {
+  const displayTitle = title.replace(/^OPENHANDS_/i, "EXEAON_");
+  const displayDescription = (description || "").replace(/OpenHands/gi, "Exeaon");
+
   return (
     <tr data-testid="secret-item" className={settingsListTableRowClassName}>
       <td
         className={cn(
           settingsListTableCellClassName,
-          "text-content-2 truncate",
+          "text-content-2 truncate font-mono text-xs",
         )}
-        title={title}
+        title={displayTitle}
       >
-        {title}
+        {displayTitle}
       </td>
 
       <td
         className={cn(
           settingsListTableCellClassName,
-          "truncate text-content-2 opacity-80",
+          "truncate text-content-2 opacity-80 text-xs",
         )}
-        title={description || ""}
+        title={displayDescription}
       >
-        {description || ""}
+        {displayDescription}
       </td>
 
       <td className={settingsListTableCellClassName}>

@@ -2,12 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import SettingsService from "#/api/settings-service/settings-service.api";
+import AgentProfilesService, {
+  type AgentProfileSaveInput,
+} from "#/api/agent-profiles-service/agent-profiles-service.api";
+import { mergeAgentProfileSaveInput } from "#/components/features/settings/agent-profiles/merge-agent-profile-save-input";
 import {
   LLM_PROFILES_QUERY_KEYS,
   SETTINGS_QUERY_KEYS,
 } from "#/hooks/query/query-keys";
-import { getLastRenderableEventId } from "#/hooks/chat/model-command-event-anchor";
-import { recordModelSwitchMessage } from "#/hooks/chat/record-model-switch-message";
 import {
   getStoredConversationMetadata,
   setStoredConversationMetadata,
@@ -57,27 +59,20 @@ export const useSwitchLlmProfile = () => {
     mutationFn: ({ conversationId, profileName }: SwitchLlmProfileVars) =>
       AgentServerConversationService.switchProfile(conversationId, profileName),
     meta: { disableToast: true },
-    // Anchor the inline message where the user issued the switch; captured
-    // synchronously here because the menu unmounts before the switch resolves.
-    onMutate: ({ conversationId }) => ({
-      anchorEventId: conversationId ? getLastRenderableEventId() : null,
-    }),
     onError: (error, { profileName }) => {
       const fallback = t(I18nKey.MODEL$SWITCH_FAILED, { name: profileName });
       displayErrorToast(retrieveAxiosErrorMessage(error) || fallback);
     },
-    onSuccess: (_data, { conversationId, profileName }, context) => {
+    onSuccess: (_data, { conversationId, profileName }) => {
       queryClient.invalidateQueries({
         queryKey: LLM_PROFILES_QUERY_KEYS.all,
       });
       if (conversationId) {
         invalidateConversationQueries(queryClient, conversationId);
-        recordModelSwitchMessage(
-          conversationId,
-          profileName,
-          context?.anchorEventId ?? null,
-        );
-        // Keep the per-conversation profile identity fresh so the chat-header
+        // Switching is silent — no "Switched to profile" chat bubble (it read
+        // as a sent message and cluttered the thread; the model pill already
+        // shows the active model). Just keep the per-conversation profile
+        // identity fresh so the chat-header
         // switcher shows the right name after a reload (the agent-server only
         // round-trips the model string). #1082
         const prev = getStoredConversationMetadata(conversationId);
@@ -90,14 +85,39 @@ export const useSwitchLlmProfile = () => {
           plugins: prev?.plugins ?? null,
         });
       } else {
-        // Home-page activate path (same server endpoint as
-        // useActivateLlmProfile): clear the SettingsService cache so the next
-        // conversation-start reads the newly activated profile's LLM config
-        // instead of the stale encrypted settings.
+        // Home-page activate path. activateProfile syncs agent_settings.llm
+        // server-side, but a NEW conversation launches from the ACTIVE AGENT
+        // profile (its llm_profile_ref), which otherwise keeps its old model
+        // (e.g. Groq) — so the chat ignores the pick. Repoint that agent
+        // profile's llm_profile_ref at the picked LLM profile so new chats run
+        // it. Uses the profile-ref mechanism (agent-server resolves secrets), so
+        // it never touches the api-key state. Best-effort.
         SettingsService.invalidateCache();
         queryClient.invalidateQueries({
           queryKey: SETTINGS_QUERY_KEYS.personal(),
         });
+        (async () => {
+          try {
+            const list = await AgentProfilesService.listProfiles();
+            const active = list.profiles.find(
+              (p) => p.id != null && p.id === list.active_agent_profile_id,
+            );
+            if (
+              active?.agent_kind === "openhands" &&
+              active.llm_profile_ref !== profileName
+            ) {
+              const detail = await AgentProfilesService.getProfile(active.name);
+              const input = mergeAgentProfileSaveInput(detail.profile, {
+                agent_kind: "openhands",
+                llm_profile_ref: profileName,
+              } as AgentProfileSaveInput);
+              await AgentProfilesService.saveProfile(active.name, input);
+              queryClient.invalidateQueries({ queryKey: ["agent-profiles"] });
+            }
+          } catch {
+            // Best-effort: never block or fail the switch on the repoint.
+          }
+        })();
       }
     },
   });

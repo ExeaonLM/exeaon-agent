@@ -22,7 +22,9 @@ export function CloudSettingsLink() {
 
   if (isNoBackend(backend) || backend.kind !== "cloud") return null;
 
-  const cloudSettingsUrl = `${backend.host.replace(/\/+$/, "")}/settings`;
+  // The Exeaon Cloud management UI is the console at /console/, not the
+  // OpenHands-cloud /settings path (which 404s on the gateway).
+  const cloudSettingsUrl = `${backend.host.replace(/\/+$/, "")}/console/`;
 
   return (
     <a

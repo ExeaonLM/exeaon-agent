@@ -14,6 +14,14 @@ import {
 import { waitForI18n } from "./i18n";
 import { shouldStartMockWorker } from "./mocks/should-start-mock-worker";
 
+// Auto-recover from stale chunk hashes after frontend rebuilds
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
 async function prepareApp() {
   await waitForI18n();
 

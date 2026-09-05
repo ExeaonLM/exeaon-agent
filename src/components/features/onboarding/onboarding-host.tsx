@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation } from "react-router";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -9,6 +10,7 @@ import {
   readOnboardingPreviewStep,
 } from "./onboarding-preview";
 import { useOnboardingCompletion } from "./use-onboarding-completion";
+import { ExeaonSplash } from "./exeaon-splash";
 
 function hasUsableCloudLlm(settings: Settings | undefined): boolean {
   const llm = settings?.agent_settings?.llm as
@@ -35,6 +37,9 @@ function hasUsableCloudLlm(settings: Settings | undefined): boolean {
  * With `?previewOnboardingStep=<0-3>` the modal opens on that slide for
  * design review without persisting completion (works on any route when
  * mounted from the root layout).
+ *
+ * For first-time users the Exeaon branded splash screen is shown for ~2.4 s
+ * before the onboarding modal appears.
  */
 export function OnboardingHost() {
   const location = useLocation();
@@ -45,12 +50,25 @@ export function OnboardingHost() {
   const settings = useSettings();
   const isCloudBackend = backend.kind === "cloud";
 
+  // Show the splash only once per session for brand-new users (not previews).
+  const [showSplash, setShowSplash] = React.useState(() => {
+    if (isPreview) return false;
+    // If onboarding is already done we won't show the modal at all, so skip
+    // the splash too.
+    const done = !!window.localStorage.getItem("openhands-onboarding-completed");
+    return !done;
+  });
+
   if (!isPreview) {
     if (isCompleted) return null;
     if (isCloudBackend && settings.isLoading) return null;
     if (isCloudBackend && hasUsableCloudLlm(settings.data)) {
       return null;
     }
+  }
+
+  if (showSplash) {
+    return <ExeaonSplash onDone={() => setShowSplash(false)} />;
   }
 
   const handleClose = () => {

@@ -43,7 +43,7 @@ const DEFAULT_BACKEND_PORT = SHARED_DEFAULTS.ports.agentServer;
 // or the advertised URL and the route that serves it disagree.
 export const VSCODE_BASE_PATH = SHARED_DEFAULTS.paths.vscodeBasePath;
 const DEFAULT_VITE_PORT = 3001;
-const DEFAULT_WAIT_TIMEOUT_MS = 30_000;
+const DEFAULT_WAIT_TIMEOUT_MS = 900_000;
 const DEFAULT_AGENT_SERVER_PACKAGE = SHARED_DEFAULTS.packages.agentServer;
 const AGENT_SERVER_GIT_REPO = "https://github.com/OpenHands/software-agent-sdk";
 const LOCAL_AGENT_SERVER_SUBDIRS = [

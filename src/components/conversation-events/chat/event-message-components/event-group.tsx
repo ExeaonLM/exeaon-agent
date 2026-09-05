@@ -120,25 +120,25 @@ export function EventGroup({
             : t(I18nKey.EVENT_GROUP$EXPAND)
         }
         data-testid="event-group-toggle"
-        className="w-full flex items-center justify-between gap-2 text-left cursor-pointer"
+        className="w-full flex items-center justify-between gap-2 text-left cursor-pointer rounded-xl border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]/80 backdrop-blur-sm px-3.5 py-2 text-[var(--cool-grey-300)] transition-all hover:bg-[var(--oh-surface-raised)] shadow-sm"
       >
         {isFinalized ? (
-          <span className="flex items-center gap-2 min-w-0 font-normal text-[var(--oh-muted)]">
-            <Chevron className="h-4 w-4 fill-[var(--oh-muted)] flex-shrink-0" />
+          <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-[var(--cool-grey-300)]">
+            <Chevron className="h-3.5 w-3.5 fill-current text-[var(--cool-grey-400)] flex-shrink-0" />
             <span className="truncate">{countSummary}</span>
           </span>
         ) : (
           <>
-            <span className="flex items-center gap-2 min-w-0 font-normal text-[var(--oh-muted)]">
-              <Chevron className="h-4 w-4 fill-[var(--oh-muted)] flex-shrink-0" />
+            <span className="flex items-center gap-2 min-w-0 font-medium text-xs text-[var(--cool-grey-100)]">
+              <Chevron className="h-3.5 w-3.5 fill-current text-[var(--cool-grey-400)] flex-shrink-0" />
               <span className="truncate">{latestTitle ?? countSummary}</span>
             </span>
-            <span className="flex items-center flex-shrink-0 font-normal text-[var(--oh-muted)]">
-              <span className="truncate">{countSummary}</span>
+            <span className="flex items-center flex-shrink-0 text-xs text-[var(--cool-grey-400)] font-normal">
+              <span className="truncate text-[11px] bg-[var(--cool-grey-800)]/80 px-2 py-0.5 rounded-full border border-[var(--oh-border)] text-[var(--cool-grey-300)]">{countSummary}</span>
               {isRunning ? (
                 <LoaderCircle
                   data-testid="spinner-icon"
-                  className="h-4 w-4 ml-2 inline animate-spin text-[var(--oh-muted)]"
+                  className="h-3.5 w-3.5 ml-2 inline animate-spin text-amber-400"
                 />
               ) : null}
             </span>

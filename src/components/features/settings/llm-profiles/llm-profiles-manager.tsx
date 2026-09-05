@@ -4,17 +4,19 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { RenameProfileModal } from "./rename-profile-modal";
 import { DeleteProfileModal } from "./delete-profile-modal";
 import { ProfilesBody } from "./profiles-body";
-import { ProviderConnectionsManager } from "./provider-connections-manager";
+import { ModelOriginSections } from "./model-origin-sections";
 import ProfilesService, {
   ProfileInfo,
   type SaveProfileRequest,
 } from "#/api/profiles-service/profiles-service.api";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { useCloudModels } from "#/hooks/query/use-cloud-models";
+import { useLocalGgufModels } from "#/hooks/query/use-local-gguf-models";
+import { sanitizeProfileName } from "#/utils/format-model-name";
 import { useProviderConnections } from "#/hooks/query/use-provider-connections";
 import { useActivateLlmProfile } from "#/hooks/mutation/use-activate-llm-profile";
 import { useSaveLlmProfile } from "#/hooks/mutation/use-save-llm-profile";
 import { useCanManageOrgProfiles } from "#/hooks/use-can-manage-org-profiles";
-import { useActiveBackend } from "#/contexts/active-backend-context";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -37,14 +39,9 @@ export function LlmProfilesManager({
   // Cloud members are view-only; only owners/admins (and all local users) may
   // add, edit, rename, duplicate, delete, or activate profiles.
   const canManage = useCanManageOrgProfiles();
-  // Provider connections exist only on the local agent-server.
-  const { backend } = useActiveBackend();
-  const isLocal = backend.kind === "local";
-  const {
-    data: connections,
-    isLoading: isLoadingConnections,
-    error: connectionsError,
-  } = useProviderConnections();
+  // Provider connections exist only on the local agent-server; used to label
+  // profiles that link to a shared connection.
+  const { data: connections } = useProviderConnections();
   const [profileToRename, setProfileToRename] = useState<ProfileInfo | null>(
     null,
   );
@@ -52,22 +49,35 @@ export function LlmProfilesManager({
     null,
   );
 
-  const profiles = data?.profiles ?? [];
+  const allProfiles = data?.profiles ?? [];
   const active = data?.active_profile ?? null;
+
+  // A model picked from the Cloud / On-device sections auto-registers a profile
+  // named after it. Hide those from "Your models" so they don't duplicate the
+  // catalog rows above (which already show the active/Default state); only
+  // genuinely user-added profiles (Groq, custom keys, the seeded Exeaon ones)
+  // remain here.
+  const { data: cloudModels } = useCloudModels();
+  const gguf = useLocalGgufModels();
+  const catalogNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const m of cloudModels ?? []) names.add(sanitizeProfileName(m.name));
+    if (gguf.hasTauri)
+      for (const m of gguf.models)
+        names.add(sanitizeProfileName(m.displayName));
+    return names;
+  }, [cloudModels, gguf.hasTauri, gguf.models]);
+  const profiles = useMemo(
+    () => allProfiles.filter((p) => !catalogNames.has(p.name)),
+    [allProfiles, catalogNames],
+  );
+
   const connectionList = useMemo(() => connections ?? [], [connections]);
 
   const connectionNamesById = useMemo(
     () => Object.fromEntries(connectionList.map((c) => [c.id, c.display_name])),
     [connectionList],
   );
-  const linkedCountById = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const profile of profiles) {
-      const id = profile.provider_connection_id;
-      if (id) counts[id] = (counts[id] ?? 0) + 1;
-    }
-    return counts;
-  }, [profiles]);
 
   const handleActivate = async (name: string) => {
     try {
@@ -121,10 +131,11 @@ export function LlmProfilesManager({
   return (
     <>
       <div className="flex flex-col gap-8">
+        <ModelOriginSections />
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-base font-medium text-white">
-              {t(I18nKey.SETTINGS$AVAILABLE_PROFILES)}
+            <h2 className="text-base font-medium text-[var(--cool-grey-50)]">
+              Your models
             </h2>
             {onAddProfile && canManage ? (
               <BrandButton
@@ -134,7 +145,7 @@ export function LlmProfilesManager({
                 className="ml-auto"
                 onClick={onAddProfile}
               >
-                {t(I18nKey.SETTINGS$ADD_LLM_PROFILE)}
+                Add model
               </BrandButton>
             ) : null}
           </div>
@@ -154,15 +165,6 @@ export function LlmProfilesManager({
             isActivating={activateProfile.isPending}
           />
         </div>
-
-        {isLocal && canManage ? (
-          <ProviderConnectionsManager
-            connections={connectionList}
-            linkedCountById={linkedCountById}
-            isLoading={isLoadingConnections}
-            loadError={connectionsError ?? null}
-          />
-        ) : null}
       </div>
 
       <RenameProfileModal

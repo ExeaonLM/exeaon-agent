@@ -95,48 +95,6 @@ export function ToolsContextMenu({
       alignment="left"
       className="left-[-16px] mb-2 bottom-full overflow-visible min-w-[200px]"
     >
-      {/* Switch agent profile — only while starting a new conversation; the
-          profile is locked once the conversation starts (OSS-5735). Selecting
-          a profile activates it (home) or recreates the blank conversation
-          with it (see ChatInputProfileMenuContent). No archived gating: this
-          never renders in a started (archivable) conversation. */}
-      {showAgentProfileSwitch && (
-        <div className="relative group/agent-profile">
-          <ContextMenuListItem
-            testId="switch-agent-profile-button"
-            onClick={() => handleSubmenuClick("agent-profile")}
-          >
-            <ToolsContextMenuIconText
-              icon={<RobotIcon width={16} height={16} aria-hidden />}
-              text={t(I18nKey.CHAT$SWITCH_AGENT_PROFILE)}
-              rightIcon={<CarretRightFillIcon width={10} height={10} />}
-            />
-          </ContextMenuListItem>
-          <div
-            className={cn(
-              "absolute left-full top-[-4px] z-60 opacity-0 invisible pointer-events-none transition-all duration-200 ml-[1px]",
-              "group-hover/agent-profile:opacity-100 group-hover/agent-profile:visible group-hover/agent-profile:pointer-events-auto",
-              "hover:opacity-100 hover:visible hover:pointer-events-auto",
-              activeSubmenu === "agent-profile" &&
-                "opacity-100 visible pointer-events-auto",
-            )}
-          >
-            {/* overflow-y-auto so a long profile list scrolls within the menu;
-                safe because the content has no floating children — only the
-                flat profile list + Manage link. */}
-            <ContextMenu
-              testId="agent-profile-submenu"
-              className="min-w-[220px] max-w-[320px] max-h-[60vh] overflow-y-auto gap-0"
-            >
-              <ChatInputProfileMenuContent
-                onClose={handleClose}
-                dividerInset="menu"
-              />
-            </ContextMenu>
-          </div>
-        </div>
-      )}
-
       {/* Git Tools */}
       {showGitTools && (
         <div className="relative group/git">
@@ -169,7 +127,7 @@ export function ToolsContextMenu({
         </div>
       )}
 
-      {/* Macros */}
+      {/* Prompt Shortcuts */}
       <div className="relative group/macros">
         <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
           <ContextMenuListItem
@@ -179,7 +137,7 @@ export function ToolsContextMenu({
           >
             <ToolsContextMenuIconText
               icon={<SettingsIcon width={16} height={16} />}
-              text={t(I18nKey.COMMON$MACROS)}
+              text="Prompt Shortcuts"
               rightIcon={<CarretRightFillIcon width={10} height={10} />}
             />
           </ContextMenuListItem>
@@ -198,76 +156,6 @@ export function ToolsContextMenu({
           </div>
         )}
       </div>
-
-      {shouldShowAgentTools && <Divider inset="menu" />}
-
-      <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-        <ContextMenuListItem
-          testId="show-skills-button"
-          onClick={onShowSkills}
-          isDisabled={isArchivedConversation}
-        >
-          <ToolsContextMenuIconText
-            icon={
-              <SkillsIcon
-                width={16}
-                height={16}
-                className="stroke-[1.75]"
-                aria-hidden
-              />
-            }
-            text={t(I18nKey.CONVERSATION$SHOW_SKILLS)}
-          />
-        </ContextMenuListItem>
-      </ArchivedDisabledTooltip>
-
-      {/* Show Plugins - only when this conversation has attached plugins */}
-      {shouldShowPlugins && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-plugins-button"
-            onClick={onShowPlugins}
-            isDisabled={isArchivedConversation}
-          >
-            <ToolsContextMenuIconText
-              icon={<PuzzleIcon width={16} height={16} aria-hidden />}
-              text={t(I18nKey.CONVERSATION$SHOW_PLUGINS)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
-
-      {/* Show Hooks - Only show for V1 conversations */}
-      {shouldShowHooks && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-hooks-button"
-            onClick={onShowHooks}
-            isDisabled={isArchivedConversation}
-          >
-            <ToolsContextMenuIconText
-              icon={<FishingHookIcon width={16} height={16} aria-hidden />}
-              text={t(I18nKey.CONVERSATION$SHOW_HOOKS)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
-
-      {/* Show Agent Tools and Metadata - Only show if system message is available */}
-      {shouldShowAgentTools && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-agent-tools-button"
-            onClick={onShowAgentTools}
-            isDisabled={isArchivedConversation}
-          >
-            <ToolsContextMenuIconText
-              icon={<ToolsIcon width={16} height={16} />}
-              text={t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
 
       {footerAction && (
         <>

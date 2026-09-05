@@ -1,0 +1,50 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Exeaon Claw",
+  "version": "1.15.0",
+  "identifier": "com.exeaon.claw",
+  "build": {
+    "beforeDevCommand": "npm run dev:frontend",
+    "devUrl": "http://127.0.0.1:3005",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk0NzczNTEyNzRGRTlDRTAKUldUZ25QNTBFalYzbEdIb0dSUVF3ZnpFMDczVzZtQWlhVjM1VGd2OG5qWkRaV2lqbHJENWYreFgK",
+      "endpoints": [
+        "https://github.com/ExeaonLM/exeaon-agent/releases/latest/download/latest.json"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "resources": [
+      "resources/python-runtime",
+      "resources/llama",
+      "resources/mcp",
+      "resources/subagents"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": {
+        "language": "en-US"
+      },
+      "nsis": {
+        "installerIcon": "icons/icon.ico"
+      }
+    }
+  }
+}

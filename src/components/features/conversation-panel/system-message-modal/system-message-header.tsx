@@ -37,7 +37,7 @@ export function SystemMessageHeader({
             {openhandsVersion && (
               <div className="text-sm">
                 <Typography.Text className="font-semibold text-[var(--oh-text-tertiary)]">
-                  {t(I18nKey.SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION)}
+                  Exeaon Version:
                 </Typography.Text>{" "}
                 <Typography.Text className="text-content-2">
                   {openhandsVersion}

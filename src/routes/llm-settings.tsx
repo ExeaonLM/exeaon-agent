@@ -56,6 +56,10 @@ const LLM_EXCLUDED_KEYS = new Set([
 
 const buildModelId = (provider: string | null, model: string | null) => {
   if (!provider || !model) return null;
+  // LiteLLM requires openhands/ prefix for Exeaon Cloud / custom proxy routing
+  if (provider === "exeaon") {
+    return `openhands/${model}`;
+  }
   return `${provider}/${model}`;
 };
 
@@ -103,15 +107,13 @@ interface OpenHandsApiKeyHelpProps {
 }
 
 function OpenHandsApiKeyHelp({ testId }: OpenHandsApiKeyHelpProps) {
-  const { t } = useTranslation("openhands");
-
   return (
     <HelpLink
       testId={testId}
-      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-      href="https://app.all-hands.dev/settings/api-keys"
-      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
+      text="You can find your Exeaon API Key in the"
+      linkText="API Keys"
+      href="https://cloud.exeaon.dev/settings/api-keys"
+      suffix=" tab of Exeaon Cloud."
     />
   );
 }
@@ -218,7 +220,7 @@ export function LlmSettingsScreen({
         trimmedBaseUrl.length > 0 &&
         !isProviderDefaultBaseUrl(currentModel, trimmedBaseUrl);
 
-      return hasCustomBaseUrl ? "all" : "basic";
+      return hasCustomBaseUrl ? "advanced" : "basic";
     },
     [],
   );
@@ -323,9 +325,9 @@ export function LlmSettingsScreen({
 
           <HelpLink
             testId={helpTestId}
-            text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-            linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-            href="https://docs.openhands.dev/usage/local-setup#getting-an-api-key"
+            text="Don't know your API key?"
+            linkText="Click here for instructions"
+            href="https://docs.exeaon.dev/usage/getting-an-api-key"
           />
         </>
       );
@@ -426,98 +428,82 @@ export function LlmSettingsScreen({
               className="flex flex-col gap-6"
               data-testid="llm-settings-form-basic"
             >
-              {renderAuthTypeInput()}
+              <ModelSelector
+                currentModel={modelValue || undefined}
+                onChange={(provider, model) => {
+                  const nextModel = buildModelId(provider, model);
+                  if (nextModel) {
+                    onChange("llm.model", nextModel);
+                  }
+                }}
+                wrapperClassName="!flex-col !gap-6"
+                isDisabled={isDisabled}
+              />
 
-              {isSubscriptionAuth ? (
-                renderSubscriptionSettings()
-              ) : (
-                <>
-                  <ModelSelector
-                    currentModel={modelValue || undefined}
-                    onChange={(provider, model) => {
-                      const nextModel = buildModelId(provider, model);
-                      if (nextModel) {
-                        onChange("llm.model", nextModel);
-                      }
-                    }}
-                    wrapperClassName="!flex-col !gap-6"
-                    isDisabled={isDisabled}
-                  />
+              {showConnectionSelector ? renderConnectionSelector() : null}
 
-                  {showConnectionSelector ? renderConnectionSelector() : null}
+              {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
+                <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
+              ) : null}
 
-                  {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
-                    <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
-                  ) : null}
-
-                  {isLinkedToConnection
-                    ? null
-                    : renderApiKeyInput(
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-input",
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-help-anchor",
-                      )}
-                </>
-              )}
+              {isLinkedToConnection
+                ? null
+                : renderApiKeyInput(
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-input",
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-help-anchor",
+                  )}
             </div>
           ) : (
             <div
               className="flex flex-col gap-6"
               data-testid="llm-settings-form-advanced"
             >
-              {renderAuthTypeInput()}
+              <SettingsInput
+                testId="llm-custom-model-input"
+                label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
+                type="text"
+                className="w-full"
+                value={modelValue}
+                placeholder={defaultModel}
+                onChange={(value) => onChange("llm.model", value)}
+                isDisabled={isDisabled}
+              />
 
-              {isSubscriptionAuth ? (
-                renderSubscriptionSettings()
-              ) : (
+              {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
                 <>
-                  <SettingsInput
-                    testId="llm-custom-model-input"
-                    label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
-                    type="text"
-                    className="w-full"
-                    value={modelValue}
-                    placeholder={defaultModel}
-                    onChange={(value) => onChange("llm.model", value)}
-                    isDisabled={isDisabled}
-                  />
-
-                  {showOpenHandsApiKeyHelp && !isLinkedToConnection ? (
-                    <>
-                      {isFreeOpenHandsModel(modelValue) ? (
-                        <OpenHandsFreeModelsNote />
-                      ) : null}
-                      <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
-                    </>
+                  {isFreeOpenHandsModel(modelValue) ? (
+                    <OpenHandsFreeModelsNote />
                   ) : null}
-
-                  {showConnectionSelector ? renderConnectionSelector() : null}
-
-                  {isLinkedToConnection ? null : (
-                    <SettingsInput
-                      testId="base-url-input"
-                      label={t(I18nKey.SETTINGS$BASE_URL)}
-                      type="text"
-                      className="w-full"
-                      value={baseUrlValue}
-                      // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
-                      placeholder="https://api.openai.com"
-                      onChange={(value) => onChange("llm.base_url", value)}
-                      isDisabled={isDisabled}
-                    />
-                  )}
-
-                  {isLinkedToConnection
-                    ? null
-                    : renderApiKeyInput(
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-input",
-                        // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
-                        "llm-api-key-help-anchor-advanced",
-                      )}
+                  <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
                 </>
+              ) : null}
+
+              {showConnectionSelector ? renderConnectionSelector() : null}
+
+              {isLinkedToConnection ? null : (
+                <SettingsInput
+                  testId="base-url-input"
+                  label={t(I18nKey.SETTINGS$BASE_URL)}
+                  type="text"
+                  className="w-full"
+                  value={baseUrlValue}
+                  // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
+                  placeholder="https://api.openai.com"
+                  onChange={(value) => onChange("llm.base_url", value)}
+                  isDisabled={isDisabled}
+                />
               )}
+
+              {isLinkedToConnection
+                ? null
+                : renderApiKeyInput(
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-input",
+                    // eslint-disable-next-line i18next/no-literal-string -- DOM id, not user-facing
+                    "llm-api-key-help-anchor-advanced",
+                  )}
             </div>
           )}
         </div>

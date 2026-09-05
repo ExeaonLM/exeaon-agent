@@ -15,6 +15,7 @@ interface ChangeAgentContextMenuProps {
   onClose: () => void;
   onCodeClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onPlanClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  ignoreRef?: React.RefObject<HTMLElement | null>;
 }
 
 export function ChangeAgentContextMenu({
@@ -22,9 +23,10 @@ export function ChangeAgentContextMenu({
   onClose,
   onCodeClick,
   onPlanClick,
+  ignoreRef,
 }: ChangeAgentContextMenuProps) {
   const { t } = useTranslation("openhands");
-  const menuRef = useClickOutsideElement<HTMLUListElement>(onClose);
+  const menuRef = useClickOutsideElement<HTMLUListElement>(onClose, ignoreRef);
 
   const handleCodeClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();

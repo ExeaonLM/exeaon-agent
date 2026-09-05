@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { CustomChatInput } from "#/components/features/chat/custom-chat-input";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useLocalWorkspaces } from "#/hooks/query/use-local-workspaces";
 import { useModelInterceptor } from "#/hooks/chat/use-model-interceptor";
@@ -10,6 +11,7 @@ import { useLlmConfigured } from "#/hooks/use-llm-configured";
 import { HOME_PROMPT_DRAFT_KEY } from "#/hooks/chat/use-draft-persistence";
 import { useChatAttachmentUpload } from "#/hooks/chat/use-chat-attachment-upload";
 import { useConversationStore } from "#/stores/conversation-store";
+import { setConversationState } from "#/utils/conversation-local-storage";
 import type { WorkspaceMode } from "#/api/conversation-metadata-store";
 import { setPendingTaskAttachments } from "#/stores/pending-task-attachments-store";
 import { enqueueHomeTaskPendingMessage } from "#/utils/enqueue-home-task-pending-message";
@@ -27,21 +29,37 @@ import {
 import { getWorkspacesUnsupportedMessage } from "#/utils/workspaces-compatibility";
 import type { PluginSpec } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { PluginPickerModal } from "#/components/features/plugins/plugin-picker-modal";
-import { PluginPickerTrigger } from "#/components/features/plugins/plugin-picker-trigger";
-import { RecommendedAutomationsLauncher } from "#/components/features/automations/recommended-automations-launcher";
 import { PinnedAutomationsDashboard } from "./featured-automations/pinned-automations-dashboard";
 import { RunningAutomationsList } from "./featured-automations/running-automations-list";
 import { HomeHeaderTitle } from "./home-header/home-header-title";
-import { OpenLauncherButton } from "./open-launcher-button";
+import { Plus, Folder, Puzzle } from "lucide-react";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
+import { WorkspacePicker } from "./workspace-picker";
+import { ConnectGitHubButton } from "./connect-github-button";
+import { GitHubRepoButton } from "./github-repo-button";
+import { WorkspaceModeSelector } from "#/components/features/chat/workspace-mode-selector";
+import { useHomeStore } from "#/stores/home-store";
+import { buildEngineeringDirective } from "#/utils/engineering-labs";
+import { reconcileEngineeringMcp } from "#/hooks/use-engineering-mcp-reconcile";
+import {
+  isNativeDialogAvailable,
+  pickWorkspaceFolderNative,
+} from "#/utils/pick-workspace-folder";
 
 export function HomeChatLauncher() {
   const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const { navigate } = useNavigation();
-  const isLocal = backend.kind === "local";
+  // The Exeaon agent runtime is ALWAYS the local sovereign engine, even when a
+  // cloud backend is "active" for identity/billing (the Exeaon gateway is not an
+  // OpenHands app-server — see isCloudAppServerBackend, the seam for a future
+  // real cloud app-server; false today). Gate the local-workspace flow on the
+  // runtime, not on backend.kind: otherwise signing into Exeaon Cloud
+  // (kind:"cloud") hides the workspace picker even though the agent still writes
+  // to a local folder on this machine.
+  const isLocal = !isCloudAppServerBackend();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingWorkspace, setPendingWorkspace] =
@@ -54,6 +72,7 @@ export function HomeChatLauncher() {
     useState<WorkspaceMode>("local_repo");
   const [selectedPlugins, setSelectedPlugins] = useState<PluginSpec[]>([]);
   const [isPluginPickerOpen, setIsPluginPickerOpen] = useState(false);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
   const { mutateAsync: createConversation, isPending } =
     useCreateConversation();
@@ -64,13 +83,67 @@ export function HomeChatLauncher() {
   // Block sending entirely when there's no usable LLM; the banner above the
   // launcher (rendered by the home route) explains it and offers setup.
   const llmBlocked = !isLlmConfigLoading && !isLlmConfigured;
-  const { images, files, imagesMarkedUploadAsFile, clearAllFiles } =
-    useConversationStore();
+  const {
+    images,
+    files,
+    imagesMarkedUploadAsFile,
+    clearAllFiles,
+    engineeringField,
+    executionMode,
+    conversationMode,
+    cyberSwarm,
+  } = useConversationStore();
   const { handleUpload } = useChatAttachmentUpload();
   const { error: workspacesError } = useLocalWorkspaces({ enabled: isLocal });
   const workspacesUnsupportedMessage = isLocal
     ? getWorkspacesUnsupportedMessage(workspacesError, t)
     : null;
+
+  const recentWorkspaces = useHomeStore((state) => state.recentWorkspaces);
+  const addRecentWorkspace = useHomeStore((state) => state.addRecentWorkspace);
+
+  // Default a new chat to the most-recent workspace (like Claude: a new chat
+  // opens in your last workspace). Runs once, and only when the user hasn't
+  // already picked one — so clearing to a scratch workspace isn't undone.
+  const didInitWorkspaceRef = useRef(false);
+  useEffect(() => {
+    if (didInitWorkspaceRef.current || !isLocal) return;
+    if (pendingWorkspace) {
+      didInitWorkspaceRef.current = true;
+      return;
+    }
+    if (recentWorkspaces.length > 0) {
+      setPendingWorkspace(recentWorkspaces[0]);
+      setWorkspaceMode("local_repo");
+      didInitWorkspaceRef.current = true;
+    }
+  }, [isLocal, pendingWorkspace, recentWorkspaces]);
+
+  const selectWorkspace = (workspace: LocalWorkspace | null) => {
+    setPendingWorkspace(workspace);
+    setPendingRepository(null);
+    setPendingBranch(null);
+    setPendingProvider(null);
+    setWorkspaceMode("local_repo");
+    if (workspace) addRecentWorkspace(workspace);
+  };
+
+  // "Open folder…" opens the native OS picker (folder create + rename come free
+  // from the OS). Falls back to the in-app browser when the native dialog isn't
+  // available — e.g. web dev, or before the Tauri side is rebuilt with the
+  // dialog plugin.
+  const handleOpenFolder = async () => {
+    if (isNativeDialogAvailable()) {
+      try {
+        const workspace = await pickWorkspaceFolderNative();
+        if (workspace) selectWorkspace(workspace);
+        return;
+      } catch {
+        // Native dialog failed to open — fall through to the in-app browser.
+      }
+    }
+    setIsDialogOpen(true);
+  };
 
   const hasSelection = isLocal
     ? !!pendingWorkspace
@@ -92,16 +165,31 @@ export function HomeChatLauncher() {
     };
 
     // Workspace/repo are optional — match the "Start from scratch" flow which
+    const engineeringDirective = buildEngineeringDirective(
+      engineeringField,
+      executionMode,
+      cyberSwarm,
+    );
+    const augmentedQuery =
+      engineeringDirective && trimmed
+        ? `${engineeringDirective}\n\n${trimmed}`
+        : trimmed || undefined;
+
+    // Workspace/repo are optional — match the "Start from scratch" flow which
     // creates a conversation with no working dir and no repo. Build the
     // payload from whatever is selected.
     // When attachments are present the first user message is sent afterward
     // via sendMessageWithAttachments / flushPendingTaskAttachments. Passing
     // query here would create a duplicate text-only initial_message.
     let variables: Parameters<typeof createConversation>[0] = {
-      query: hasAttachments ? undefined : trimmed || undefined,
+      query: hasAttachments ? undefined : augmentedQuery,
       entryPoint: "home_chat_launcher",
+      engineeringDirective: engineeringDirective || undefined,
     };
     if (isLocal && pendingWorkspace) {
+      // Bump this workspace to the top of the recent list so the next new chat
+      // defaults to it.
+      addRecentWorkspace(pendingWorkspace);
       variables = {
         ...variables,
         workingDir: pendingWorkspace.path,
@@ -134,6 +222,7 @@ export function HomeChatLauncher() {
 
     void (async () => {
       try {
+        await reconcileEngineeringMcp(engineeringField, executionMode);
         const data = await createConversation(variables);
         toast.dismiss(toastId);
         try {
@@ -142,6 +231,12 @@ export function HomeChatLauncher() {
           // sessionStorage not available
         }
         const targetConversationId = data.conversation_id;
+        setConversationState(targetConversationId, {
+          engineeringField,
+          executionMode,
+          conversationMode,
+          cyberSwarm,
+        });
         const isTaskConversation = targetConversationId.startsWith("task-");
 
         if (hasAttachments) {
@@ -162,7 +257,7 @@ export function HomeChatLauncher() {
             }
 
             setPendingTaskAttachments(taskId, {
-              content: trimmed,
+              content: augmentedQuery ?? trimmed,
               images: attachmentSnapshot.images,
               files: attachmentSnapshot.files,
               imagesMarkedUploadAsFile: [...imagesMarkedUploadAsFile],
@@ -180,7 +275,7 @@ export function HomeChatLauncher() {
             try {
               await sendMessageWithAttachments({
                 conversationId: targetConversationId,
-                content: trimmed,
+                content: augmentedQuery ?? trimmed,
                 images: attachmentSnapshot.images,
                 files: attachmentSnapshot.files,
                 imagesMarkedUploadAsFile,
@@ -235,35 +330,105 @@ export function HomeChatLauncher() {
           />
         </div>
 
-        <div className="flex items-center justify-start gap-2">
-          {hasSelection ? (
-            <HomeGitControlBarPreview
-              workspace={pendingWorkspace}
-              repository={pendingRepository}
-              branch={pendingBranch}
-              provider={pendingProvider}
-              workspaceMode={workspaceMode}
-              backendKind={backend.kind}
-              onRepoClick={() => setIsDialogOpen(true)}
-              onWorkspaceModeChange={setWorkspaceMode}
-            />
+        <div className="flex flex-wrap items-center justify-start gap-2">
+          {isLocal ? (
+            <>
+              <WorkspacePicker
+                value={pendingWorkspace}
+                onChange={selectWorkspace}
+                onOpenFolder={handleOpenFolder}
+                disabled={isCreating}
+                unsupportedMessage={workspacesUnsupportedMessage}
+              />
+              {pendingWorkspace && (
+                <WorkspaceModeSelector
+                  value={workspaceMode}
+                  // The Exeaon runtime is always local, so the mode reads
+                  // "Local Repo"/"New Worktree" — never "Cloud Repo", which
+                  // would wrongly imply work runs in the cloud when signed in.
+                  backendKind="local"
+                  onChange={setWorkspaceMode}
+                />
+              )}
+              <ConnectGitHubButton />
+              <GitHubRepoButton />
+            </>
           ) : (
-            <OpenLauncherButton
-              kind={isLocal ? "local" : "cloud"}
-              onClick={() => setIsDialogOpen(true)}
-              disabled={isCreating || Boolean(workspacesUnsupportedMessage)}
-              disabledTooltip={workspacesUnsupportedMessage}
-            />
+            hasSelection && (
+              <HomeGitControlBarPreview
+                workspace={pendingWorkspace}
+                repository={pendingRepository}
+                branch={pendingBranch}
+                provider={pendingProvider}
+                workspaceMode={workspaceMode}
+                backendKind={backend.kind}
+                onRepoClick={() => setIsDialogOpen(true)}
+                onWorkspaceModeChange={setWorkspaceMode}
+              />
+            )
           )}
-          <PluginPickerTrigger
-            count={selectedPlugins.length}
-            onClick={() => setIsPluginPickerOpen(true)}
-            disabled={isCreating}
-          />
+          {/* One "+" menu instead of a row of buttons: Add folder (workspace)
+              + Plugins. Cleaner, and not the OpenHands two-button layout. */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPlusMenuOpen((o) => !o)}
+              disabled={isCreating}
+              aria-label="Add"
+              className="flex size-9 items-center justify-center rounded-full border border-[var(--oh-border)] text-[var(--oh-muted)] transition-colors hover:border-[#F3CE49]/50 hover:text-[var(--oh-fg)] disabled:opacity-40"
+            >
+              <Plus className="size-4" />
+            </button>
+            {plusMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setPlusMenuOpen(false)}
+                />
+                <div className="absolute left-0 top-full z-50 mt-2 flex w-52 flex-col gap-0.5 rounded-xl border border-[var(--oh-border)] bg-[#141413] p-1.5 shadow-2xl">
+                  {/* Local uses the dedicated workspace picker; only cloud needs
+                      the repository entry here. */}
+                  {!isLocal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlusMenuOpen(false);
+                        setIsDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                    >
+                      <Folder className="size-4 text-[var(--oh-muted)]" />
+                      <span>Add repository</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlusMenuOpen(false);
+                      setIsPluginPickerOpen(true);
+                    }}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-[var(--oh-foreground)] transition-colors hover:bg-white/[0.06] hover:text-white"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Puzzle className="size-4 text-[var(--oh-muted)]" />
+                      Plugins
+                    </span>
+                    {selectedPlugins.length > 0 && (
+                      <span className="text-[11px] font-semibold text-[#F3CE49]">
+                        {selectedPlugins.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 flex w-full flex-col gap-8">
-          <RecommendedAutomationsLauncher variant="rail" />
+          {/* Recommended flows templates hidden -- they were OpenHands' default
+              catalog (GitHub/Slack "@openhands" agents), off-brand for Exeaon.
+              The user's own pinned/running flows stay. */}
           <PinnedAutomationsDashboard />
           <RunningAutomationsList />
         </div>
@@ -273,13 +438,7 @@ export function HomeChatLauncher() {
         <OpenWorkspaceDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onConfirm={(workspace) => {
-            setPendingWorkspace(workspace);
-            setPendingRepository(null);
-            setPendingBranch(null);
-            setPendingProvider(null);
-            setWorkspaceMode("local_repo");
-          }}
+          onConfirm={(workspace) => selectWorkspace(workspace)}
         />
       ) : (
         <OpenRepositoryDialog
