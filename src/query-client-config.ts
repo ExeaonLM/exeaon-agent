@@ -28,13 +28,21 @@ const handle401Error = (error: AxiosError, client: QueryClient) => {
 // reload, which re-reads the freshly-injected key (this is the "a page refresh
 // recovers" note in agent-server-compatibility.ts). So on a local-backend 401 we
 // reload once, automatically, instead of dead-ending in a toast.
-const AGENT_SERVER_401_RELOAD_KEY = "oh:agent-server-401-reload-at";
-// Long enough to cover the post-reload 401 burst (so we never double-reload),
-// short enough that a genuinely-later rotation still recovers on its own.
-const AGENT_SERVER_401_RELOAD_COOLDOWN_MS = 30_000;
+const AGENT_SERVER_401_RELOADED_KEY = "oh:agent-server-401-reloaded";
 // Suppresses the flood of concurrent 401s that fire the instant the key goes
 // stale — the first one schedules the reload, the rest are swallowed silently.
 let recoveringAgentServer401 = false;
+
+// Cleared on the next successful response so a genuine LATER key rotation (which
+// follows a period of success) still earns its own single reload.
+const clearAgentServer401Recovery = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(AGENT_SERVER_401_RELOADED_KEY);
+  } catch {
+    // ignore — nothing to clear if storage is unavailable.
+  }
+};
 
 const maybeRecoverAgentServer401 = (error: unknown): boolean => {
   if (typeof window === "undefined") return false;
@@ -43,35 +51,35 @@ const maybeRecoverAgentServer401 = (error: unknown): boolean => {
   // only the local agent-server's key is recoverable by re-serving the page.
   if (getActiveBackend().backend.kind !== "local") return false;
 
+  // A reload only helps when the key is re-served per page load — the packaged
+  // binary injects `window.__AGENT_CANVAS_SESSION_API_KEY__` into index.html.
+  // In dev the key is baked into the bundle (`VITE_SESSION_API_KEY`), so a
+  // reload re-reads the SAME stale key: reloading is futile (and, on a slow or
+  // persistently-401'ing dev agent-server, would just flash a blank screen).
+  // Skip auto-reload there and let the 401 surface as a normal toast.
+  const bakedKey = import.meta.env.VITE_SESSION_API_KEY;
+  if (typeof bakedKey === "string" && bakedKey.trim() !== "") return false;
+
   // A reload is already scheduled for this burst — swallow the rest.
   if (recoveringAgentServer401) return true;
 
-  let lastReloadAt = 0;
+  // At most ONE reload per stale-key episode. If we already reloaded and it's
+  // STILL 401, the reload didn't fix it (server down, or slow to boot) — do NOT
+  // reload again, or the app is trapped in a blank reload loop. Fall through to
+  // the normal toast instead. The guard lives in sessionStorage so it survives
+  // the reload, and is cleared on the next success. If storage can't be read or
+  // written we can't guarantee the loop-guard, so we skip auto-reload entirely
+  // (a toast is a far better failure than an infinite reload).
   try {
-    lastReloadAt = Number(
-      window.sessionStorage.getItem(AGENT_SERVER_401_RELOAD_KEY) ?? "0",
-    );
+    if (window.sessionStorage.getItem(AGENT_SERVER_401_RELOADED_KEY) === "1") {
+      return false;
+    }
+    window.sessionStorage.setItem(AGENT_SERVER_401_RELOADED_KEY, "1");
   } catch {
-    // sessionStorage unavailable (private mode) — treat as never reloaded.
-  }
-  // We already reloaded once and it's STILL 401 (server down, not just a key
-  // rotation) — stop, don't loop; let the toast surface so the user knows.
-  if (
-    lastReloadAt &&
-    Date.now() - lastReloadAt < AGENT_SERVER_401_RELOAD_COOLDOWN_MS
-  ) {
     return false;
   }
 
   recoveringAgentServer401 = true;
-  try {
-    window.sessionStorage.setItem(
-      AGENT_SERVER_401_RELOAD_KEY,
-      String(Date.now()),
-    );
-  } catch {
-    // Best-effort; without persistence the cooldown just won't survive reload.
-  }
   displayWarningToast("Agent server session refreshed — reconnecting…");
   // Small delay so the notice is visible before the window reloads.
   window.setTimeout(() => window.location.reload(), 700);
@@ -103,6 +111,9 @@ export const createAgentServerQueryClient = () => {
   const client = new QueryClient({
     queryCache: new QueryCache({
       onSuccess: (_data, query) => {
+        // A successful response means the key is valid again — reset the 401
+        // reload guard so a future rotation can recover once more.
+        clearAgentServer401Recovery();
         const backendId =
           query.meta?.backendId ?? query.options.meta?.backendId;
         if (typeof backendId === "string") {
