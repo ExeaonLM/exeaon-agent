@@ -11,6 +11,7 @@ import { useLlmConfigured } from "#/hooks/use-llm-configured";
 import { HOME_PROMPT_DRAFT_KEY } from "#/hooks/chat/use-draft-persistence";
 import { useChatAttachmentUpload } from "#/hooks/chat/use-chat-attachment-upload";
 import { useConversationStore } from "#/stores/conversation-store";
+import { setConversationState } from "#/utils/conversation-local-storage";
 import type { WorkspaceMode } from "#/api/conversation-metadata-store";
 import { setPendingTaskAttachments } from "#/stores/pending-task-attachments-store";
 import { enqueueHomeTaskPendingMessage } from "#/utils/enqueue-home-task-pending-message";
@@ -40,6 +41,8 @@ import { ConnectGitHubButton } from "./connect-github-button";
 import { GitHubRepoButton } from "./github-repo-button";
 import { WorkspaceModeSelector } from "#/components/features/chat/workspace-mode-selector";
 import { useHomeStore } from "#/stores/home-store";
+import { buildEngineeringDirective } from "#/utils/engineering-labs";
+import { reconcileEngineeringMcp } from "#/hooks/use-engineering-mcp-reconcile";
 import {
   isNativeDialogAvailable,
   pickWorkspaceFolderNative,
@@ -80,8 +83,16 @@ export function HomeChatLauncher() {
   // Block sending entirely when there's no usable LLM; the banner above the
   // launcher (rendered by the home route) explains it and offers setup.
   const llmBlocked = !isLlmConfigLoading && !isLlmConfigured;
-  const { images, files, imagesMarkedUploadAsFile, clearAllFiles } =
-    useConversationStore();
+  const {
+    images,
+    files,
+    imagesMarkedUploadAsFile,
+    clearAllFiles,
+    engineeringField,
+    executionMode,
+    conversationMode,
+    cyberSwarm,
+  } = useConversationStore();
   const { handleUpload } = useChatAttachmentUpload();
   const { error: workspacesError } = useLocalWorkspaces({ enabled: isLocal });
   const workspacesUnsupportedMessage = isLocal
@@ -154,14 +165,26 @@ export function HomeChatLauncher() {
     };
 
     // Workspace/repo are optional — match the "Start from scratch" flow which
+    const engineeringDirective = buildEngineeringDirective(
+      engineeringField,
+      executionMode,
+      cyberSwarm,
+    );
+    const augmentedQuery =
+      engineeringDirective && trimmed
+        ? `${engineeringDirective}\n\n${trimmed}`
+        : trimmed || undefined;
+
+    // Workspace/repo are optional — match the "Start from scratch" flow which
     // creates a conversation with no working dir and no repo. Build the
     // payload from whatever is selected.
     // When attachments are present the first user message is sent afterward
     // via sendMessageWithAttachments / flushPendingTaskAttachments. Passing
     // query here would create a duplicate text-only initial_message.
     let variables: Parameters<typeof createConversation>[0] = {
-      query: hasAttachments ? undefined : trimmed || undefined,
+      query: hasAttachments ? undefined : augmentedQuery,
       entryPoint: "home_chat_launcher",
+      engineeringDirective: engineeringDirective || undefined,
     };
     if (isLocal && pendingWorkspace) {
       // Bump this workspace to the top of the recent list so the next new chat
@@ -199,6 +222,7 @@ export function HomeChatLauncher() {
 
     void (async () => {
       try {
+        await reconcileEngineeringMcp(engineeringField, executionMode);
         const data = await createConversation(variables);
         toast.dismiss(toastId);
         try {
@@ -207,6 +231,12 @@ export function HomeChatLauncher() {
           // sessionStorage not available
         }
         const targetConversationId = data.conversation_id;
+        setConversationState(targetConversationId, {
+          engineeringField,
+          executionMode,
+          conversationMode,
+          cyberSwarm,
+        });
         const isTaskConversation = targetConversationId.startsWith("task-");
 
         if (hasAttachments) {
@@ -227,7 +257,7 @@ export function HomeChatLauncher() {
             }
 
             setPendingTaskAttachments(taskId, {
-              content: trimmed,
+              content: augmentedQuery ?? trimmed,
               images: attachmentSnapshot.images,
               files: attachmentSnapshot.files,
               imagesMarkedUploadAsFile: [...imagesMarkedUploadAsFile],
@@ -245,7 +275,7 @@ export function HomeChatLauncher() {
             try {
               await sendMessageWithAttachments({
                 conversationId: targetConversationId,
-                content: trimmed,
+                content: augmentedQuery ?? trimmed,
                 images: attachmentSnapshot.images,
                 files: attachmentSnapshot.files,
                 imagesMarkedUploadAsFile,

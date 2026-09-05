@@ -17,7 +17,10 @@ import { readCloudUser, cloudLogout } from "#/api/cloud/session-store";
 import {
   fetchCloudMe,
   renameCloudOrg,
+  startCloudTopUp,
+  startCloudPlanUpgrade,
   type CloudMe,
+  type CloudMeWindow,
 } from "#/api/cloud/exeaon-me.api";
 
 function fmtInt(n: number): string {
@@ -76,6 +79,45 @@ export function AccountSettingsView() {
 
   const tier = me?.tier ?? "free";
   const isPro = tier === "pro";
+
+  const [billingBusy, setBillingBusy] = React.useState(false);
+
+  // Pay-as-you-go top-up: prompt for a USD amount, open Paystack checkout.
+  const handleTopUp = React.useCallback(async () => {
+    const raw = window.prompt("Top-up amount in USD credits:", "10");
+    if (raw == null) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      window.alert("Enter a valid amount.");
+      return;
+    }
+    setBillingBusy(true);
+    try {
+      await startCloudTopUp(amount);
+    } catch (e) {
+      window.alert(
+        e instanceof Error ? e.message : "Could not start the top-up.",
+      );
+    } finally {
+      setBillingBusy(false);
+    }
+  }, []);
+
+  // Upgrade to the next tier up from the current plan (free → pro → max).
+  const handleUpgrade = React.useCallback(async () => {
+    const current = me?.plan ?? "free";
+    const nextPlan = current === "free" ? "pro" : "max";
+    setBillingBusy(true);
+    try {
+      await startCloudPlanUpgrade(nextPlan);
+    } catch (e) {
+      window.alert(
+        e instanceof Error ? e.message : "Could not start the upgrade.",
+      );
+    } finally {
+      setBillingBusy(false);
+    }
+  }, [me?.plan]);
   const roleLabel =
     me?.role ||
     (user?.isPlatformAdmin || me?.isPlatformAdmin ? "Administrator" : "Member");
@@ -266,16 +308,57 @@ export function AccountSettingsView() {
             </p>
           ) : (
             <>
-              {/* Plan line */}
-              <div className="flex justify-between text-xs">
-                <span className="text-[var(--oh-muted)]">Plan</span>
-                <span className="text-white font-medium">
-                  {isPro ? "Pro — funded account" : "Free — pay-as-you-go"}
-                  {me?.currency && me.balanceCredits > 0
-                    ? ` · ${fmtInt(me.balanceCredits)} ${me.currency} credits`
-                    : ""}
-                </span>
+              {/* Plan header + upgrade / top-up */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[var(--oh-muted)]">Plan</span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#FFD026]/40 bg-[#241F14] px-2 py-0.5 text-[11px] font-semibold text-[#FFD026]">
+                    {me?.planName || (isPro ? "Pro" : "Free")}
+                  </span>
+                  {me && me.balanceCredits > 0 ? (
+                    <span className="text-[11px] text-[var(--oh-muted)]">
+                      {fmtCredits(me.balanceCredits)} top-up balance
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  {me && me.plan !== "max" ? (
+                    <BrandButton
+                      type="button"
+                      variant="primary"
+                      onClick={handleUpgrade}
+                      isDisabled={billingBusy}
+                      className="!h-7 !px-3 !text-xs"
+                    >
+                      Upgrade
+                    </BrandButton>
+                  ) : null}
+                  <BrandButton
+                    type="button"
+                    variant="secondary"
+                    onClick={handleTopUp}
+                    isDisabled={billingBusy}
+                    className="!h-7 !px-3 !text-xs"
+                  >
+                    Top up
+                  </BrandButton>
+                </div>
               </div>
+
+              {/* Hourly + weekly gating windows (all plans) */}
+              {me?.hourly && me?.weekly ? (
+                <div className="flex flex-col gap-3">
+                  <UsageWindowBar label="Hourly usage" window={me.hourly} />
+                  <UsageWindowBar label="Weekly usage" window={me.weekly} />
+                  {(me.hourly.usedCredits >= me.hourly.includedCredits ||
+                    me.weekly.usedCredits >= me.weekly.includedCredits) && (
+                    <p className="text-[11px] text-amber-400/90">
+                      You’ve reached a plan limit. Top up for pay-as-you-go
+                      headroom, or upgrade for higher included limits.
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               {/* Credit balance bar (only meaningful when a limit exists) */}
               {me && me.creditLimitCredits > 0 && (
@@ -458,6 +541,72 @@ function Stat({ label, value }: { label: string; value: string }) {
         {label}
       </span>
       <span className="text-sm text-white font-semibold">{value}</span>
+    </div>
+  );
+}
+
+/** Format a credit amount compactly ($1.25, $0.03, $150). */
+function fmtCredits(n: number): string {
+  const v = Math.max(0, n);
+  if (v >= 100) return `$${Math.round(v)}`;
+  if (v >= 1) return `$${v.toFixed(2)}`;
+  return `$${v.toFixed(3)}`;
+}
+
+/** "resets in 42m" / "resets in 3d 4h" from a unix-seconds reset time. */
+function fmtReset(resetAtUnix: number): string {
+  const ms = resetAtUnix * 1000 - Date.now();
+  if (ms <= 0) return "resetting…";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `resets in ${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `resets in ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `resets in ${days}d ${hours % 24}h`;
+}
+
+/**
+ * One plan-gating window (Hourly / Weekly): a credit-spend bar against the
+ * plan's included allowance. Turns amber near the cap and red when exhausted.
+ */
+function UsageWindowBar({
+  label,
+  window: w,
+}: {
+  label: string;
+  window: CloudMeWindow;
+}) {
+  const included = w.includedCredits > 0 ? w.includedCredits : 0;
+  const pct =
+    included > 0 ? Math.min(100, (w.usedCredits / included) * 100) : 0;
+  const exhausted = included > 0 && w.usedCredits >= included;
+  const near = pct >= 80 && !exhausted;
+  const barColor = exhausted
+    ? "from-red-500 to-red-600"
+    : near
+      ? "from-[#FFD026] to-amber-500"
+      : "from-[#FFD026] to-[#FF7A00]";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-[var(--oh-muted)]">
+          {label}
+          <span className="ml-2 text-[10px] text-[var(--oh-muted)]/70">
+            {fmtReset(w.resetAtUnix)}
+          </span>
+        </span>
+        <span
+          className={`font-medium ${exhausted ? "text-red-400" : "text-white"}`}
+        >
+          {fmtCredits(w.usedCredits)} / {fmtCredits(included)}
+        </span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-black/40 overflow-hidden border border-white/5">
+        <div
+          className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${barColor}`}
+          style={{ width: `${Math.max(exhausted ? 100 : 2, pct)}%` }}
+        />
+      </div>
     </div>
   );
 }

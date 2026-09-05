@@ -184,4 +184,5 @@ class ProfilesService {
   }
 }
 
+export { ProfilesService };
 export default ProfilesService;

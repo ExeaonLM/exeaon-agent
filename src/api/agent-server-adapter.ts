@@ -750,10 +750,29 @@ function buildAgentContext(
   agentSettings: SettingsRecord,
   runtimeServicesInfo?: RuntimeServicesInfo | null,
   disabledSkills: string[] = [],
+  engineeringDirective?: string,
 ): SettingsRecord {
   const runtimeServicesSuffix =
     buildRuntimeServicesSystemSuffix(runtimeServicesInfo);
   const existingContext = toRecord(agentSettings.agent_context);
+
+  // Compose the system-message suffix from every source, preserving any suffix
+  // already on the settings (previously dropped): the stored suffix, the dev
+  // RUNTIME_SERVICES block, and the Exeaon Engineering Labs contract for a
+  // field-scoped launch. Joining here is what makes the cyber directive apply
+  // from the FIRST turn — invisibly, in the system prompt, not as a chat
+  // message — so the agent knows its tools/mode/posture before it acts.
+  const existingSuffix =
+    typeof existingContext.system_message_suffix === "string"
+      ? existingContext.system_message_suffix.trim()
+      : "";
+  const systemMessageSuffix = [
+    existingSuffix,
+    runtimeServicesSuffix?.trim() ?? "",
+    engineeringDirective?.trim() ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Merge bundled public skills with any skills already present in the
   // agent context (e.g. user-defined skills set via the settings API).
@@ -785,8 +804,8 @@ function buildAgentContext(
     // travel with the context so those skills are excluded from the system
     // prompt too.
     disabled_skills: disabledSkills,
-    ...(runtimeServicesSuffix
-      ? { system_message_suffix: runtimeServicesSuffix }
+    ...(systemMessageSuffix
+      ? { system_message_suffix: systemMessageSuffix }
       : {}),
   };
 }
@@ -821,6 +840,7 @@ function resolveAcpCommand(agentSettings: SettingsRecord): unknown {
 function buildConfiguredAcpAgentSettings(
   settings: Settings,
   runtimeServicesInfo?: RuntimeServicesInfo | null,
+  engineeringDirective?: string,
 ): AgentSettingsPayload {
   const agentSettings = toRecord(settings.agent_settings);
   const payload: AgentSettingsPayload = {
@@ -829,6 +849,7 @@ function buildConfiguredAcpAgentSettings(
       agentSettings,
       runtimeServicesInfo,
       settings.disabled_skills,
+      engineeringDirective,
     ),
   };
 
@@ -887,6 +908,7 @@ function buildConfiguredAcpAgentSettings(
 function buildConfiguredOpenHandsAgentSettings(
   settings: Settings,
   runtimeServicesInfo?: RuntimeServicesInfo | null,
+  engineeringDirective?: string,
 ): AgentSettingsPayload {
   const agentSettings = toRecord(settings.agent_settings);
   const llm = toRecord(agentSettings.llm);
@@ -945,6 +967,7 @@ function buildConfiguredOpenHandsAgentSettings(
       agentSettings,
       runtimeServicesInfo,
       settings.disabled_skills,
+      engineeringDirective,
     ),
     tools: getAgentTools(agentSettings),
   };
@@ -953,23 +976,52 @@ function buildConfiguredOpenHandsAgentSettings(
 function buildConfiguredAgentSettings(
   settings: Settings,
   runtimeServicesInfo?: RuntimeServicesInfo | null,
+  engineeringDirective?: string,
 ): AgentSettingsPayload {
   return isAcpAgent(settings)
-    ? buildConfiguredAcpAgentSettings(settings, runtimeServicesInfo)
-    : buildConfiguredOpenHandsAgentSettings(settings, runtimeServicesInfo);
+    ? buildConfiguredAcpAgentSettings(
+        settings,
+        runtimeServicesInfo,
+        engineeringDirective,
+      )
+    : buildConfiguredOpenHandsAgentSettings(
+        settings,
+        runtimeServicesInfo,
+        engineeringDirective,
+      );
 }
 
 function buildConfiguredConversationSettings(options: {
   settings: Settings;
   query?: string;
   conversationInstructions?: string;
+  engineeringDirective?: string;
   plugins?: PluginSpec[];
   workingDir?: string;
 }): ConversationSettingsPayload {
-  const { settings, query, conversationInstructions, plugins, workingDir } =
-    options;
+  const {
+    settings,
+    query,
+    conversationInstructions,
+    engineeringDirective,
+    plugins,
+    workingDir,
+  } = options;
   const conversationSettings = toRecord(settings.conversation_settings);
-  const initialMessage = buildInitialMessage(query, conversationInstructions);
+  const effectiveDirective =
+    engineeringDirective && !query?.includes(engineeringDirective)
+      ? engineeringDirective
+      : undefined;
+  const effectiveInstructions = [
+    effectiveDirective,
+    conversationInstructions,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const initialMessage = buildInitialMessage(
+    query,
+    effectiveInstructions || undefined,
+  );
 
   CONVERSATION_SETTINGS_METADATA_KEYS.forEach(
     (key) => delete conversationSettings[key],
@@ -1030,6 +1082,7 @@ export interface StartConversationOptions {
   settings: Settings;
   query?: string;
   conversationInstructions?: string;
+  engineeringDirective?: string;
   plugins?: PluginSpec[];
   conversationId?: string;
   // Links the new conversation to an existing one as its child. The
@@ -1067,6 +1120,7 @@ export function buildStartConversationRequest(
   const agentSettings = buildConfiguredAgentSettings(
     sourceAgentSettings,
     options.runtimeServicesInfo,
+    options.engineeringDirective,
   );
   const acpServerTag = acpMode
     ? getAcpServerTag(sourceAgentSettings)
@@ -1259,6 +1313,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
   settings: Settings;
   query?: string;
   conversationInstructions?: string;
+  engineeringDirective?: string;
   plugins?: PluginSpec[];
   conversationId?: string;
   parentConversationId?: string;

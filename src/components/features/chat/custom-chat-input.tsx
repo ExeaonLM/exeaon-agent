@@ -7,6 +7,7 @@ import { useChatSubmission } from "#/hooks/chat/use-chat-submission";
 import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
+import { PlanUsageLimitsBar } from "./components/plan-usage-limits";
 import { HiddenFileInput } from "./components/hidden-file-input";
 import {
   ArrowRight,
@@ -398,6 +399,9 @@ export function CustomChatInput({
           slashSelectedIndex={slashSelectedIndex}
           onSlashSelect={selectSlashItem}
         />
+
+        {/* Plan usage limits — under the input, below the send button. */}
+        <PlanUsageLimitsBar />
       </div>
     </div>
   );

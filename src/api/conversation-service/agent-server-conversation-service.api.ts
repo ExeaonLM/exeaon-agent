@@ -353,6 +353,14 @@ export interface CreateConversationOptions {
   // encrypted-settings builder; cloud sends it as a flat request field.
   agentProfileId?: string;
   agentProfileKind?: AgentKind;
+  /**
+   * Exeaon Engineering Labs contract (field + execution mode + safety posture)
+   * to append to the agent's persistent `system_message_suffix` at creation, so
+   * it applies from the very FIRST turn and stays invisible to the user (it is
+   * not a chat message). Empty/undefined for ordinary conversations. See
+   * `buildEngineeringDirective`.
+   */
+  engineeringDirective?: string;
 }
 
 class AgentServerConversationService {
@@ -417,6 +425,7 @@ class AgentServerConversationService {
       sandboxId,
       agentProfileId,
       agentProfileKind,
+      engineeringDirective,
     } = options;
 
     if (isCloudAppServerBackend()) {
@@ -524,6 +533,7 @@ class AgentServerConversationService {
       agentProfileId,
       agentProfileKind,
       titleLlmProfile,
+      engineeringDirective,
     });
 
     const telemetryDistinctId = await getTelemetryDistinctId();

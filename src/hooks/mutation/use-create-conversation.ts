@@ -48,6 +48,7 @@ export interface CreateConversationVariables {
   // launch from the user's selected profile (#3727).
   agentProfileId?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
+  engineeringDirective?: string;
 }
 
 export const CREATE_CONVERSATION_MUTATION_KEY = ["create-conversation"];
@@ -90,6 +91,7 @@ export const useCreateConversation = () => {
         parentConversationId,
         agentType,
         agentProfileId,
+        engineeringDirective,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -221,6 +223,7 @@ export const useCreateConversation = () => {
         await AgentServerConversationService.createConversation({
           initialUserMsg: query,
           conversationInstructions,
+          engineeringDirective,
           plugins,
           metadata: repository
             ? {

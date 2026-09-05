@@ -107,7 +107,7 @@ export function ConversationConfirmationButtons() {
   const isHighRisk = risk === SecurityRisk.HIGH;
 
   return (
-    <div className="flex flex-col gap-2 pt-4">
+    <div className="flex flex-col gap-2.5 pt-3 pb-1 w-full max-w-full">
       {isHighRisk && (
         <RiskAlert
           content={t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
@@ -116,11 +116,11 @@ export function ConversationConfirmationButtons() {
           title={t(I18nKey.COMMON$HIGH_RISK)}
         />
       )}
-      <div className="flex justify-between items-center">
-        <p className="text-sm font-normal text-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[var(--oh-surface-raised)] border border-[var(--oh-border)] shadow-sm">
+        <p className="text-sm font-medium text-white min-w-0 flex-1 leading-snug">
           {t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
           <ActionTooltip
             type="reject"
             onClick={() => handleConfirmation(false)}

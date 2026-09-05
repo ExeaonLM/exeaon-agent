@@ -8,6 +8,12 @@
     "**/.client/**/*.tsx",
     ".react-router/types/**/*"
   ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "src-tauri",
+    "vendor"
+  ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "es2022"],
     "target": "es2022",

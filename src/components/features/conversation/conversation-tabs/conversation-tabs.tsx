@@ -1,7 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LayoutGroup } from "framer-motion";
-import { Gauge, Globe, ListTodo, SquareChevronRight } from "lucide-react";
+import {
+  Gauge,
+  Globe,
+  ListTodo,
+  Maximize2,
+  Minimize2,
+  Network,
+  SquareChevronRight,
+  X,
+} from "lucide-react";
 import { LuFileDiff } from "react-icons/lu";
 import DocumentIcon from "#/icons/document.svg?react";
 import DoubleCheckIcon from "#/icons/double-check.svg?react";
@@ -33,7 +42,17 @@ export function ConversationTabs({
   isPanelResizing?: boolean;
 }) {
   const { conversationId } = useConversationId();
-  const { setSelectedTab, planContent } = useConversationStore();
+  const {
+    setSelectedTab,
+    planContent,
+    engineeringField,
+    cyberSwarm,
+    isRightPanelExpanded,
+    toggleRightPanelExpanded,
+    setIsRightPanelExpanded,
+    setIsRightPanelShown,
+    setHasRightPanelToggled,
+  } = useConversationStore();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -138,6 +157,15 @@ export function ConversationTabs({
       tooltipAriaLabel: t(I18nKey.COMMON$USAGE),
       label: t(I18nKey.COMMON$USAGE),
     },
+    {
+      tabValue: "swarm",
+      isActive: isTabActive("swarm"),
+      icon: Network,
+      onClick: () => selectTab("swarm"),
+      tooltipContent: "Cyber Graph",
+      tooltipAriaLabel: "Cyber Graph",
+      label: "Cyber Graph",
+    },
   ];
 
   if (hasTaskList) {
@@ -159,6 +187,14 @@ export function ConversationTabs({
   // agent isn't supported locally.
   const visibleTabs = tabs.filter((tab) => {
     if (tab.tabValue === "planner" && backend.kind !== "cloud") return false;
+    if (
+      tab.tabValue === "swarm" &&
+      engineeringField !== "cyber" &&
+      !cyberSwarm &&
+      selectedTab !== "swarm"
+    ) {
+      return false;
+    }
     if (!persistedState.unpinnedTabs.includes(tab.tabValue)) return true;
     return selectedTab === tab.tabValue;
   });
@@ -247,6 +283,7 @@ export function ConversationTabs({
     backend.kind,
     selectedTab,
     isRightPanelShown,
+    isRightPanelExpanded,
     i18n.language,
   ]);
 
@@ -363,8 +400,55 @@ export function ConversationTabs({
           </div>
           {/* The ref'd wrapper must stay mounted — the overflow measurement
               effect above bails if it's missing. */}
-          <div ref={vscodeButtonRef} className="ml-auto shrink-0 pr-1">
+          <div
+            ref={vscodeButtonRef}
+            className="ml-auto shrink-0 flex items-center gap-1 pr-1"
+          >
             <DrawerVSCodeLink />
+            {variant !== "compact" && (
+              <>
+                <ChatActionTooltip
+                  tooltip={isRightPanelExpanded ? "Collapse" : "Expand"}
+                  ariaLabel={isRightPanelExpanded ? "Collapse" : "Expand"}
+                >
+                  <button
+                    type="button"
+                    onClick={toggleRightPanelExpanded}
+                    aria-label={isRightPanelExpanded ? "Collapse" : "Expand"}
+                    className={cn(
+                      "inline-flex size-6 items-center justify-center rounded-[6px] transition-colors duration-150 cursor-pointer",
+                      "text-[var(--oh-muted)] hover:bg-white/10 hover:text-white active:scale-95",
+                      isRightPanelExpanded && "text-white bg-white/10",
+                    )}
+                    data-testid="right-panel-expand-toggle"
+                  >
+                    {isRightPanelExpanded ? (
+                      <Minimize2 className="size-3.5 shrink-0" aria-hidden />
+                    ) : (
+                      <Maximize2 className="size-3.5 shrink-0" aria-hidden />
+                    )}
+                  </button>
+                </ChatActionTooltip>
+                <ChatActionTooltip tooltip="Close" ariaLabel="Close">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRightPanelShown(false);
+                      setIsRightPanelExpanded(false);
+                      setHasRightPanelToggled(false);
+                    }}
+                    aria-label="Close"
+                    className={cn(
+                      "inline-flex size-6 items-center justify-center rounded-[6px] transition-colors duration-150 cursor-pointer",
+                      "text-[var(--oh-muted)] hover:bg-white/10 hover:text-white active:scale-95",
+                    )}
+                    data-testid="right-panel-close-button"
+                  >
+                    <X className="size-3.5 shrink-0" aria-hidden />
+                  </button>
+                </ChatActionTooltip>
+              </>
+            )}
           </div>
         </div>
       </div>

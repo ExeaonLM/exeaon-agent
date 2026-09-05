@@ -7,6 +7,8 @@ interface ContextMenuListItemProps {
   isDisabled?: boolean;
   className?: string;
   ref?: React.Ref<HTMLButtonElement>;
+  /** Optional hover handler — used by flyout/submenu rows (e.g. the field picker). */
+  onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function ContextMenuListItem({
@@ -16,6 +18,7 @@ export function ContextMenuListItem({
   isDisabled,
   className,
   ref,
+  onMouseEnter,
 }: React.PropsWithChildren<ContextMenuListItemProps>) {
   return (
     <button
@@ -23,6 +26,7 @@ export function ContextMenuListItem({
       data-testid={testId || "context-menu-list-item"}
       type="button"
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       disabled={isDisabled}
       className={cn(
         dropdownMenuRowForegroundClassName,

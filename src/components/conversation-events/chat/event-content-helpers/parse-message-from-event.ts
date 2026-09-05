@@ -35,6 +35,11 @@ export const sanitizeAgentProse = (text: string): string => {
   return cleaned.trim();
 };
 
+export const stripEngineeringDirective = (text: string): string => {
+  if (!text) return "";
+  return text.replace(/^\[Exeaon Engineering Labs\][\s\S]*?\n\n/i, "").trim();
+};
+
 export const parseMessageFromEvent = (event: MessageEvent): string => {
   const message = event.llm_message;
 
@@ -72,6 +77,8 @@ export const parseMessageFromEvent = (event: MessageEvent): string => {
 
   if (event.source === "agent") {
     result = sanitizeAgentProse(result);
+  } else if (event.source === "user") {
+    result = stripEngineeringDirective(result);
   }
 
   return result;

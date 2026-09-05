@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type {
   ConversationTab,
   ConversationMode,
+  EngineeringField,
+  ExecutionMode,
 } from "#/stores/conversation-store";
 import type { ViewMode } from "#/components/features/files-tab/view-mode";
 import {
@@ -40,6 +42,10 @@ export interface ConversationState {
   unpinnedOverviewSections?: string[];
   unpinnedOverviewGitParts?: string[];
   conversationMode: ConversationMode;
+  /** Exeaon Engineering Labs field + how it runs (Phase 0 scaffold). */
+  engineeringField: EngineeringField;
+  executionMode: ExecutionMode;
+  cyberSwarm: boolean;
   subConversationTaskId: string | null;
   draftMessage: string | null;
   rightPanelShown?: boolean;
@@ -67,6 +73,9 @@ const DEFAULT_CONVERSATION_STATE: ConversationState = {
   unpinnedOverviewSections: [...DEFAULT_UNPINNED_OVERVIEW_SECTIONS],
   unpinnedOverviewGitParts: [...DEFAULT_UNPINNED_OVERVIEW_GIT_PARTS],
   conversationMode: "code",
+  engineeringField: "none",
+  executionMode: "simulation",
+  cyberSwarm: false,
   subConversationTaskId: null,
   draftMessage: null,
   rightPanelShown: false,

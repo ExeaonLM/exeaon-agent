@@ -4,6 +4,7 @@ import {
   cloudRegister,
   type CloudSession,
 } from "#/api/cloud/exeaon-auth.api";
+import { syncCloudModelProfiles } from "#/api/cloud/exeaon-models.api";
 import {
   readStoredBackends,
   writeStoredBackends,
@@ -118,6 +119,7 @@ export function ExeaonCloudLogin({
           ? await cloudLogin(host, email.trim(), password)
           : await cloudRegister(host, name.trim(), email.trim(), password);
       persistSession(session);
+      await syncCloudModelProfiles({ activateDefault: true });
       onSignedIn?.(session);
     } catch (err) {
       const msg =

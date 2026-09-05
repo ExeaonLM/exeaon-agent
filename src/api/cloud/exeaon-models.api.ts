@@ -1,5 +1,7 @@
 import axios from "axios";
 import { readStoredBackends } from "#/api/backend-registry/storage";
+import { ProfilesService } from "#/api/profiles-service/profiles-service.api";
+import { sanitizeProfileName } from "#/utils/format-model-name";
 
 /**
  * A model the Exeaon Cloud gateway can serve, as returned by the session-authed
@@ -97,4 +99,67 @@ export async function fetchCloudModels(): Promise<CloudModel[]> {
     requiresPro: Boolean(d.requiresPro),
     available: d.available === undefined ? true : Boolean(d.available),
   }));
+}
+
+const DEFAULT_CLOUD_MODELS = [
+  "Exeaon-Spark-1.0",
+  "Exeaon-Video-1.0",
+  "Exeaon-Arc-1.0",
+];
+
+/**
+ * Automatically provisions and syncs the user's Exeaon Cloud gateway virtual key
+ * into local agent-server profiles for Cloud models.
+ *
+ * This ensures that on login or startup, Exeaon Cloud models (Spark, Video, Arc)
+ * are immediately usable with full authentication without requiring the user to
+ * manually input keys or click buttons. Local GGUF models and custom API models
+ * remain completely untouched.
+ */
+export async function syncCloudModelProfiles(options?: {
+  activateDefault?: boolean;
+}): Promise<void> {
+  try {
+    const host = cloudHost();
+    if (!host) return;
+
+    const key = await fetchMyGatewayKey();
+    if (!key) return;
+
+    const profileList = await ProfilesService.listProfiles();
+    const existingProfiles = profileList.profiles ?? [];
+
+    for (const modelName of DEFAULT_CLOUD_MODELS) {
+      const sanitized = sanitizeProfileName(modelName);
+      const existing = existingProfiles.find((p) => p.name === sanitized);
+
+      // If the profile does not exist or its API key is missing/un-set, sync it
+      if (!existing || !existing.api_key_set) {
+        await ProfilesService.saveProfile(sanitized, {
+          llm: {
+            model: `litellm_proxy/${modelName}`,
+            base_url: `${host}/ai/v1`,
+            api_key: key,
+            native_tool_calling: false,
+          },
+          include_secrets: true,
+        } as unknown as Parameters<typeof ProfilesService.saveProfile>[1]);
+      }
+    }
+
+    if (
+      options?.activateDefault &&
+      (!profileList.active_profile ||
+        DEFAULT_CLOUD_MODELS.some(
+          (m) => sanitizeProfileName(m) === profileList.active_profile,
+        ))
+    ) {
+      const target =
+        profileList.active_profile ||
+        sanitizeProfileName(DEFAULT_CLOUD_MODELS[0]);
+      await ProfilesService.activateProfile(target);
+    }
+  } catch (err) {
+    console.warn("Could not auto-sync cloud model profiles:", err);
+  }
 }

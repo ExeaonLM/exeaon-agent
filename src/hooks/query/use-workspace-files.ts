@@ -35,9 +35,9 @@ const EXCLUDED_DIRS = [
 ];
 
 // Build a cross-platform file listing command that works on both Windows and Linux.
-function buildListCommand(): string {
-  const excluded = JSON.stringify(EXCLUDED_DIRS);
-  return `python -c "import os; ex = set(${excluded}); files = [os.path.relpath(os.path.join(r, f), '.').replace(chr(92), '/') for r, d, fs in os.walk('.') if not any(x in r.replace(chr(92), '/').split('/') for x in ex) for f in fs]; [print(f) for f in sorted(files)[:${MAX_FILES}]]"`;
+function buildListCommand(pyBin = "python"): string {
+  const excluded = EXCLUDED_DIRS.map((d) => `'${d}'`).join(",");
+  return `${pyBin} -c "import os; ex = {${excluded}}; files = [os.path.relpath(os.path.join(r, f), '.').replace(chr(92), '/') for r, d, fs in os.walk('.') if not any(x in r.replace(chr(92), '/').split('/') for x in ex) for f in fs]; [print(f) for f in sorted(files)[:${MAX_FILES}]]"`;
 }
 
 function normalizePath(path: string): string {
@@ -74,13 +74,24 @@ function useLocalWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
       workingDir,
     ],
     queryFn: async () => {
-      const result = await AgentServerRuntimeService.executeCommand(
+      let result = await AgentServerRuntimeService.executeCommand(
         conversationUrl,
         sessionApiKey,
-        buildListCommand(),
+        buildListCommand("python"),
         workingDir,
         30,
       );
+
+      // Fallback: try python3 if python failed (e.g. Linux environments without python symlink)
+      if (result.exit_code !== 0) {
+        result = await AgentServerRuntimeService.executeCommand(
+          conversationUrl,
+          sessionApiKey,
+          buildListCommand("python3"),
+          workingDir,
+          30,
+        );
+      }
 
       if (result.exit_code !== 0) {
         throw new Error(

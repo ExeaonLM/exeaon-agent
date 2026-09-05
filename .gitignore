@@ -54,3 +54,7 @@ tauri-build.log
 
 # local dev
 .env
+vendor/
+run-build.bat
+schtasks-create.bat
+start-build.ps1

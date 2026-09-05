@@ -27,7 +27,9 @@
     "createUpdaterArtifacts": true,
     "resources": [
       "resources/python-runtime",
-      "resources/llama"
+      "resources/llama",
+      "resources/mcp",
+      "resources/subagents"
     ],
     "icon": [
       "icons/32x32.png",

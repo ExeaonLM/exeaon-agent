@@ -348,7 +348,7 @@ function buildAutomationCommand(env = process.env) {
   } else if (version) {
     // Use specific PyPI version
     uvxArgs.push(
-      "--from",
+      "--with",
       `${DEFAULT_AUTOMATION_PACKAGE}==${version}`,
       "uvicorn",
       "openhands.automation.app:app",
@@ -357,7 +357,7 @@ function buildAutomationCommand(env = process.env) {
   } else {
     // Default to released PyPI version
     uvxArgs.push(
-      "--from",
+      "--with",
       `${DEFAULT_AUTOMATION_PACKAGE}==${DEFAULT_AUTOMATION_VERSION}`,
       "uvicorn",
       "openhands.automation.app:app",
@@ -839,7 +839,7 @@ function buildRejectPrefixArgs(prefixes) {
 }
 
 function getFrontendBackend(config) {
-  return config.launchFrontend ? `http://localhost:${config.vitePort}` : null;
+  return config.launchFrontend ? `http://127.0.0.1:${config.vitePort}` : null;
 }
 
 function buildViteBackendEnv(config, env = process.env) {

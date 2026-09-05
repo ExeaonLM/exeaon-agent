@@ -78,7 +78,7 @@
     "dev:static": "node --env-file-if-exists=.env scripts/dev-static.mjs",
     "dev:extra-backend": "node --env-file-if-exists=.env scripts/dev-extra-backend.mjs",
     "dev:minimal": "node --env-file-if-exists=.env scripts/dev-safe.mjs",
-    "dev:frontend": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",
+    "dev:frontend": "npm run make-i18n && cross-env VITE_MOCK_API=false vite",
     "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true react-router dev",
     "build": "npm run build:app",
     "build:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true react-router build",

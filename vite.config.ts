@@ -397,7 +397,7 @@ export default defineConfig(({ mode }) => {
       },
       port: FE_PORT,
       strictPort: true, // Fail if port is busy (dynamic allocation handles fallback)
-      host: true,
+      host: "0.0.0.0",
       allowedHosts: true,
       proxy: {
         // More specific than "/api" and declared first so /api/automation is

@@ -29,6 +29,9 @@ export function ChatInputField({
   const conversationMode = useConversationStore(
     (state) => state.conversationMode,
   );
+  const engineeringField = useConversationStore(
+    (state) => state.engineeringField,
+  );
 
   const isPlanMode = conversationMode === "plan";
 
@@ -54,7 +57,9 @@ export function ChatInputField({
           )}
           contentEditable={!disabled}
           data-placeholder={
-            isPlanMode
+            engineeringField === "cyber"
+              ? "Describe a target, security assessment, or command..."
+              : isPlanMode
               ? t(I18nKey.COMMON$LET_S_WORK_ON_A_PLAN)
               : t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)
           }

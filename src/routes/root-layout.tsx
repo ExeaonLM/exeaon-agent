@@ -18,6 +18,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useEnsureActiveProfile } from "#/hooks/use-ensure-active-profile";
 import { useSyncTelemetryConsent } from "#/hooks/use-sync-telemetry-consent";
 import { useSyncAutomationTelemetryConsent } from "#/hooks/use-sync-automation-telemetry-consent";
+import { useEngineeringMcpReconcile } from "#/hooks/use-engineering-mcp-reconcile";
 
 import { useTelemetryIdentity } from "#/hooks/use-telemetry-identity";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -107,6 +108,8 @@ export default function MainApp() {
   useTelemetryIdentity();
   // Local-mode policy: keep a profile active so a usable LLM is always selected.
   useEnsureActiveProfile();
+  // Keep managed field MCP servers synchronized across the entire application.
+  useEngineeringMcpReconcile();
 
   React.useEffect(() => {
     if (settings?.language) {

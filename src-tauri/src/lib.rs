@@ -122,6 +122,55 @@ fn bundled_python(resource_dir: &Path) -> Option<std::path::PathBuf> {
     None
 }
 
+/// Seed the user's `~/.openhands/agents` with Exeaon's bundled cyber-swarm
+/// operative(s) so the agent-server's file-based-agent loader discovers them
+/// (it scans `~/.openhands/agents` + the workspace). Copies each bundled
+/// `subagents/*.md`, overwriting so updates ship. Best-effort — never blocks
+/// startup.
+fn seed_subagents(resource_dir: &Path) {
+    #[allow(unused_mut)]
+    let mut src = [
+        resource_dir.join("subagents"),
+        resource_dir.join("resources").join("subagents"),
+    ]
+    .into_iter()
+    .find(|p| p.exists());
+    #[cfg(debug_assertions)]
+    if src.is_none() {
+        let dev = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("subagents");
+        if dev.exists() {
+            src = Some(dev);
+        }
+    }
+    let src = match src {
+        Some(s) => s,
+        None => return,
+    };
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .map(std::path::PathBuf::from);
+    let home = match home {
+        Ok(h) => h,
+        Err(_) => return,
+    };
+    let dest = home.join(".openhands").join("agents");
+    if std::fs::create_dir_all(&dest).is_err() {
+        return;
+    }
+    if let Ok(entries) = std::fs::read_dir(&src) {
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) == Some("md") {
+                if let Some(name) = p.file_name() {
+                    let _ = std::fs::copy(&p, dest.join(name));
+                }
+            }
+        }
+    }
+}
+
 /// Spawn the bundled agent-server runtime (a full, self-contained Python
 /// install shipped inside the installer's resources). Returns None when the
 /// runtime is not present (e.g. `tauri dev`).
@@ -253,6 +302,8 @@ fn automation_backend_command(resource_dir: &Path) -> Option<(std::path::PathBuf
     // Dev fallback: uvx fetches the package (cached after first run).
     let uvx = resolve_uvx()?;
     let args = vec![
+        "--from".to_string(),
+        "uvicorn".to_string(),
         "--with".to_string(),
         format!("{AUTOMATION_PACKAGE}=={AUTOMATION_VERSION}"),
         "uvicorn".to_string(),
@@ -540,6 +591,73 @@ fn open_external(url: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Resolve where the system-managed Engineering-field MCP servers live at
+/// runtime, so the frontend reconcile can point `mcp_config` at real paths.
+///
+/// Bundled installs read `<resource_dir>/mcp`; a `tauri dev`/source build falls
+/// back to `<src-tauri>/../vendor/mcp`. Also reports whether each server's build
+/// output exists so the reconcile only enables servers that are actually built.
+#[tauri::command]
+fn mcp_runtime_paths(app: tauri::AppHandle) -> serde_json::Value {
+    #[allow(unused_mut)] // reassigned only under debug_assertions (dev fallback)
+    let mut mcp_root = app
+        .path()
+        .resource_dir()
+        .ok()
+        .map(|d| d.join("mcp"))
+        .filter(|p| p.exists());
+    #[cfg(debug_assertions)]
+    if mcp_root.is_none() {
+        // Dev / `tauri dev`: resources aren't copied next to the exe, so read
+        // the staged servers straight from the source tree.
+        let dev = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("mcp");
+        if dev.exists() {
+            mcp_root = Some(dev);
+        }
+    }
+    let root = mcp_root
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_default();
+    let exists = |rel: &str| -> bool {
+        !root.is_empty() && Path::new(&format!("{root}/{rel}")).exists()
+    };
+
+    // Bundled Python runs the CybORG sim server. Reuse the agent-server's
+    // resolver (bundle: <resources>/python-runtime; dev: source tree); fall back
+    // to "python" on PATH.
+    let resource_dir = app.path().resource_dir().unwrap_or_default();
+    let python_path = bundled_python(&resource_dir)
+        .or_else(|| {
+            #[cfg(debug_assertions)]
+            {
+                let dev = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("resources")
+                    .join("python-runtime")
+                    .join("python.exe");
+                if dev.exists() {
+                    return Some(dev);
+                }
+            }
+            None
+        })
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|| "python".to_string());
+
+    serde_json::json!({
+        "mcpRoot": root,
+        // A bundled node isn't shipped yet; rely on PATH (dev has node). The
+        // bundling step will replace this with the packaged node path.
+        "nodePath": "node",
+        "pythonPath": python_path,
+        "cyberUnifiedExists": exists("cyber-unified/build/index.js"),
+        "windowsMcpExists": exists("windows-mcp-server.exe"),
+        "calderaMcpExists": exists("caldera-mcp/index.mjs"),
+        "cyborgSimExists": exists("cyborg-sim/server.py"),
+    })
+}
+
 /// Start GitHub's OAuth Device Flow: request a device + user code.
 ///
 /// Run from Rust (not the webview) because GitHub's device endpoints send no
@@ -797,10 +915,15 @@ pub fn run() {
             list_local_models,
             open_models_dir,
             open_external,
+            mcp_runtime_paths,
             github_device_start,
             github_device_poll,
         ])
         .setup(move |app| {
+            // 1b. Seed the cyber-swarm operative(s) into ~/.openhands/agents so
+            //     the agent-server discovers them before it starts.
+            seed_subagents(&app.path().resource_dir().unwrap_or_default());
+
             // 2. Spawn the bundled agent-server (or dev uvx fallback) so the
             //    frontend's /server_info probe finds it when the window loads.
             let child = start_backend_if_needed(&app.path().resource_dir().unwrap_or_default());

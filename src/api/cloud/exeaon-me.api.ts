@@ -11,6 +11,22 @@ import { readStoredBackends } from "#/api/backend-registry/storage";
  * rely on cross-site cookies). "pro" means a funded, active billing account;
  * a fresh account-less user is honestly "free" with zero usage.
  */
+/** One live gating window (hourly or weekly), all values in credits. */
+export interface CloudMeWindow {
+  usedCredits: number;
+  includedCredits: number;
+  resetAtUnix: number;
+}
+
+/** A selectable plan tier for the upgrade UI. */
+export interface CloudPlanItem {
+  id: string;
+  name: string;
+  hourlyCredits: number;
+  weeklyCredits: number;
+  monthlyPriceUsd: number;
+}
+
 export interface CloudMe {
   userId: number;
   email: string;
@@ -30,11 +46,40 @@ export interface CloudMe {
   completionTokens: number;
   totalTokens: number;
   spendCredits: number;
+  plan: string;
+  planName: string;
+  hourly: CloudMeWindow | null;
+  weekly: CloudMeWindow | null;
+  planCatalog: CloudPlanItem[];
 }
 
 function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+function unwrapWindow(v: unknown): CloudMeWindow | null {
+  if (!v || typeof v !== "object") return null;
+  const w = v as Record<string, unknown>;
+  return {
+    usedCredits: num(w.usedCredits),
+    includedCredits: num(w.includedCredits),
+    resetAtUnix: num(w.resetAtUnix),
+  };
+}
+
+function unwrapPlanCatalog(v: unknown): CloudPlanItem[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((raw) => {
+    const p = (raw ?? {}) as Record<string, unknown>;
+    return {
+      id: String(p.id ?? ""),
+      name: String(p.name ?? ""),
+      hourlyCredits: num(p.hourlyCredits),
+      weeklyCredits: num(p.weeklyCredits),
+      monthlyPriceUsd: num(p.monthlyPriceUsd),
+    };
+  });
 }
 
 function unwrap(payload: unknown): CloudMe {
@@ -59,6 +104,11 @@ function unwrap(payload: unknown): CloudMe {
     completionTokens: num(d.completionTokens),
     totalTokens: num(d.totalTokens),
     spendCredits: num(d.spendCredits),
+    plan: String(d.plan ?? "free"),
+    planName: String(d.planName ?? "Free"),
+    hourly: unwrapWindow(d.hourly),
+    weekly: unwrapWindow(d.weekly),
+    planCatalog: unwrapPlanCatalog(d.planCatalog),
   };
 }
 
@@ -82,6 +132,82 @@ export async function fetchCloudMe(): Promise<CloudMe | null> {
     headers: { Authorization: `Bearer ${be.apiKey}` },
   });
   return unwrap(res.data);
+}
+
+/**
+ * Open a URL outside the app. In the Tauri desktop shell we invoke the app's
+ * `open_external` command (registered in src-tauri); on the web we open a new
+ * tab. Both are best-effort — checkout must never crash the app.
+ */
+async function openExternal(url: string): Promise<void> {
+  try {
+    const tauri = (
+      window as unknown as {
+        __TAURI_INTERNALS__?: { invoke?: (cmd: string, args: unknown) => Promise<unknown> };
+      }
+    ).__TAURI_INTERNALS__;
+    if (tauri?.invoke) {
+      await tauri.invoke("open_external", { url });
+      return;
+    }
+  } catch {
+    // fall through to window.open
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/** Result of starting a hosted checkout: where to send the browser + ref. */
+export interface CheckoutStart {
+  authorizationUrl: string;
+  reference: string;
+}
+
+/**
+ * Start a pay-as-you-go top-up: buys `amountUsd` of credits via Paystack hosted
+ * checkout. Opens the authorization URL and returns the reference to verify on
+ * return. Throws when not signed in or Paystack is unconfigured.
+ */
+export async function startCloudTopUp(amountUsd: number): Promise<CheckoutStart> {
+  const be = cloudBackend();
+  if (!be) throw new Error("Not signed in to Exeaon Cloud.");
+  const me = await fetchCloudMe();
+  const res = await axios.post(
+    `${be.host}/ai/gateway/billing/paystack/initialize`,
+    { tenantId: me?.tenantId ?? 0, email: me?.email ?? "", amount: amountUsd },
+    { timeout: 20000, headers: { Authorization: `Bearer ${be.apiKey}` } },
+  );
+  const d = (res.data?.data ?? res.data ?? {}) as Record<string, unknown>;
+  const start: CheckoutStart = {
+    authorizationUrl: String(d.authorizationUrl ?? ""),
+    reference: String(d.reference ?? ""),
+  };
+  if (start.authorizationUrl) await openExternal(start.authorizationUrl);
+  return start;
+}
+
+/**
+ * Start a plan upgrade (pro / max) via Paystack hosted checkout. Opens the
+ * authorization URL; on successful payment the gateway sets the account's plan
+ * for the billing period. Throws when not signed in or Paystack is unconfigured.
+ */
+export async function startCloudPlanUpgrade(
+  planId: string,
+): Promise<CheckoutStart> {
+  const be = cloudBackend();
+  if (!be) throw new Error("Not signed in to Exeaon Cloud.");
+  const me = await fetchCloudMe();
+  const res = await axios.post(
+    `${be.host}/ai/gateway/billing/plan/initialize`,
+    { tenantId: me?.tenantId ?? 0, email: me?.email ?? "", planId },
+    { timeout: 20000, headers: { Authorization: `Bearer ${be.apiKey}` } },
+  );
+  const d = (res.data?.data ?? res.data ?? {}) as Record<string, unknown>;
+  const start: CheckoutStart = {
+    authorizationUrl: String(d.authorizationUrl ?? ""),
+    reference: String(d.reference ?? ""),
+  };
+  if (start.authorizationUrl) await openExternal(start.authorizationUrl);
+  return start;
 }
 
 /**

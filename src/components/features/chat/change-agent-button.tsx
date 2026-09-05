@@ -24,6 +24,7 @@ import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
 
 export function ChangeAgentButton() {
   const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const { conversationMode, setConversationMode, subConversationTaskId } =
     useConversationStore();
@@ -90,10 +91,9 @@ export function ChangeAgentButton() {
   }, [isAgentRunning, contextMenuOpen, isWebSocketConnected]);
 
   const isButtonDisabled =
-    isHomePage ||
     isAgentRunning ||
     isCreatingConversation ||
-    !isWebSocketConnected;
+    (!isHomePage && !isWebSocketConnected);
 
   // Handle Shift + Tab keyboard shortcut to cycle through modes
   useEffect(() => {
@@ -140,6 +140,7 @@ export function ChangeAgentButton() {
     event.preventDefault();
     event.stopPropagation();
     setConversationMode("code");
+    setContextMenuOpen(false);
   };
 
   const isExecutionAgent = conversationMode === "code";
@@ -158,9 +159,10 @@ export function ChangeAgentButton() {
     return <LessonPlanIcon width={18} height={18} color="currentColor" />;
   }, [isExecutionAgent]);
 
-  const button = (
+  return (
     <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleButtonClick}
         disabled={isButtonDisabled}
@@ -196,22 +198,13 @@ export function ChangeAgentButton() {
           activeMode={conversationMode}
           onClose={() => setContextMenuOpen(false)}
           onCodeClick={handleCodeClick}
-          onPlanClick={handlePlanClick}
+          onPlanClick={(e) => {
+            handlePlanClick(e);
+            setContextMenuOpen(false);
+          }}
+          ignoreRef={buttonRef}
         />
       )}
     </div>
   );
-
-  if (isHomePage) {
-    return (
-      <StyledTooltip
-        content={t(I18nKey.CHANGE_AGENT$SWITCH_AFTER_CONVERSATION)}
-        placement="top"
-      >
-        {button}
-      </StyledTooltip>
-    );
-  }
-
-  return button;
 }
