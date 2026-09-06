@@ -103,7 +103,15 @@ if ($SkipCyborg) {
     $ok = (& $Python -c "import CybORG; print('ok')" 2>$null)
     $results["CybORG"] = if ($ok -eq "ok") { "ok" } else { "installed (import unverified)" }
   } else {
-    $results["CybORG"] = "FAILED"
+    # NON-FATAL: CybORG pins old deps (numpy==1.26.4, gym 0.26.2, …) that have
+    # no wheels for a bleeding-edge Python (e.g. 3.14), so pip falls back to
+    # compiling them — which the embedded runtime can't do (no dev headers /
+    # pythonNN.lib). This is a known limitation, NOT a script bug. Cyber
+    # Simulation then stays on-demand (the cyborg-sim MCP reports the hint).
+    # Robotics (MuJoCo) + Computing (Icarus) are unaffected. To actually bundle
+    # CybORG you'd need a Python 3.11/3.12 runtime, or to modernise its pins.
+    Write-Host "CybORG could not be bundled on this Python — see note above." -ForegroundColor Yellow
+    $results["CybORG"] = "unavailable (needs py3.11-3.12; stays on-demand)"
   }
 }
 
