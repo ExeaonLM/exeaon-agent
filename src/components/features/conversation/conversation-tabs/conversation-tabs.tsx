@@ -8,6 +8,7 @@ import {
   Maximize2,
   Minimize2,
   Network,
+  Bot,
   SquareChevronRight,
   X,
 } from "lucide-react";
@@ -166,6 +167,15 @@ export function ConversationTabs({
       tooltipAriaLabel: "Cyber Graph",
       label: "Cyber Graph",
     },
+    {
+      tabValue: "robotics",
+      isActive: isTabActive("robotics"),
+      icon: Bot,
+      onClick: () => selectTab("robotics"),
+      tooltipContent: "Robotics Sim",
+      tooltipAriaLabel: "Robotics Sim",
+      label: "Robotics Sim",
+    },
   ];
 
   if (hasTaskList) {
@@ -192,6 +202,13 @@ export function ConversationTabs({
       engineeringField !== "cyber" &&
       !cyberSwarm &&
       selectedTab !== "swarm"
+    ) {
+      return false;
+    }
+    if (
+      tab.tabValue === "robotics" &&
+      engineeringField !== "robotics" &&
+      selectedTab !== "robotics"
     ) {
       return false;
     }

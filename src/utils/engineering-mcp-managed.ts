@@ -97,6 +97,21 @@ const CYBER_SIM: ManagedSpec = {
   }),
 };
 
+// Robotics Simulation: the MuJoCo physics sim (pure Python, no real hardware).
+// Runs on the bundled Python; MuJoCo itself is installed on demand (the server
+// reports a clear install hint until then). Every step returns per-geom world
+// transforms so the desktop's live 3D viewer renders the actual model.
+const ROBOTICS_MUJOCO: ManagedSpec = {
+  key: "robotics-mujoco",
+  build: (ctx) => ({
+    id: `${MANAGED_MCP_PREFIX}robotics-mujoco`,
+    name: `${MANAGED_MCP_PREFIX}robotics-mujoco`,
+    type: "stdio",
+    command: ctx.pythonPath,
+    args: [`${ctx.mcpRoot}/mujoco-sim/server.py`],
+  }),
+};
+
 /**
  * Which managed servers a (field, mode) activates. Simulation mode uses the
  * field's local sim backends (CALDERA/CybORG, MuJoCo, Verilator) which are NOT
@@ -115,9 +130,12 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
       if (wantsSim) out.push(CYBER_SIM);
       return out;
     }
+    case "robotics":
+      // Simulation only in v1 (physical labs deferred): the MuJoCo sim MCP.
+      return wantsSim ? [ROBOTICS_MUJOCO] : [];
     case "device":
       return wantsReal ? [DEVICE_WINDOWS] : [];
-    // robotics / computing have no real MCP path in v1 (physical labs deferred).
+    // computing has no wired backend yet.
     default:
       return [];
   }
@@ -145,7 +163,11 @@ export function buildManagedMcpConfig(
 
 /** Names of every managed server this build knows about (for cleanup/reconcile). */
 export function allManagedMcpNames(): string[] {
-  return [CYBER_UNIFIED, DEVICE_WINDOWS, CYBER_CALDERA, CYBER_SIM].map(
-    (s) => `${MANAGED_MCP_PREFIX}${s.key}`,
-  );
+  return [
+    CYBER_UNIFIED,
+    DEVICE_WINDOWS,
+    CYBER_CALDERA,
+    CYBER_SIM,
+    ROBOTICS_MUJOCO,
+  ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }

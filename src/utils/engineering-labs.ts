@@ -54,8 +54,8 @@ export const ENGINEERING_FIELDS: EngineeringFieldMeta[] = [
     shortLabel: "Robotics",
     icon: "Bot",
     blurb:
-      "Physics, control, dynamics. Simulation = MuJoCo (live 3D). Real (physical labs) deferred.",
-    available: false,
+      "Physics, control, dynamics. Simulation = MuJoCo with a live 3D war-room viewer. Real (physical labs) deferred.",
+    available: true,
     modes: ["simulation"],
   },
   {
@@ -179,6 +179,7 @@ export function buildEngineeringDirective(
 ): string {
   if (field === "none") return "";
   if (field === "cyber") return buildCyberContract(mode, swarm);
+  if (field === "robotics") return buildRoboticsContract(mode);
 
   const meta = fieldMeta(field);
   const plan = getFieldToolPlan(field, mode);
@@ -205,6 +206,24 @@ export function buildEngineeringDirective(
     lines.push(`Real-tool MCP servers: ${plan.mcpServers.join(", ")}.`);
   }
   return lines.join(" ");
+}
+
+/**
+ * The Robotics operating contract — the field's "brain" for the MuJoCo sim.
+ * Simulation-only in v1 (physical labs deferred). Prepended to each message so
+ * the agent drives the physics sim rigorously and its motion shows in the live
+ * 3D viewer.
+ */
+function buildRoboticsContract(mode: ExecutionMode): string {
+  const L: string[] = [
+    `[Exeaon Engineering Labs] Field: Robotics · Mode: ${EXECUTION_MODES[mode].label}.`,
+    "SIMULATION only: drive the MuJoCo physics simulation through the `robotics-mujoco` MCP (tools: mujoco_status, list_models, load_model, reset, set_control, step, get_state). No real hardware; there is no physical-robot mode in v1.",
+    "NO SHORTCUTS: call mujoco_status first. If MuJoCo isn't installed, INSTALL it before proceeding — `pip install mujoco numpy` — then re-check mujoco_status. Never fabricate physics results or describe motion you didn't actually simulate.",
+    "METHOD: state the objective (control, stability, trajectory, analysis) → load_model (a built-in demo: cartpole, double_pendulum, bouncing_ball, reacher — or your own MJCF via `xml`) → design a controller/policy → run a CLOSED LOOP (set_control → step → read state) → measure the objective → iterate → report.",
+    "The live 3D viewer renders the sim from your step observations (each step returns per-geom world transforms). Step in modest increments (e.g. n=5–20) so the motion is visible and controllable, not one giant jump.",
+    "DOCUMENT ONLY ON A COMPLETED MILESTONE: emit a structured Markdown report to the workspace — Objective → Model → Controller/approach → Procedure → Results (metrics: stability, tracking error, settling time, energy) → Conclusion. One report per completed task.",
+  ];
+  return L.join(" ");
 }
 
 /**

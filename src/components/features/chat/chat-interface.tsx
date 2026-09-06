@@ -55,6 +55,7 @@ import { hasConversationStarted } from "./components/resolve-picker-kind";
 import { buildEngineeringDirective } from "#/utils/engineering-labs";
 import { useEngineeringMcpReconcile } from "#/hooks/use-engineering-mcp-reconcile";
 import { useSwarmAutoOpen } from "#/hooks/use-swarm-auto-open";
+import { useRoboticsAutoOpen } from "#/hooks/use-robotics-auto-open";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -80,6 +81,7 @@ export function ChatInterface() {
   useEngineeringMcpReconcile();
   // Auto-open the Swarm war-room when a cyber swarm starts.
   useSwarmAutoOpen();
+  useRoboticsAutoOpen();
   const {
     errorMessage,
     errorCode,

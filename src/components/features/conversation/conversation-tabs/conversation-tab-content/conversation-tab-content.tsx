@@ -5,17 +5,18 @@ import { TabContentArea } from "./tab-content-area";
 import { ConversationTabContentCrossfade } from "./conversation-tab-content-crossfade";
 import { useConversationStore } from "#/stores/conversation-store";
 import { useConversationId } from "#/hooks/use-conversation-id";
+import SwarmTab from "#/routes/swarm-tab";
+import RoboticsTab from "#/routes/robotics-tab";
 
-// Lazy load all tab components, including the terminal — xterm + addon-fit +
-// xterm.css are large enough that we don't want them in the conversation
-// route's eager graph just because the terminal tab might be selected later.
-const FilesTab = lazy(() => import("#/routes/files-tab"));
+import FilesTab from "#/routes/files-tab";
+
+// Lazy load tab components with heavy deps (xterm, browser sandbox, etc.).
+// Lightweight tabs (swarm, files, usage, planner, tasklist) render instantly.
 const CommitsTab = lazy(() => import("#/routes/commits-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const PlannerTab = lazy(() => import("#/routes/planner-tab"));
 const TaskListTab = lazy(() => import("#/routes/task-list-tab"));
 const UsageTab = lazy(() => import("#/routes/usage-tab"));
-const SwarmTab = lazy(() => import("#/routes/swarm-tab"));
 const Terminal = lazy(() => import("#/components/features/terminal/terminal"));
 
 const TAB_CONFIG = {
@@ -27,7 +28,13 @@ const TAB_CONFIG = {
   planner: { component: PlannerTab },
   usage: { component: UsageTab },
   swarm: { component: SwarmTab },
+  robotics: { component: RoboticsTab },
 };
+
+// Only browser genuinely needs the remote sandbox ready before rendering.
+// All other tabs render client-side or manage their own queries and should
+// never be blocked by the global agent-loading overlay.
+const BACKEND_DEPENDENT_TABS = new Set(["browser"]);
 
 export function ConversationTabContent() {
   const { selectedTab, shouldShownAgentLoading } = useConversationStore();
@@ -46,11 +53,17 @@ export function ConversationTabContent() {
       ? `${selectedTab}-${conversationId}`
       : (selectedTab ?? "files");
 
+  // Only gate the loading overlay for tabs that actually need the backend.
+  // Terminal, swarm, usage, planner, tasklist all render instantly.
+  const effectiveLoading =
+    shouldShownAgentLoading &&
+    BACKEND_DEPENDENT_TABS.has(selectedTab ?? "files");
+
   return (
     <TabContainer>
       <TabContentArea>
         <ConversationTabContentCrossfade
-          showAgentLoading={shouldShownAgentLoading}
+          showAgentLoading={effectiveLoading}
           tabKey={tabWrapperKey}
         >
           <TabWrapper key={tabWrapperKey}>

@@ -13,7 +13,8 @@ export type ConversationTab =
   | "planner"
   | "tasklist"
   | "usage"
-  | "swarm";
+  | "swarm"
+  | "robotics";
 
 export type ConversationMode = "code" | "plan";
 

@@ -10,7 +10,14 @@ import {
   type ConversationTab,
 } from "#/stores/conversation-store";
 import { I18nKey } from "#/i18n/declaration";
-import { Gauge, Globe, ListTodo, Network, SquareChevronRight } from "lucide-react";
+import {
+  Bot,
+  Gauge,
+  Globe,
+  ListTodo,
+  Network,
+  SquareChevronRight,
+} from "lucide-react";
 import { LuFileDiff } from "react-icons/lu";
 import DocumentIcon from "#/icons/document.svg?react";
 import PillIcon from "#/icons/pill.svg?react";
@@ -81,8 +88,13 @@ export function ConversationTabsContextMenu({
     setUnpinnedTabs,
     setSelectedTab: setPersistedSelectedTab,
   } = useConversationLocalStorageState(conversationId);
-  const { selectedTab, isRightPanelShown, setSelectedTab, engineeringField, cyberSwarm } =
-    useConversationStore();
+  const {
+    selectedTab,
+    isRightPanelShown,
+    setSelectedTab,
+    engineeringField,
+    cyberSwarm,
+  } = useConversationStore();
 
   const { navigateToTab } = useSelectConversationTab();
 
@@ -115,6 +127,7 @@ export function ConversationTabsContextMenu({
     { tab: "browser", icon: Globe, i18nKey: I18nKey.COMMON$BROWSER },
     { tab: "usage", icon: Gauge, i18nKey: I18nKey.COMMON$USAGE },
     { tab: "swarm", icon: Network, label: "Cyber Graph" },
+    { tab: "robotics", icon: Bot, label: "Robotics Sim" },
   ];
 
   if (hasTaskList) {
@@ -132,6 +145,13 @@ export function ConversationTabsContextMenu({
       engineeringField !== "cyber" &&
       !cyberSwarm &&
       selectedTab !== "swarm"
+    ) {
+      return false;
+    }
+    if (
+      tab === "robotics" &&
+      engineeringField !== "robotics" &&
+      selectedTab !== "robotics"
     ) {
       return false;
     }
@@ -219,7 +239,9 @@ export function ConversationTabsContextMenu({
                   >
                     <Icon className="h-4 w-4" />
                   </span>
-                  <span className="text-sm">{i18nKey ? t(i18nKey) : label}</span>
+                  <span className="text-sm">
+                    {i18nKey ? t(i18nKey) : label}
+                  </span>
                 </button>
                 <button
                   type="button"
