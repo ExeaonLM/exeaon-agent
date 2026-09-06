@@ -110,8 +110,12 @@ function useLocalWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
     },
     enabled: enabled && runtimeIsReady && !!conversationId && !!workingDir,
     retry: false,
-    staleTime: 1000 * 30,
-    gcTime: 1000 * 60 * 5,
+    // Keep the listing fresh for 10 min so re-opening the Files tab is instant
+    // (no spinner). Freshness is handled by explicit invalidation instead of a
+    // short window: the manual refresh button and use-auto-refresh-files-on-edit
+    // both invalidate ["workspace-files"] whenever files actually change.
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     meta: { disableToast: true },
   });
 
@@ -161,8 +165,12 @@ function useCloudWorkspaceFiles(enabled: boolean): WorkspaceFilesResult {
     },
     enabled: enabled && runtimeIsReady && !!conversationId,
     retry: false,
-    staleTime: 1000 * 30,
-    gcTime: 1000 * 60 * 5,
+    // Keep the listing fresh for 10 min so re-opening the Files tab is instant
+    // (no spinner). Freshness is handled by explicit invalidation instead of a
+    // short window: the manual refresh button and use-auto-refresh-files-on-edit
+    // both invalidate ["workspace-files"] whenever files actually change.
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     meta: { disableToast: true },
   });
 
