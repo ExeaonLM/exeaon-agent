@@ -74,8 +74,8 @@ export const ENGINEERING_FIELDS: EngineeringFieldMeta[] = [
     shortLabel: "Device",
     icon: "MonitorCog",
     blurb:
-      "Desktop / device automation via Windows + macOS MCP. Real-only, Validation-gated. (Coming last.)",
-    available: false,
+      "Desktop / device automation via the Windows control MCP. Real-only, every action Validation-gated. Acts only on your own machine.",
+    available: true,
     modes: ["real", "auto"],
   },
 ];
@@ -104,7 +104,8 @@ export const EXECUTION_MODES: Record<ExecutionMode, ExecutionModeMeta> = {
     id: "auto",
     label: "Auto",
     icon: "Wand2",
-    blurb: "Agent chooses Simulation or Real per step; never escalates unsafely.",
+    blurb:
+      "Agent chooses Simulation or Real per step; never escalates unsafely.",
   },
 };
 
@@ -152,9 +153,11 @@ export function getFieldToolPlan(
         realCapable: false,
       };
     case "device":
+      // mac-mcp was removed (Swift/macOS-only); the Windows control MCP is the
+      // shipped device backend (same server that powers Cyber real OS-control).
       return {
         simBackends: [],
-        mcpServers: ["windows-mcp", "mac-mcp"],
+        mcpServers: ["windows-mcp"],
         realCapable: true,
       };
     case "none":
@@ -229,13 +232,13 @@ function buildCyberContract(mode: ExecutionMode, swarm = false): string {
     );
   }
 
-  // Tooling + the no-shortcut install discipline (applies in real/auto).
+  // Tooling: use the cyber-unified MCP tools directly (50 tools pre-registered).
   if (mode !== "simulation") {
     L.push(
-      "TOOLS: your primary instrument is the `cyber-unified` MCP — 50+ security tools (recon-nmap, recon-httpx, recon-subfinder, recon-dnsx, recon-katana, web-http-headers, web-sslscan, web-nuclei, web-ffuf, code-semgrep, code-gitleaks, cloud-prowler/trivy, plus shodan/virustotal/crtsh via API keys). Also windows-mcp (host control) and caldera-mcp (adversary emulation / enumeration).",
+      "TOOLS: The `cyber-unified` MCP server is ALREADY registered, active, and exposes 50 security tools (recon-httpx, recon-subfinder, recon-dnsx, recon-nmap, recon-katana, recon-crtsh, web-http-headers, web-sslscan, web-nuclei, web-ffuf, code-semgrep, code-gitleaks, cloud-prowler, cloud-trivy, etc.). INVOKE THESE MCP TOOLS DIRECTLY.",
     );
     L.push(
-      "NO SHORTCUTS — if a tool's binary is missing, INSTALL it before falling back, in order: (1) the app's bundled `mcp/bin`, (2) `winget install` / `choco install` / `scoop install`, (3) the tool's official GitHub release / `go install` / `pip install`. Never use cracked, pirated, or untrusted-mirror binaries. If it needs elevation you can't get, use a native equivalent (Python socket/ssl/urllib/requests) and clearly NOTE the substitution. Verify each tool with `--version` before relying on it. In security you either get the real capability working or you honestly report you couldn't — never silently skip.",
+      "DO NOT attempt system-level package installations (`choco install`, `winget install`, `scoop install`, etc.) via terminal — all primary capabilities are already provided by the active `cyber-unified` MCP server. If an external command-line binary is not installed on the system, do NOT attempt to install it with package managers; use the corresponding MCP tool or run a native Python script (socket, ssl, urllib, requests) in the workspace to accomplish the task.",
     );
   }
 
@@ -252,7 +255,10 @@ function buildCyberContract(mode: ExecutionMode, swarm = false): string {
 
   if (swarm) {
     L.push(
-      "SWARM LEAD: for any non-trivial engagement you lead a swarm — DECOMPOSE it into independent slices and SUMMON operatives to run them IN PARALLEL. Use the `task` tool: in a SINGLE turn, issue MULTIPLE `task` calls with subagent_type=\"cyber-operative\", each carrying a precise, self-composed mission prompt (e.g. one call \"Port+service scan <scope>; return assets\", another \"Web stack+headers+TLS on <url>; return findings\", another \"Enumerate SMB/LDAP on <host>\"). Firing several `task` calls together runs the operatives concurrently — that is your swarm. Summon as many as THIS engagement needs (more for wide scope, fewer for one host); no fixed roster. Give each operative its scope + authorization explicitly in the prompt. When they return, FUSE their facts: dedupe, resolve conflicts, cross-reference (a recon service version → a CVE another operative confirmed). Produce ONE consolidated report — never N disjoint ones. You remain accountable for scope, authorization, and Validation across every operative.",
+      'SWARM LEAD: for any non-trivial engagement you lead a swarm — DECOMPOSE it into independent slices and SUMMON operatives to run them IN PARALLEL. Use the `task` tool: in a SINGLE turn, issue MULTIPLE `task` calls with subagent_type="cyber-operative", each carrying a precise, self-composed mission prompt (e.g. one call "Port+service scan <scope>; return assets", another "Web stack+headers+TLS on <url>; return findings", another "Enumerate SMB/LDAP on <host>"). Firing several `task` calls together runs the operatives concurrently — that is your swarm. Summon as many as THIS engagement needs (more for wide scope, fewer for one host); no fixed roster. Give each operative its scope + authorization explicitly in the prompt. When they return, FUSE their facts: dedupe, resolve conflicts, cross-reference (a recon service version → a CVE another operative confirmed). Produce ONE consolidated report — never N disjoint ones. You remain accountable for scope, authorization, and Validation across every operative.',
+    );
+    L.push(
+      "EXECUTION STRATEGY (PARALLEL vs SEQUENTIAL): Strictly adhere to the user's explicit instructions regarding PARALLEL (summoning/dispatching tools and operatives concurrently in a single turn) versus SEQUENTIAL (step-by-step phased execution). In security audits, adopt a staged 2-phase pipeline: Phase 1 concurrent discovery & reconnaissance in parallel, followed by Phase 2 concurrent deep vulnerability scanning & assessment on discovered endpoints.",
     );
   }
   return L.join(" ");
