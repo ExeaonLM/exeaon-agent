@@ -195,7 +195,15 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
     ],
     resolve: {
+      // `tsconfigPaths` is a vite 8 (rolldown) native option; on vite 7 it's a
+      // no-op, so declare the `#/*` -> `src/*` alias (from tsconfig paths)
+      // explicitly here. This resolves the alias in every environment,
+      // including the SSR module runner that renders root.tsx (which otherwise
+      // 500s with "Cannot find module '#/...'"). Harmless on vite 8.
       tsconfigPaths: true,
+      alias: {
+        "#": fileURLToPath(new URL("./src", import.meta.url)),
+      },
     },
     css: {
       postcss: {
@@ -392,6 +400,15 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
+      // Pre-transform the entry + root at startup so the FIRST dev render isn't
+      // a cold pull of the whole module graph through the SSR module-runner —
+      // that cold pull is what makes the first page take minutes on Windows.
+      // Purely a startup speed-up (a documented Vite feature); no behavior
+      // change, safe to leave on.
+      warmup: {
+        clientFiles: ["./src/entry.client.tsx", "./src/root.tsx"],
+        ssrFiles: ["./src/root.tsx"],
+      },
       hmr: {
         overlay: false,
       },
@@ -477,17 +494,20 @@ export default defineConfig(({ mode }) => {
           : {}),
       },
       watch: {
-        // Ignore the Rust build tree: `tauri dev` recompiles into
-        // src-tauri/target/, and every build writes hundreds of files. Without
-        // this, the dev watcher treats that as a change storm and react-router
-        // logs "Config changed" hundreds of times per build, reload-thrashing
-        // the webview so the app never settles (the x276 burst that lined up
-        // exactly with each `cargo` finish).
+        // Ignore build output and live agent runtime workspaces so background
+        // task writes (.owner_lease.lock, trajectories, workspace files) don't
+        // trigger reload storms where react-router logs "Config changed" thousands
+        // of times and forces webview page reloads.
         ignored: [
           "**/node_modules/**",
           "**/.git/**",
           "**/src-tauri/target/**",
           "**/src-tauri/gen/**",
+          "**/src-tauri/workspace/**",
+          "**/workspace/**",
+          "**/.agents_tmp/**",
+          "**/vendor/**",
+          "**/*.lock",
         ],
       },
     },
