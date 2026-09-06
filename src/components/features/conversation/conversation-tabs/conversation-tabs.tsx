@@ -9,6 +9,7 @@ import {
   Minimize2,
   Network,
   Bot,
+  Cpu,
   SquareChevronRight,
   X,
 } from "lucide-react";
@@ -176,6 +177,15 @@ export function ConversationTabs({
       tooltipAriaLabel: "Robotics Sim",
       label: "Robotics Sim",
     },
+    {
+      tabValue: "rtl",
+      isActive: isTabActive("rtl"),
+      icon: Cpu,
+      onClick: () => selectTab("rtl"),
+      tooltipContent: "RTL Waveforms",
+      tooltipAriaLabel: "RTL Waveforms",
+      label: "RTL Waveforms",
+    },
   ];
 
   if (hasTaskList) {
@@ -209,6 +219,13 @@ export function ConversationTabs({
       tab.tabValue === "robotics" &&
       engineeringField !== "robotics" &&
       selectedTab !== "robotics"
+    ) {
+      return false;
+    }
+    if (
+      tab.tabValue === "rtl" &&
+      engineeringField !== "computing" &&
+      selectedTab !== "rtl"
     ) {
       return false;
     }

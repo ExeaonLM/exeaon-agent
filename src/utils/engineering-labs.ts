@@ -64,8 +64,8 @@ export const ENGINEERING_FIELDS: EngineeringFieldMeta[] = [
     shortLabel: "RTL",
     icon: "Cpu",
     blurb:
-      "Digital logic & hardware. Simulation = Verilator + cocotb with live waveforms. Grows into SPICE/FPGA.",
-    available: false,
+      "Digital logic & RTL. Simulation = Icarus Verilog with a live waveform viewer (VCD). Grows into Verilator/SPICE/FPGA.",
+    available: true,
     modes: ["simulation"],
   },
   {
@@ -180,6 +180,7 @@ export function buildEngineeringDirective(
   if (field === "none") return "";
   if (field === "cyber") return buildCyberContract(mode, swarm);
   if (field === "robotics") return buildRoboticsContract(mode);
+  if (field === "computing") return buildComputingContract(mode);
 
   const meta = fieldMeta(field);
   const plan = getFieldToolPlan(field, mode);
@@ -222,6 +223,24 @@ function buildRoboticsContract(mode: ExecutionMode): string {
     "METHOD: state the objective (control, stability, trajectory, analysis) → load_model (a built-in demo: cartpole, double_pendulum, bouncing_ball, reacher — or your own MJCF via `xml`) → design a controller/policy → run a CLOSED LOOP (set_control → step → read state) → measure the objective → iterate → report.",
     "The live 3D viewer renders the sim from your step observations (each step returns per-geom world transforms). Step in modest increments (e.g. n=5–20) so the motion is visible and controllable, not one giant jump.",
     "DOCUMENT ONLY ON A COMPLETED MILESTONE: emit a structured Markdown report to the workspace — Objective → Model → Controller/approach → Procedure → Results (metrics: stability, tracking error, settling time, energy) → Conclusion. One report per completed task.",
+  ];
+  return L.join(" ");
+}
+
+/**
+ * The Computing / RTL operating contract — the field's "brain" for the Icarus
+ * Verilog simulation. Simulation-only. Prepended to each message so the agent
+ * designs/verifies digital logic rigorously and the waveforms show in the
+ * live viewer.
+ */
+function buildComputingContract(mode: ExecutionMode): string {
+  const L: string[] = [
+    `[Exeaon Engineering Labs] Field: Computing / RTL · Mode: ${EXECUTION_MODES[mode].label}.`,
+    "SIMULATION only: design and verify digital logic through the `rtl-sim` MCP (tools: rtl_status, list_examples, simulate, get_waveform). The engine is Icarus Verilog; simulation returns a parsed VCD waveform.",
+    "NO SHORTCUTS: call rtl_status first. If Icarus Verilog isn't installed, INSTALL it before proceeding — `winget install --id=IcarusVerilog.IcarusVerilog` (or `scoop install iverilog`) — then re-check. Never fabricate waveforms or claim a design passed without actually simulating it.",
+    'METHOD: state the spec → write the Verilog `design` → write a `testbench` that drives inputs and MUST call `$dumpfile("dump.vcd"); $dumpvars;` (so the waveform renders) → simulate → read get_waveform + the log → check the behaviour against the spec (add `$display`/asserts for self-checking) → iterate → report. Start from a built-in `example` (counter, adder, dff) when useful.',
+    "The live waveform viewer renders the signals from your last simulation. Keep testbenches bounded (finish with `$finish`) so simulations return promptly.",
+    "DOCUMENT ONLY ON A COMPLETED MILESTONE: emit a structured Markdown report to the workspace — Spec → Design (RTL) → Testbench → Results (waveform summary, timing, pass/fail of checks) → Conclusion. One report per completed task.",
   ];
   return L.join(" ");
 }

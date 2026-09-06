@@ -12,6 +12,7 @@ import {
 import { I18nKey } from "#/i18n/declaration";
 import {
   Bot,
+  Cpu,
   Gauge,
   Globe,
   ListTodo,
@@ -128,6 +129,7 @@ export function ConversationTabsContextMenu({
     { tab: "usage", icon: Gauge, i18nKey: I18nKey.COMMON$USAGE },
     { tab: "swarm", icon: Network, label: "Cyber Graph" },
     { tab: "robotics", icon: Bot, label: "Robotics Sim" },
+    { tab: "rtl", icon: Cpu, label: "RTL Waveforms" },
   ];
 
   if (hasTaskList) {
@@ -152,6 +154,13 @@ export function ConversationTabsContextMenu({
       tab === "robotics" &&
       engineeringField !== "robotics" &&
       selectedTab !== "robotics"
+    ) {
+      return false;
+    }
+    if (
+      tab === "rtl" &&
+      engineeringField !== "computing" &&
+      selectedTab !== "rtl"
     ) {
       return false;
     }

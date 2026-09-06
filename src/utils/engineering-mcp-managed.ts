@@ -112,6 +112,21 @@ const ROBOTICS_MUJOCO: ManagedSpec = {
   }),
 };
 
+// Computing / RTL Simulation: Verilog compile + simulate via Icarus Verilog,
+// returning parsed VCD waveforms. Pure Python protocol layer on the bundled
+// Python; the `iverilog` binary is found on PATH or in mcp/bin (installed on
+// demand until bundled). Drives the waveform viewer.
+const RTL_SIM: ManagedSpec = {
+  key: "rtl-sim",
+  build: (ctx) => ({
+    id: `${MANAGED_MCP_PREFIX}rtl-sim`,
+    name: `${MANAGED_MCP_PREFIX}rtl-sim`,
+    type: "stdio",
+    command: ctx.pythonPath,
+    args: [`${ctx.mcpRoot}/rtl-sim/server.py`],
+  }),
+};
+
 /**
  * Which managed servers a (field, mode) activates. Simulation mode uses the
  * field's local sim backends (CALDERA/CybORG, MuJoCo, Verilator) which are NOT
@@ -133,9 +148,11 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
     case "robotics":
       // Simulation only in v1 (physical labs deferred): the MuJoCo sim MCP.
       return wantsSim ? [ROBOTICS_MUJOCO] : [];
+    case "computing":
+      // Simulation only: the Icarus-Verilog RTL sim MCP.
+      return wantsSim ? [RTL_SIM] : [];
     case "device":
       return wantsReal ? [DEVICE_WINDOWS] : [];
-    // computing has no wired backend yet.
     default:
       return [];
   }
@@ -169,5 +186,6 @@ export function allManagedMcpNames(): string[] {
     CYBER_CALDERA,
     CYBER_SIM,
     ROBOTICS_MUJOCO,
+    RTL_SIM,
   ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }
