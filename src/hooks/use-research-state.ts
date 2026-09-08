@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { useEventStore } from "#/stores/use-event-store";
-import { isObservationEvent } from "#/types/agent-server/type-guards";
+import {
+  isActionEvent,
+  isObservationEvent,
+} from "#/types/agent-server/type-guards";
 import { textFromContent } from "#/components/features/chat/tool-visualizers/text-content";
 
 export interface ResearchSource {
@@ -33,7 +36,28 @@ const EMPTY: ResearchState = {
   reported: false,
 };
 
-const RESEARCH_MCP = "field-research";
+// The observation's `tool_name` is the TOOL name (e.g. "record_source"), which
+// may or may not carry the "exeaon-field-research" server prefix depending on
+// the agent-server build. Match on the tool names themselves (like the robotics
+// viewer matches "step"/"reset") plus the server substring, so the war-room
+// fills whether the name is prefixed or bare.
+const RESEARCH_TOOL_PATTERNS = [
+  "field-research",
+  "record_source",
+  "log_claim",
+  "check_originality",
+  "integrity_report",
+  "humanize_review",
+  "research_status",
+  "read_document",
+  "reset_research",
+];
+
+function isResearchTool(toolName: string): boolean {
+  if (!toolName) return false;
+  const lower = toolName.toLowerCase();
+  return RESEARCH_TOOL_PATTERNS.some((p) => lower.includes(p));
+}
 
 function parse(text: string): Record<string, unknown> | null {
   const t = text.trim();
@@ -80,10 +104,25 @@ export function useResearchState(): ResearchState {
       });
     };
 
+    // The tool_name is on the ACTION event; the paired OBSERVATION carries the
+    // result and references its action via `action_id` (=== the action's `id`).
+    // An observation has no tool_name of its own, so map the research-tool
+    // action ids first, then read the observations that answer them.
+    const researchActionIds = new Set<string>();
+    for (const event of events) {
+      if (!isActionEvent(event)) continue;
+      const toolName = (event as { tool_name?: string }).tool_name ?? "";
+      if (isResearchTool(toolName)) {
+        researchActionIds.add(String((event as { id?: unknown }).id ?? ""));
+      }
+    }
+
     for (const event of events) {
       if (!isObservationEvent(event)) continue;
-      const toolName = (event as { tool_name?: string }).tool_name ?? "";
-      if (!toolName.includes(RESEARCH_MCP)) continue;
+      const actionId = String(
+        (event as { action_id?: unknown }).action_id ?? "",
+      );
+      if (!researchActionIds.has(actionId)) continue;
 
       const obs = event.observation as {
         content?: Parameters<typeof textFromContent>[0];
