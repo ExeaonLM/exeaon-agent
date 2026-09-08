@@ -8,6 +8,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import SwarmTab from "#/routes/swarm-tab";
 import RoboticsTab from "#/routes/robotics-tab";
 import RtlTab from "#/routes/rtl-tab";
+import ResearchTab from "#/routes/research-tab";
 
 import FilesTab from "#/routes/files-tab";
 
@@ -31,6 +32,7 @@ const TAB_CONFIG = {
   swarm: { component: SwarmTab },
   robotics: { component: RoboticsTab },
   rtl: { component: RtlTab },
+  research: { component: ResearchTab },
 };
 
 // Only browser genuinely needs the remote sandbox ready before rendering.
@@ -38,8 +40,14 @@ const TAB_CONFIG = {
 // never be blocked by the global agent-loading overlay.
 const BACKEND_DEPENDENT_TABS = new Set(["browser"]);
 
-export function ConversationTabContent() {
-  const { selectedTab, shouldShownAgentLoading } = useConversationStore();
+export function ConversationTabContent({
+  tabKey,
+}: {
+  tabKey?: import("#/stores/conversation-store").ConversationTab | null;
+} = {}) {
+  const { selectedTab: storeSelectedTab, shouldShownAgentLoading } =
+    useConversationStore();
+  const selectedTab = tabKey ?? storeSelectedTab;
   const { conversationId } = useConversationId();
 
   const activeTab = useMemo(
@@ -52,8 +60,8 @@ export function ConversationTabContent() {
 
   const tabWrapperKey =
     selectedTab === "terminal"
-      ? `${selectedTab}-${conversationId}`
-      : (selectedTab ?? "files");
+      ? `${selectedTab}-${conversationId}${tabKey ? "-split" : ""}`
+      : `${selectedTab ?? "files"}${tabKey ? "-split" : ""}`;
 
   // Only gate the loading overlay for tabs that actually need the backend.
   // Terminal, swarm, usage, planner, tasklist all render instantly.

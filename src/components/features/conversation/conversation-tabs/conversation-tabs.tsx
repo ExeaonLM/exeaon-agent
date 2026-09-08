@@ -10,7 +10,9 @@ import {
   Network,
   Bot,
   Cpu,
+  Microscope,
   SquareChevronRight,
+  Columns2,
   X,
 } from "lucide-react";
 import { LuFileDiff } from "react-icons/lu";
@@ -52,6 +54,8 @@ export function ConversationTabs({
     isRightPanelExpanded,
     toggleRightPanelExpanded,
     setIsRightPanelExpanded,
+    isSplitPanelOpen,
+    toggleSplitPanel,
     setIsRightPanelShown,
     setHasRightPanelToggled,
   } = useConversationStore();
@@ -186,6 +190,15 @@ export function ConversationTabs({
       tooltipAriaLabel: "RTL Waveforms",
       label: "RTL Waveforms",
     },
+    {
+      tabValue: "research",
+      isActive: isTabActive("research"),
+      icon: Microscope,
+      onClick: () => selectTab("research"),
+      tooltipContent: "Research",
+      tooltipAriaLabel: "Research",
+      label: "Research",
+    },
   ];
 
   if (hasTaskList) {
@@ -226,6 +239,13 @@ export function ConversationTabs({
       tab.tabValue === "rtl" &&
       engineeringField !== "computing" &&
       selectedTab !== "rtl"
+    ) {
+      return false;
+    }
+    if (
+      tab.tabValue === "research" &&
+      engineeringField !== "research" &&
+      selectedTab !== "research"
     ) {
       return false;
     }
@@ -441,6 +461,31 @@ export function ConversationTabs({
             <DrawerVSCodeLink />
             {variant !== "compact" && (
               <>
+                <ChatActionTooltip
+                  tooltip={
+                    isSplitPanelOpen ? "Close split view" : "Split panel view"
+                  }
+                  ariaLabel={
+                    isSplitPanelOpen ? "Close split view" : "Split panel view"
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={toggleSplitPanel}
+                    aria-label={
+                      isSplitPanelOpen ? "Close split view" : "Split panel view"
+                    }
+                    className={cn(
+                      "inline-flex size-6 items-center justify-center rounded-[6px] transition-colors duration-150 cursor-pointer",
+                      "text-[var(--oh-muted)] hover:bg-white/10 hover:text-white active:scale-95",
+                      isSplitPanelOpen &&
+                        "text-white bg-white/10 ring-1 ring-white/20",
+                    )}
+                    data-testid="right-panel-split-toggle"
+                  >
+                    <Columns2 className="size-3.5 shrink-0" aria-hidden />
+                  </button>
+                </ChatActionTooltip>
                 <ChatActionTooltip
                   tooltip={isRightPanelExpanded ? "Collapse" : "Expand"}
                   ariaLabel={isRightPanelExpanded ? "Collapse" : "Expand"}

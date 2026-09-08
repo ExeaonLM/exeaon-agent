@@ -112,6 +112,21 @@ const ROBOTICS_MUJOCO: ManagedSpec = {
   }),
 };
 
+// Research: integrity tools (offline originality check, humanize review) +
+// structured session state (sources, claims) that also drives the research
+// war-room viewer. Pure Python on the bundled runtime; the agent's own browser
+// + compute + file tools do the rest.
+const RESEARCH_MCP: ManagedSpec = {
+  key: "research",
+  build: (ctx) => ({
+    id: `${MANAGED_MCP_PREFIX}research`,
+    name: `${MANAGED_MCP_PREFIX}research`,
+    type: "stdio",
+    command: ctx.pythonPath,
+    args: [`${ctx.mcpRoot}/research-mcp/server.py`],
+  }),
+};
+
 // Computing / RTL Simulation: Verilog compile + simulate via Icarus Verilog,
 // returning parsed VCD waveforms. Pure Python protocol layer on the bundled
 // Python; the `iverilog` binary is found on PATH or in mcp/bin (installed on
@@ -153,6 +168,10 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
       return wantsSim ? [RTL_SIM] : [];
     case "device":
       return wantsReal ? [DEVICE_WINDOWS] : [];
+    case "research":
+      // Integrity + war-room state MCP (always on for the field); browsing +
+      // compute come from the agent's built-in tools.
+      return [RESEARCH_MCP];
     default:
       return [];
   }
@@ -187,5 +206,6 @@ export function allManagedMcpNames(): string[] {
     CYBER_SIM,
     ROBOTICS_MUJOCO,
     RTL_SIM,
+    RESEARCH_MCP,
   ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }

@@ -57,6 +57,7 @@ import { useEngineeringMcpReconcile } from "#/hooks/use-engineering-mcp-reconcil
 import { useSwarmAutoOpen } from "#/hooks/use-swarm-auto-open";
 import { useRoboticsAutoOpen } from "#/hooks/use-robotics-auto-open";
 import { useRtlAutoOpen } from "#/hooks/use-rtl-auto-open";
+import { useResearchAutoOpen } from "#/hooks/use-research-auto-open";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -84,6 +85,7 @@ export function ChatInterface() {
   useSwarmAutoOpen();
   useRoboticsAutoOpen();
   useRtlAutoOpen();
+  useResearchAutoOpen();
   const {
     errorMessage,
     errorCode,

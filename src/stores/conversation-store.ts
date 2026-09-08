@@ -15,7 +15,8 @@ export type ConversationTab =
   | "usage"
   | "swarm"
   | "robotics"
-  | "rtl";
+  | "rtl"
+  | "research";
 
 export type ConversationMode = "code" | "plan";
 

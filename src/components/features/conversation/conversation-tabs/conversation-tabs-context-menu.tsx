@@ -16,6 +16,7 @@ import {
   Gauge,
   Globe,
   ListTodo,
+  Microscope,
   Network,
   SquareChevronRight,
 } from "lucide-react";
@@ -130,6 +131,7 @@ export function ConversationTabsContextMenu({
     { tab: "swarm", icon: Network, label: "Cyber Graph" },
     { tab: "robotics", icon: Bot, label: "Robotics Sim" },
     { tab: "rtl", icon: Cpu, label: "RTL Waveforms" },
+    { tab: "research", icon: Microscope, label: "Research" },
   ];
 
   if (hasTaskList) {
@@ -161,6 +163,13 @@ export function ConversationTabsContextMenu({
       tab === "rtl" &&
       engineeringField !== "computing" &&
       selectedTab !== "rtl"
+    ) {
+      return false;
+    }
+    if (
+      tab === "research" &&
+      engineeringField !== "research" &&
+      selectedTab !== "research"
     ) {
       return false;
     }
