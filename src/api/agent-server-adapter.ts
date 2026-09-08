@@ -2,6 +2,7 @@ import { ACP_SETTINGS_KEYS } from "@openhands/typescript-client";
 import { ServerClient } from "@openhands/typescript-client/clients";
 import { SKILLS_CATALOG } from "@openhands/extensions/skills";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { resolveSovereignApiKey } from "#/api/cloud/exeaon-models.api";
 import { ExecutionStatus } from "#/types/agent-server/core";
 import { AgentKind, Settings, SettingsValue } from "#/types/settings";
 import {
@@ -922,11 +923,21 @@ function buildConfiguredOpenHandsAgentSettings(
   // emits StreamingDeltaEvents for SDK LLM agents when an LLM has stream=True.
   llm.stream = true;
 
+  // Resolve the key. A real stored key always wins. When it's empty, ONLY a
+  // sovereign Exeaon model may fall back to the sovereign key — a custom
+  // provider (Deepseek, raw OpenAI, …) must never be handed `sk-exeaon` (the
+  // provider would reject it), so we drop the field and let its own
+  // "set your API key" error surface.
   const apiKey = normalizeSecretString(llm.api_key);
   if (apiKey) {
     llm.api_key = apiKey;
   } else {
-    delete llm.api_key;
+    const sovereignKey = resolveSovereignApiKey(llm);
+    if (sovereignKey) {
+      llm.api_key = sovereignKey;
+    } else {
+      delete llm.api_key;
+    }
   }
 
   const baseUrl = normalizeSecretString(llm.base_url);
@@ -1012,10 +1023,7 @@ function buildConfiguredConversationSettings(options: {
     engineeringDirective && !query?.includes(engineeringDirective)
       ? engineeringDirective
       : undefined;
-  const effectiveInstructions = [
-    effectiveDirective,
-    conversationInstructions,
-  ]
+  const effectiveInstructions = [effectiveDirective, conversationInstructions]
     .filter(Boolean)
     .join("\n\n");
   const initialMessage = buildInitialMessage(

@@ -36,29 +36,21 @@ fn session_key() -> &'static str {
         .unwrap_or(LEGACY_SESSION_API_KEY)
 }
 
-/// Resolve the per-install session key: read it from `<app_data_dir>/session.key`
-/// if present, else generate 32 random bytes (OS RNG), hex-encode, and persist
-/// it so it is stable across launches. Every install therefore gets its own key
-/// — nothing secret is compiled into the binary or shared between installs.
-fn resolve_session_api_key(dir: &Path) -> String {
-    if dir.as_os_str().is_empty() {
-        return LEGACY_SESSION_API_KEY.to_string();
-    }
-    let key_path = dir.join("session.key");
-    if let Ok(existing) = std::fs::read_to_string(&key_path) {
-        let trimmed = existing.trim();
-        if trimmed.len() >= 32 {
-            return trimmed.to_string();
-        }
-    }
-    let mut buf = [0u8; 32];
-    if getrandom::getrandom(&mut buf).is_err() {
-        return LEGACY_SESSION_API_KEY.to_string();
-    }
-    let key: String = buf.iter().map(|b| format!("{:02x}", b)).collect();
-    let _ = std::fs::create_dir_all(dir);
-    let _ = std::fs::write(&key_path, &key);
-    key
+/// Resolve the session key used for BOTH the agent-server request auth
+/// (`X-Session-API-Key`) AND `OH_SECRET_KEY`, which encrypts every stored LLM
+/// `api_key` at rest.
+///
+/// This intentionally returns a STABLE secret. An earlier attempt generated a
+/// per-install random key here — but because the same value is `OH_SECRET_KEY`,
+/// rotating it orphaned every previously-saved key: cloud (Spark/Arc/Video) AND
+/// custom providers (Deepseek, …) all failed to decrypt and surfaced as
+/// "missing credentials" / "missing or invalid Authorization header" on every
+/// model. A secret that encrypts existing data on disk cannot be rotated
+/// without a re-encryption migration of that data. Until that migration exists,
+/// keep the key stable so saved credentials keep working. (Per-install
+/// hardening can return later, paired with a startup legacy→current migration.)
+fn resolve_session_api_key(_dir: &Path) -> String {
+    LEGACY_SESSION_API_KEY.to_string()
 }
 
 /// Entry module of the bundled `openhands-agent-server` runtime.

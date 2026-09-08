@@ -60,6 +60,7 @@ import {
   type WorkspaceMode,
 } from "../conversation-metadata-store";
 import { resolveTitleLlmProfile } from "#/utils/title-llm-profile";
+import { resolveSovereignApiKey } from "#/api/cloud/exeaon-models.api";
 import type {
   GetHooksResponse,
   PluginSpec,
@@ -952,9 +953,23 @@ class AgentServerConversationService {
       typeof profile.config.model === "string" ? profile.config.model : "";
     if (!model) throw new Error(`Profile '${profileName}' has no model.`);
     await assertSubscriptionAuthReady({ llm: profile.config });
+    // A real stored key always wins. When it's empty, ONLY a sovereign Exeaon
+    // model may fall back to the sovereign key; a custom provider keeps its own
+    // (possibly empty) key from profile.config and surfaces its own auth error
+    // rather than being handed an invalid `sk-exeaon`.
+    const storedKey =
+      typeof profile.config.api_key === "string" &&
+      profile.config.api_key.trim().length > 0
+        ? profile.config.api_key
+        : undefined;
+    const sovereignKey = !storedKey
+      ? resolveSovereignApiKey(profile.config)
+      : undefined;
+
     await conversationClient.switchLLM(conversationId, {
       ...profile.config,
       model,
+      ...(sovereignKey ? { api_key: sovereignKey } : {}),
       // Keep streaming on after a switch (parity with conversation start);
       // the profile config would otherwise default it to stream=False.
       stream: true,
