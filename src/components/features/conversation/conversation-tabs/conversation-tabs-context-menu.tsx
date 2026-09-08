@@ -128,10 +128,15 @@ export function ConversationTabsContextMenu({
     },
     { tab: "browser", icon: Globe, i18nKey: I18nKey.COMMON$BROWSER },
     { tab: "usage", icon: Gauge, i18nKey: I18nKey.COMMON$USAGE },
-    { tab: "swarm", icon: Network, label: "Cyber Graph" },
+    {
+      // Unified field viewer — adapts to the active field (Research war-room
+      // vs cyber operative graph); robotics/rtl keep dedicated tabs.
+      tab: "swarm",
+      icon: engineeringField === "research" ? Microscope : Network,
+      label: engineeringField === "research" ? "Research" : "Cyber Graph",
+    },
     { tab: "robotics", icon: Bot, label: "Robotics Sim" },
     { tab: "rtl", icon: Cpu, label: "RTL Waveforms" },
-    { tab: "research", icon: Microscope, label: "Research" },
   ];
 
   if (hasTaskList) {
@@ -147,6 +152,7 @@ export function ConversationTabsContextMenu({
     if (
       tab === "swarm" &&
       engineeringField !== "cyber" &&
+      engineeringField !== "research" &&
       !cyberSwarm &&
       selectedTab !== "swarm"
     ) {
@@ -163,13 +169,6 @@ export function ConversationTabsContextMenu({
       tab === "rtl" &&
       engineeringField !== "computing" &&
       selectedTab !== "rtl"
-    ) {
-      return false;
-    }
-    if (
-      tab === "research" &&
-      engineeringField !== "research" &&
-      selectedTab !== "research"
     ) {
       return false;
     }

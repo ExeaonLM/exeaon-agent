@@ -8,7 +8,6 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import SwarmTab from "#/routes/swarm-tab";
 import RoboticsTab from "#/routes/robotics-tab";
 import RtlTab from "#/routes/rtl-tab";
-import ResearchTab from "#/routes/research-tab";
 
 import FilesTab from "#/routes/files-tab";
 
@@ -32,7 +31,6 @@ const TAB_CONFIG = {
   swarm: { component: SwarmTab },
   robotics: { component: RoboticsTab },
   rtl: { component: RtlTab },
-  research: { component: ResearchTab },
 };
 
 // Only browser genuinely needs the remote sandbox ready before rendering.

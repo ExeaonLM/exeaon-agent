@@ -3,6 +3,8 @@ import { useResearchState } from "./use-research-state";
 import { useConversationStore } from "#/stores/conversation-store";
 import { useOptionalConversationId } from "./use-conversation-id";
 import { setConversationState } from "#/utils/conversation-local-storage";
+import { useAgentState } from "./use-agent-state";
+import { AgentState } from "#/types/agent-state";
 
 /**
  * When the Research field starts producing state (first source/claim logged),
@@ -10,6 +12,11 @@ import { setConversationState } from "#/utils/conversation-local-storage";
  */
 export function useResearchAutoOpen() {
   const { active } = useResearchState();
+  const { curAgentState } = useAgentState();
+  const isAgentActive =
+    curAgentState === AgentState.RUNNING ||
+    curAgentState === AgentState.LOADING;
+
   const engineeringField = useConversationStore((s) => s.engineeringField);
   const setSelectedTab = useConversationStore((s) => s.setSelectedTab);
   const setIsRightPanelShown = useConversationStore(
@@ -30,19 +37,27 @@ export function useResearchAutoOpen() {
   }, [conversationId]);
 
   useEffect(() => {
-    if (active && engineeringField === "research" && !opened.current) {
+    if (
+      isAgentActive &&
+      active &&
+      engineeringField === "research" &&
+      !opened.current
+    ) {
       opened.current = true;
-      setSelectedTab("research");
+      // The Research war-room now lives inside the unified field viewer tab
+      // ("swarm"), which renders the war-room when the field is research.
+      setSelectedTab("swarm");
       setIsRightPanelShown(true);
       setHasRightPanelToggled(true);
       if (conversationId) {
         setConversationState(conversationId, {
           rightPanelShown: true,
-          selectedTab: "research",
+          selectedTab: "swarm",
         });
       }
     }
   }, [
+    isAgentActive,
     active,
     engineeringField,
     conversationId,

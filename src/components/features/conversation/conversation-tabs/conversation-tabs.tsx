@@ -164,13 +164,18 @@ export function ConversationTabs({
       label: t(I18nKey.COMMON$USAGE),
     },
     {
+      // One field-adaptive viewer: Research shows the integrity war-room,
+      // cyber (and default) shows the operative graph. Icon/label follow the
+      // active field so the single tab reads correctly in either mode.
       tabValue: "swarm",
       isActive: isTabActive("swarm"),
-      icon: Network,
+      icon: engineeringField === "research" ? Microscope : Network,
       onClick: () => selectTab("swarm"),
-      tooltipContent: "Cyber Graph",
-      tooltipAriaLabel: "Cyber Graph",
-      label: "Cyber Graph",
+      tooltipContent:
+        engineeringField === "research" ? "Research" : "Cyber Graph",
+      tooltipAriaLabel:
+        engineeringField === "research" ? "Research" : "Cyber Graph",
+      label: engineeringField === "research" ? "Research" : "Cyber Graph",
     },
     {
       tabValue: "robotics",
@@ -189,15 +194,6 @@ export function ConversationTabs({
       tooltipContent: "RTL Waveforms",
       tooltipAriaLabel: "RTL Waveforms",
       label: "RTL Waveforms",
-    },
-    {
-      tabValue: "research",
-      isActive: isTabActive("research"),
-      icon: Microscope,
-      onClick: () => selectTab("research"),
-      tooltipContent: "Research",
-      tooltipAriaLabel: "Research",
-      label: "Research",
     },
   ];
 
@@ -223,6 +219,7 @@ export function ConversationTabs({
     if (
       tab.tabValue === "swarm" &&
       engineeringField !== "cyber" &&
+      engineeringField !== "research" &&
       !cyberSwarm &&
       selectedTab !== "swarm"
     ) {
@@ -239,13 +236,6 @@ export function ConversationTabs({
       tab.tabValue === "rtl" &&
       engineeringField !== "computing" &&
       selectedTab !== "rtl"
-    ) {
-      return false;
-    }
-    if (
-      tab.tabValue === "research" &&
-      engineeringField !== "research" &&
-      selectedTab !== "research"
     ) {
       return false;
     }
