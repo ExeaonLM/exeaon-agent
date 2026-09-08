@@ -28,7 +28,13 @@ function toneFor(p: number): { bar: string; label: string } {
   return { bar: "bg-[#FFD026]", label: "text-[var(--oh-muted)]" };
 }
 
-function WindowRow({ label, window: w }: { label: string; window: CloudMeWindow }) {
+function WindowRow({
+  label,
+  window: w,
+}: {
+  label: string;
+  window: CloudMeWindow;
+}) {
   const p = pct(w);
   const tone = toneFor(p);
   return (
@@ -89,8 +95,9 @@ export function PlanUsageLimits() {
 /**
  * Under-the-input trigger for the plan usage limits: a slim, always-visible
  * summary line placed directly below the composer (below the send button) that
- * expands the full hourly/weekly popover downward on click. Renders nothing
- * when the user isn't signed in to cloud.
+ * expands the full hourly/weekly popover UPWARD on click (it sits under the
+ * composer), and shows a summary on hover. Renders nothing when the user isn't
+ * signed in to cloud.
  */
 export function PlanUsageLimitsBar() {
   const { data: me } = useCloudMe();
@@ -116,6 +123,9 @@ export function PlanUsageLimitsBar() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
+        title={`${me.planName || "Free"} plan · Hourly ${hPct}% (${fmtReset(
+          me.hourly.resetAtUnix,
+        )}) · Weekly ${wPct}% (${fmtReset(me.weekly.resetAtUnix)})`}
         className={cn(
           "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1",
           "text-[11px] text-[var(--oh-muted)] transition-colors",
@@ -136,7 +146,7 @@ export function PlanUsageLimitsBar() {
           <ChevronUp
             className={cn(
               "size-3 transition-transform",
-              open ? "rotate-0" : "rotate-180",
+              open ? "rotate-180" : "rotate-0",
             )}
             aria-hidden
           />
@@ -148,7 +158,10 @@ export function PlanUsageLimitsBar() {
           ref={popoverRef}
           role="dialog"
           className={cn(
-            "absolute left-0 right-0 top-full z-[60] mt-1",
+            // Opens UPWARD (bottom-full) — this bar sits under the composer, so
+            // a downward popover would spill off-screen. Matches the Claude-style
+            // usage popover that rises from the pill.
+            "absolute left-0 right-0 bottom-full z-[60] mb-1",
             "rounded-md border border-[var(--oh-border-subtle)] bg-tertiary py-1 shadow-lg",
           )}
         >
