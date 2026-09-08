@@ -6,6 +6,7 @@ import {
   Cpu,
   MonitorCog,
   FlaskConical,
+  Microscope,
   Zap,
   Wand2,
   Check,
@@ -27,7 +28,10 @@ import {
   EXECUTION_MODES,
   fieldMeta,
 } from "#/utils/engineering-labs";
-import type { ExecutionMode, EngineeringField } from "#/stores/conversation-store";
+import type {
+  ExecutionMode,
+  EngineeringField,
+} from "#/stores/conversation-store";
 
 const ICONS: Record<string, LucideIcon> = {
   Sparkles,
@@ -36,6 +40,7 @@ const ICONS: Record<string, LucideIcon> = {
   Cpu,
   MonitorCog,
   FlaskConical,
+  Microscope,
   Zap,
   Wand2,
 };
@@ -59,7 +64,8 @@ export function EngineeringFieldControl() {
     setCyberSwarm,
   } = useConversationStore();
   const [open, setOpen] = React.useState(false);
-  const [hoveredField, setHoveredField] = React.useState<EngineeringField | null>(null);
+  const [hoveredField, setHoveredField] =
+    React.useState<EngineeringField | null>(null);
 
   const menuRef = useClickOutsideElement<HTMLDivElement>(() => {
     setOpen(false);
@@ -77,16 +83,22 @@ export function EngineeringFieldControl() {
     }
   };
 
-  const selectFieldAndMode = (fieldId: EngineeringField, mode: ExecutionMode) => {
+  const selectFieldAndMode = (
+    fieldId: EngineeringField,
+    mode: ExecutionMode,
+  ) => {
     setEngineeringField(fieldId);
     setExecutionMode(mode);
     setOpen(false);
     setHoveredField(null);
   };
 
-  const activeFlyoutField = hoveredField ?? (engineeringField !== "none" ? engineeringField : null);
+  const activeFlyoutField =
+    hoveredField ?? (engineeringField !== "none" ? engineeringField : null);
   const flyoutMeta = activeFlyoutField ? fieldMeta(activeFlyoutField) : null;
-  const showFlyout = Boolean(open && flyoutMeta && flyoutMeta.available && flyoutMeta.id !== "none");
+  const showFlyout = Boolean(
+    open && flyoutMeta && flyoutMeta.available && flyoutMeta.id !== "none",
+  );
 
   return (
     <div className="relative" ref={menuRef}>
@@ -163,7 +175,9 @@ export function EngineeringFieldControl() {
                     }}
                     className={cn(
                       "!w-auto",
-                      isHovered && hasSubmenu && "bg-[var(--oh-interactive-hover)]",
+                      isHovered &&
+                        hasSubmenu &&
+                        "bg-[var(--oh-interactive-hover)]",
                     )}
                   >
                     <ToolsContextMenuIconText
@@ -228,7 +242,9 @@ export function EngineeringFieldControl() {
                         icon={<Icon name={meta.icon} className="size-4" />}
                         text={
                           <span className="flex flex-col">
-                            <span className="text-xs font-medium">{meta.label}</span>
+                            <span className="text-xs font-medium">
+                              {meta.label}
+                            </span>
                             <span className="text-[10px] text-[var(--oh-muted)] leading-tight">
                               {meta.blurb}
                             </span>
@@ -262,13 +278,17 @@ export function EngineeringFieldControl() {
                           <span className="flex flex-col">
                             <span className="text-xs font-medium">Swarm</span>
                             <span className="text-[10px] text-[var(--oh-muted)] leading-tight">
-                              Lead summons parallel cyber operatives per engagement.
+                              Lead summons parallel cyber operatives per
+                              engagement.
                             </span>
                           </span>
                         }
                         rightIcon={
                           cyberSwarm ? (
-                            <Check className="size-4 text-[#FFD026]" aria-hidden />
+                            <Check
+                              className="size-4 text-[#FFD026]"
+                              aria-hidden
+                            />
                           ) : undefined
                         }
                       />
@@ -283,4 +303,3 @@ export function EngineeringFieldControl() {
     </div>
   );
 }
-

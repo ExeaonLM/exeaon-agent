@@ -78,6 +78,16 @@ export const ENGINEERING_FIELDS: EngineeringFieldMeta[] = [
     available: true,
     modes: ["real", "auto"],
   },
+  {
+    id: "research",
+    label: "Research",
+    shortLabel: "Research",
+    icon: "Microscope",
+    blurb:
+      "Replicate, reason, and produce falsifiable results — browse + read real sources, compute/simulate to verify, write with integrity. Requires a strong (cloud) model.",
+    available: true,
+    modes: ["real", "auto"],
+  },
 ];
 
 export interface ExecutionModeMeta {
@@ -160,6 +170,11 @@ export function getFieldToolPlan(
         mcpServers: ["windows-mcp"],
         realCapable: true,
       };
+    case "research":
+      // Uses the agent's built-in browser + compute (bash) + file tools — no
+      // managed MCP in v1; may also drive the robotics/RTL sims to verify a
+      // physical/hardware claim.
+      return { simBackends: [], mcpServers: [], realCapable: true };
     case "none":
     default:
       return { simBackends: [], mcpServers: [], realCapable: false };
@@ -181,6 +196,7 @@ export function buildEngineeringDirective(
   if (field === "cyber") return buildCyberContract(mode, swarm);
   if (field === "robotics") return buildRoboticsContract(mode);
   if (field === "computing") return buildComputingContract(mode);
+  if (field === "research") return buildResearchContract(mode);
 
   const meta = fieldMeta(field);
   const plan = getFieldToolPlan(field, mode);
@@ -207,6 +223,25 @@ export function buildEngineeringDirective(
     lines.push(`Real-tool MCP servers: ${plan.mcpServers.join(", ")}.`);
   }
   return lines.join(" ");
+}
+
+/**
+ * The Research operating contract — the field's "brain". Its north-star test:
+ * "can the agent produce evidence that survives an attempt to prove it wrong?"
+ * Reuses the agent's built-in browser + compute + file tools (and the sim
+ * fields where a physical claim needs simulating). Gated to strong models.
+ */
+function buildResearchContract(mode: ExecutionMode): string {
+  const L: string[] = [
+    `[Exeaon Engineering Labs] Field: Research · Mode: ${EXECUTION_MODES[mode].label}.`,
+    "NORTH STAR: produce evidence that survives an attempt to prove it wrong. Run the full loop — Think → Browse → Read → Extract → Plan → Compute → Simulate → Operate → Observe → Verify → CHALLENGE (actively try to falsify your own result) → Repeat → Write → Integrity check → Publish. The CHALLENGE step is mandatory: before writing, try hard to break your own claim.",
+    "MODEL REQUIREMENT: research REQUIRES a strong (cloud/frontier) model. If you are a small/local model, STOP and tell the user to switch to a strong model — do not attempt research on a weak model; it fabricates citations and cannot falsify.",
+    "TOOLS: browse the internet and read pages for REAL sources — cite everything with URLs, never invent a citation. Run computations/simulations in the sandbox to actually test claims (don't assert math/physics you didn't run); drive the robotics (MuJoCo) or computing (RTL) sims where a physical/hardware claim can be simulated. Use files to draft.",
+    "METHOD: replicate before you extend — reproduce a paper's result end-to-end, then push toward the novelty gap. Consolidate prior work, find the pattern, form a hypothesis, TEST it, iterate. Validate against physics/maths; normalize units and assumptions; DECLARE every assumption explicitly. Where a result doesn't conform to an established standard, flag it openly and resolve it — never hide it.",
+    "INTEGRITY: separate CLAIM from EVIDENCE; every claim carries its evidence + the falsification attempt you made. Check originality — paraphrase and cite, never copy-paste source text. State limitations honestly.",
+    "DOCUMENT ONLY ON A COMPLETED MILESTONE: emit a structured paper/report to the workspace — Abstract → Background (cited) → Method → Results (with the actual computed/simulated evidence) → Falsification attempts → Limitations → References. One per completed investigation.",
+  ];
+  return L.join(" ");
 }
 
 /**

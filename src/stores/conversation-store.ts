@@ -29,7 +29,8 @@ export type EngineeringField =
   | "cyber"
   | "robotics"
   | "computing"
-  | "device";
+  | "device"
+  | "research";
 
 /**
  * How a field runs: simulation (safe/sandboxed), real (acts on real
@@ -74,12 +75,17 @@ interface ConversationState {
   /** Cyber SWARM: the lead agent summons parallel operatives per engagement. */
   cyberSwarm: boolean;
   subConversationTaskId: string | null; // Task ID for sub-conversation creation
+  isSplitPanelOpen: boolean;
+  splitTab: ConversationTab | null;
 }
 
 interface ConversationActions {
   setIsRightPanelShown: (isRightPanelShown: boolean) => void;
   setIsRightPanelExpanded: (isRightPanelExpanded: boolean) => void;
   toggleRightPanelExpanded: () => void;
+  setIsSplitPanelOpen: (isSplitPanelOpen: boolean) => void;
+  toggleSplitPanel: () => void;
+  setSplitTab: (splitTab: ConversationTab | null) => void;
   setIsOverviewPanelShown: (isOverviewPanelShown: boolean) => void;
   setIsOverviewPanelPeeked: (isOverviewPanelPeeked: boolean) => void;
   setSelectedTab: (selectedTab: ConversationTab | null) => void;
@@ -213,6 +219,8 @@ export const useConversationStore = create<ConversationStore>()(
       executionMode: getInitialExecutionMode(),
       cyberSwarm: getInitialCyberSwarm(),
       subConversationTaskId: null,
+      isSplitPanelOpen: false,
+      splitTab: "terminal" as ConversationTab,
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -236,6 +244,32 @@ export const useConversationStore = create<ConversationStore>()(
           false,
           "toggleRightPanelExpanded",
         ),
+
+      setIsSplitPanelOpen: (isSplitPanelOpen) =>
+        set({ isSplitPanelOpen }, false, "setIsSplitPanelOpen"),
+
+      toggleSplitPanel: () =>
+        set(
+          (state) => {
+            const nextOpen = !state.isSplitPanelOpen;
+            let nextSplitTab = state.splitTab;
+            if (
+              nextOpen &&
+              (!nextSplitTab || nextSplitTab === state.selectedTab)
+            ) {
+              nextSplitTab =
+                state.selectedTab === "files" ? "terminal" : "files";
+            }
+            return {
+              isSplitPanelOpen: nextOpen,
+              splitTab: nextSplitTab,
+            };
+          },
+          false,
+          "toggleSplitPanel",
+        ),
+
+      setSplitTab: (splitTab) => set({ splitTab }, false, "setSplitTab"),
 
       setIsOverviewPanelShown: (isOverviewPanelShown) =>
         set(
