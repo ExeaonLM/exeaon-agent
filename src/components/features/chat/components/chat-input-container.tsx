@@ -109,6 +109,7 @@ export function ChatInputContainer({
         showButton={showButton}
         buttonClassName={buttonClassName}
         handleSubmit={handleSubmit}
+        chatInputRef={chatInputRef}
       />
     </div>
   );

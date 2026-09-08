@@ -14,6 +14,7 @@ import { ChatAddFileButton } from "../chat-add-file-button";
 import { ChatSendButton } from "../chat-send-button";
 import { ContextWindowMeter } from "./context-window-meter";
 import { EngineeringFieldControl } from "./engineering-field-control";
+import { MicButton } from "./mic-button";
 import CarretRightFillIcon from "#/icons/carret-right-fill.svg?react";
 import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 import ThreeDotsVerticalIcon from "#/icons/three-dots-vertical.svg?react";
@@ -22,7 +23,6 @@ import { useUnifiedPauseConversation } from "#/hooks/mutation/use-unified-stop-c
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { usePauseConversation } from "#/hooks/mutation/use-pause-conversation";
 import { useResumeConversation } from "#/hooks/mutation/use-resume-conversation";
-import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useChatInputModelState } from "#/hooks/use-chat-input-model-state";
 import { useConversationStore } from "#/stores/conversation-store";
@@ -51,6 +51,8 @@ interface ChatInputActionsProps {
   showButton?: boolean;
   buttonClassName?: string;
   handleSubmit?: () => void;
+  /** The composer's contentEditable, so the mic can dictate into it. */
+  chatInputRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatInputActions({
@@ -61,6 +63,7 @@ export function ChatInputActions({
   showButton = true,
   buttonClassName = "",
   handleSubmit = () => {},
+  chatInputRef,
 }: ChatInputActionsProps) {
   const { t } = useTranslation("openhands");
   const unifiedPauseMutation = useUnifiedPauseConversation();
@@ -222,7 +225,12 @@ export function ChatInputActions({
   );
 
   const leftBaseWidth =
-    actionsRowWidth - rightSectionWidth - ROOT_GAP - addFileWidth - fieldWidth - INLINE_GAP * 2;
+    actionsRowWidth -
+    rightSectionWidth -
+    ROOT_GAP -
+    addFileWidth -
+    fieldWidth -
+    INLINE_GAP * 2;
 
   const fitWithoutOverflow = fitOptionalItems(leftBaseWidth);
   const allOptionalFit =
@@ -525,6 +533,9 @@ export function ChatInputActions({
             disabled={disabled}
             isPausing={isPausing}
           />
+        )}
+        {chatInputRef && (
+          <MicButton chatInputRef={chatInputRef} disabled={disabled} />
         )}
         <ContextWindowMeter />
         {showButton && (
