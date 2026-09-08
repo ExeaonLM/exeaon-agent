@@ -26,7 +26,8 @@
 param(
   [switch]$SkipMujoco,
   [switch]$SkipCyborg,
-  [switch]$SkipIverilog
+  [switch]$SkipIverilog,
+  [switch]$SkipResearch
 )
 
 $ErrorActionPreference = "Stop"
@@ -86,6 +87,23 @@ if ($SkipMujoco) {
     $results["MuJoCo"] = if ($ver) { "ok ($ver)" } else { "installed (import unverified)" }
   } else {
     $results["MuJoCo"] = "FAILED"
+  }
+}
+
+# --- Research (PDF reading) -------------------------------------------------
+if ($SkipResearch) {
+  $results["Research(pypdf)"] = "skipped"
+} else {
+  Write-Head "Installing pypdf (PDF reading for Research) into the bundled runtime"
+  # pypdf is pure-Python (no C ext) so it has a wheel for any Python and bundles
+  # cleanly. DOCX reading is stdlib; docx WRITING (python-docx/lxml) stays
+  # on-demand — LaTeX is the safe default for the PUBLISH step.
+  & $Python -m pip install --no-warn-script-location pypdf
+  if ($LASTEXITCODE -eq 0) {
+    $ok = (& $Python -c "import pypdf; print('ok')" 2>$null)
+    $results["Research(pypdf)"] = if ($ok -eq "ok") { "ok" } else { "installed" }
+  } else {
+    $results["Research(pypdf)"] = "FAILED"
   }
 }
 
