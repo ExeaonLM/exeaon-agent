@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use tauri::Manager;
@@ -14,12 +14,52 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 const BACKEND_PORT: u16 = 18000;
 const BACKEND_HOST: &str = "127.0.0.1";
 
-/// Shared secret the local agent-server accepts and the WebView is told to
-/// send as `X-Session-API-Key`. Injected into the frontend before first paint
-/// so `makeDefaultLocalBackend()` can seed the backend registry — without a
-/// key the registry stays empty and the app lands on the "Manage backends"
-/// recovery screen ("No extra backends added yet").
-const SESSION_API_KEY: &str = "exeaon-local-secret-key-32byteslong!";
+/// Last-resort fallback only. The real key is per-install (see
+/// `resolve_session_api_key`); this constant is used ONLY when the app-data dir
+/// is unavailable and a random key can neither be read nor generated. It must
+/// never be the value a shipped install actually runs with — a hardcoded shared
+/// key would let any local process on the machine talk to the agent-server.
+const LEGACY_SESSION_API_KEY: &str = "exeaon-local-secret-key-32byteslong!";
+
+/// The per-install local session key, resolved once at startup. It is the shared
+/// secret the local agent-server accepts (as `X-Session-API-Key` / `OH_SECRET_KEY`)
+/// and the value injected into the WebView before first paint so
+/// `makeDefaultLocalBackend()` can seed the backend registry.
+static SESSION_KEY: OnceLock<String> = OnceLock::new();
+
+/// Return the resolved per-install session key (falls back to the legacy
+/// constant only if startup never set it — should not happen in practice).
+fn session_key() -> &'static str {
+    SESSION_KEY
+        .get()
+        .map(|s| s.as_str())
+        .unwrap_or(LEGACY_SESSION_API_KEY)
+}
+
+/// Resolve the per-install session key: read it from `<app_data_dir>/session.key`
+/// if present, else generate 32 random bytes (OS RNG), hex-encode, and persist
+/// it so it is stable across launches. Every install therefore gets its own key
+/// — nothing secret is compiled into the binary or shared between installs.
+fn resolve_session_api_key(dir: &Path) -> String {
+    if dir.as_os_str().is_empty() {
+        return LEGACY_SESSION_API_KEY.to_string();
+    }
+    let key_path = dir.join("session.key");
+    if let Ok(existing) = std::fs::read_to_string(&key_path) {
+        let trimmed = existing.trim();
+        if trimmed.len() >= 32 {
+            return trimmed.to_string();
+        }
+    }
+    let mut buf = [0u8; 32];
+    if getrandom::getrandom(&mut buf).is_err() {
+        return LEGACY_SESSION_API_KEY.to_string();
+    }
+    let key: String = buf.iter().map(|b| format!("{:02x}", b)).collect();
+    let _ = std::fs::create_dir_all(dir);
+    let _ = std::fs::write(&key_path, &key);
+    key
+}
 
 /// Entry module of the bundled `openhands-agent-server` runtime.
 const AGENT_SERVER_MODULE: &str = "openhands.agent_server.__main__";
@@ -187,7 +227,7 @@ fn spawn_bundled_runtime(resource_dir: &Path) -> Option<Child> {
     ]);
 
     // Core secrets
-    cmd.env("OH_SECRET_KEY", SESSION_API_KEY);
+    cmd.env("OH_SECRET_KEY", session_key());
     // Force UTF-8 I/O. Without this the agent-server runs under Windows' default
     // cp1252 'charmap' codec and 500s when a model response contains non-ASCII
     // characters (e.g. the "→" arrow: "can't encode character '→'").
@@ -244,7 +284,7 @@ fn start_backend_if_needed(resource_dir: &Path) -> Option<Child> {
     ]);
 
     // Core secrets
-    cmd.env("OH_SECRET_KEY", SESSION_API_KEY);
+    cmd.env("OH_SECRET_KEY", session_key());
     // Force UTF-8 I/O. Without this the agent-server runs under Windows' default
     // cp1252 'charmap' codec and 500s when a model response contains non-ASCII
     // characters (e.g. the "→" arrow: "can't encode character '→'").
@@ -339,16 +379,16 @@ fn start_automation_if_needed(resource_dir: &Path) -> Option<Child> {
     cmd.args(args);
 
     // Shared secrets + config, mirroring spawnService("automation", ...).
-    cmd.env("OH_SECRET_KEY", SESSION_API_KEY);
+    cmd.env("OH_SECRET_KEY", session_key());
     cmd.env("PYTHONUTF8", "1");
     cmd.env("OPENHANDS_REMOTE_WS_READY_REQUIRED", "false");
     cmd.env(
         "AUTOMATION_AGENT_SERVER_URL",
         format!("http://{BACKEND_HOST}:{BACKEND_PORT}"),
     );
-    cmd.env("AUTOMATION_AGENT_SERVER_API_KEY", SESSION_API_KEY);
-    cmd.env("AUTOMATION_LOCAL_API_KEY", SESSION_API_KEY);
-    cmd.env("AUTOMATION_KV_SECRET", SESSION_API_KEY);
+    cmd.env("AUTOMATION_AGENT_SERVER_API_KEY", session_key());
+    cmd.env("AUTOMATION_LOCAL_API_KEY", session_key());
+    cmd.env("AUTOMATION_KV_SECRET", session_key());
     // SQLAlchemy does not expand `~`; use the real home dir (created first)
     // so the sqlite migration can open the database.
     let data_dir = automation_data_dir();
@@ -920,6 +960,13 @@ pub fn run() {
             github_device_poll,
         ])
         .setup(move |app| {
+            // 1a. Resolve the per-install session key BEFORE anything uses it
+            //     (the agent-server env below + the WebView injection). Generated
+            //     once and persisted in the app-data dir, so every install has
+            //     its own key instead of a shared hardcoded one.
+            let key = resolve_session_api_key(&app.path().app_data_dir().unwrap_or_default());
+            let _ = SESSION_KEY.set(key);
+
             // 1b. Seed the cyber-swarm operative(s) into ~/.openhands/agents so
             //     the agent-server discovers them before it starts.
             seed_subagents(&app.path().resource_dir().unwrap_or_default());
@@ -948,7 +995,7 @@ pub fn run() {
             //    evaluation, which is when the backend registry is seeded.
             let init_script = format!(
                 "window.__AGENT_CANVAS_SESSION_API_KEY__ = '{}';",
-                SESSION_API_KEY
+                session_key()
             );
             tauri::webview::WebviewWindowBuilder::new(
                 app,
