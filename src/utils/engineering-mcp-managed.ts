@@ -169,9 +169,19 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
     case "device":
       return wantsReal ? [DEVICE_WINDOWS] : [];
     case "research":
-      // Integrity + war-room state MCP (always on for the field); browsing +
-      // compute come from the agent's built-in tools.
-      return [RESEARCH_MCP];
+      // Research gets the WIDEST toolset — the MCPs are cross-field, not siloed:
+      // its own integrity/war-room MCP, the cyber-unified tools for fetching/
+      // scraping/crawling web sources (recon-httpx/katana/crtsh + more), the
+      // robotics (MuJoCo) and computing (RTL) sims to actually test physical/
+      // hardware claims, and device control — on top of the agent's built-in
+      // browser + compute + file tools.
+      return [
+        RESEARCH_MCP,
+        CYBER_UNIFIED,
+        ROBOTICS_MUJOCO,
+        RTL_SIM,
+        DEVICE_WINDOWS,
+      ];
     default:
       return [];
   }
