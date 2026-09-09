@@ -107,6 +107,31 @@ if ($SkipResearch) {
   }
 }
 
+# --- Research (academic-research-mcp deps) ----------------------------------
+# The bundled `academic-research` MCP (resources/mcp/academic-research) needs
+# these. All pure-Python, so they bundle. `bibtexparser<2` is a HARD pin:
+# `scholarly` imports the v1 `bibtexparser.bibdatabase` API that v2 removed, so
+# the server crashes on import without the pin (verified). NON-FATAL: if this
+# fails the app just falls back to the zero-dep `scholar` MCP, which always
+# works — academic-research then stays on-demand.
+if ($SkipResearch) {
+  $results["Research(academic)"] = "skipped"
+} else {
+  Write-Head "Installing academic-research-mcp deps into the bundled runtime"
+  & $Python -m pip install --no-warn-script-location `
+    "mcp>=1.8,<2" "scholarly>=1.7,<2" "httpx[socks]>=0.24,<1" `
+    "pip-system-certs>=4.0" "defusedxml>=0.7.1" "bibtexparser<2" requests
+  if ($LASTEXITCODE -eq 0) {
+    # Prove the vendored server actually imports (this is what crashed before).
+    $srv = Join-Path $McpRoot "academic-research\server.py"
+    $ok = (& $Python -c "import importlib.util,sys; sys.argv=['x']; spec=importlib.util.spec_from_file_location('ars','$($srv -replace '\\','\\')'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print('ok')" 2>$null)
+    $results["Research(academic)"] = if ($ok -eq "ok") { "ok" } else { "installed (import unverified)" }
+  } else {
+    Write-Host "academic-research-mcp deps failed to bundle — the app falls back to the zero-dep scholar MCP." -ForegroundColor Yellow
+    $results["Research(academic)"] = "unavailable (falls back to scholar MCP)"
+  }
+}
+
 # --- CybORG (Cyber Simulation) ---------------------------------------------
 if ($SkipCyborg) {
   $results["CybORG"] = "skipped"

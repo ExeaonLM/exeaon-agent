@@ -142,6 +142,22 @@ const SCHOLAR_MCP: ManagedSpec = {
   }),
 };
 
+// Richer scholarly toolkit (vendored academic-research-mcp): 25 tools incl.
+// author/funding profiles, citation networks, snowball search, and a full
+// PRISMA systematic-review workflow. Needs pip deps in the bundled runtime
+// (bundle-sim-deps.ps1, `bibtexparser<2` pin); if those aren't present it
+// simply won't start and the zero-dep `scholar` MCP still covers retrieval.
+const ACADEMIC_MCP: ManagedSpec = {
+  key: "academic-research",
+  build: (ctx) => ({
+    id: `${MANAGED_MCP_PREFIX}academic-research`,
+    name: `${MANAGED_MCP_PREFIX}academic-research`,
+    type: "stdio",
+    command: ctx.pythonPath,
+    args: [`${ctx.mcpRoot}/academic-research/server.py`],
+  }),
+};
+
 // Computing / RTL Simulation: Verilog compile + simulate via Icarus Verilog,
 // returning parsed VCD waveforms. Pure Python protocol layer on the bundled
 // Python; the `iverilog` binary is found on PATH or in mcp/bin (installed on
@@ -193,6 +209,7 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
       return [
         RESEARCH_MCP,
         SCHOLAR_MCP,
+        ACADEMIC_MCP,
         CYBER_UNIFIED,
         ROBOTICS_MUJOCO,
         RTL_SIM,
@@ -234,5 +251,6 @@ export function allManagedMcpNames(): string[] {
     RTL_SIM,
     RESEARCH_MCP,
     SCHOLAR_MCP,
+    ACADEMIC_MCP,
   ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }

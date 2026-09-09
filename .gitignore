@@ -57,6 +57,7 @@ build-fresh/
 /src-tauri/resources/mcp/*
 !/src-tauri/resources/mcp/research-mcp/
 !/src-tauri/resources/mcp/scholar-mcp/
+!/src-tauri/resources/mcp/academic-research/
 !/src-tauri/resources/mcp/mujoco-sim/
 !/src-tauri/resources/mcp/rtl-sim/
 !/src-tauri/resources/mcp/cyborg-sim/
