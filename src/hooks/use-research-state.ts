@@ -38,6 +38,12 @@ export interface ResearchState {
   faithfulness: number | null;
   /** Composite research-integrity grade 0-100 (from integrity_report), or null. */
   grade: number | null;
+  /** Lightweight run telemetry (native profiler): swarm + tool activity. */
+  telemetry: {
+    operatives: number;
+    toolCalls: number;
+    researchToolCalls: number;
+  };
   /** Whether an integrity_report has been produced (final scorecard). */
   reported: boolean;
 }
@@ -52,6 +58,7 @@ const EMPTY: ResearchState = {
   groundedness: null,
   faithfulness: null,
   grade: null,
+  telemetry: { operatives: 0, toolCalls: 0, researchToolCalls: 0 },
   reported: false,
 };
 
@@ -144,13 +151,22 @@ export function useResearchState(): ResearchState {
     // An observation has no tool_name of its own, so map the research-tool
     // action ids first, then read the observations that answer them.
     const researchActionIds = new Set<string>();
+    let operatives = 0;
+    let toolCalls = 0;
+    let researchToolCalls = 0;
     for (const event of events) {
       if (!isActionEvent(event)) continue;
       const toolName = (event as { tool_name?: string }).tool_name ?? "";
+      if (!toolName) continue;
+      toolCalls += 1;
+      // `task` calls are swarm operatives (research-operative / research-judge).
+      if (toolName.toLowerCase().includes("task")) operatives += 1;
       if (isResearchTool(toolName)) {
+        researchToolCalls += 1;
         researchActionIds.add(String((event as { id?: unknown }).id ?? ""));
       }
     }
+    state.telemetry = { operatives, toolCalls, researchToolCalls };
 
     for (const event of events) {
       if (!isObservationEvent(event)) continue;

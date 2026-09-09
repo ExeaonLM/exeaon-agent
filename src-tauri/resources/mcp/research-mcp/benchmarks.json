@@ -1,8 +1,35 @@
 {
   "name": "Exeaon Research Reproduction Benchmark (starter)",
   "version": "0.1.0",
-  "note": "A fixed set of reproduction TASKS (Faraday/Replica-style): reproduce each `target` from its `paper` end-to-end and record the value with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>). benchmark_report then aggregates matched/total into a benchmark score. EXTEND THIS with real, citable targets — each `reference` MUST be a number a source actually states (or that Exeaon has independently measured, noted in `provenance`). Do not invent reference values.",
+  "note": "A fixed set of reproduction TASKS (reproduce each `target` from its `paper`, record it with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>); benchmark_report aggregates matched/total). Populate from EXISTING open reproduction benchmarks — their format is target->number, identical to ours: CORE-Bench (270 tasks/90 papers, github.com/siegelz/core-bench + HF siegelz/core-bench, arXiv:2409.11363), PaperBench (arXiv:2504.01848), REPRO-Bench, SciReplicate-Bench. IMPORTANT: CORE-Bench's TEST answers are encrypted on purpose (anti-leakage) — do NOT commit protected answers into this file; keep a downloaded dataset LOCAL and convert (target=question, reference=answer). Every `reference` MUST be a number a source actually states (cite it in `provenance`) or one Exeaon independently measured. Never invent a reference.",
   "tasks": [
+    {
+      "id": "corebench-hypereta-mape-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA MAPE with no DTW",
+      "reference": 17.374344500709498,
+      "tolerance": 0.02,
+      "hint": "Run the paper's provided capsule/code+data; read the reported MAPE (no-DTW config) from its output.",
+      "provenance": "CORE-Bench README answer-schema example (report.json), arXiv:2409.11363 / github.com/siegelz/core-bench."
+    },
+    {
+      "id": "corebench-hypereta-rmse-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA RMSE with no DTW",
+      "reference": 459.7782074000463,
+      "tolerance": 0.02,
+      "hint": "Same capsule; read the reported RMSE (no-DTW).",
+      "provenance": "CORE-Bench README answer-schema example, arXiv:2409.11363."
+    },
+    {
+      "id": "corebench-hypereta-mae-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA MAE with no DTW",
+      "reference": 323.0,
+      "tolerance": 0.02,
+      "hint": "Same capsule; read the reported MAE (no-DTW).",
+      "provenance": "CORE-Bench README answer-schema example, arXiv:2409.11363."
+    },
     {
       "id": "rans-awq-int4-gain",
       "paper": "arXiv:2606.15789 (Approaching Shannon Bound); EntroLLM arXiv:2505.02380",

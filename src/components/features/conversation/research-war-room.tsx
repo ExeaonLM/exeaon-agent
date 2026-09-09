@@ -88,6 +88,17 @@ export function ResearchWarRoom() {
         <span className="text-[var(--oh-muted)]">
           {state.claims.length} claim{state.claims.length === 1 ? "" : "s"}
         </span>
+        {(state.telemetry.operatives > 0 || state.telemetry.toolCalls > 0) && (
+          <span
+            className="text-[var(--oh-muted)]"
+            title={`Run telemetry: ${state.telemetry.operatives} swarm operatives · ${state.telemetry.toolCalls} tool calls (${state.telemetry.researchToolCalls} research-tool)`}
+          >
+            {state.telemetry.operatives} op
+            {state.telemetry.operatives === 1 ? "" : "s"} ·{" "}
+            {state.telemetry.toolCalls} tool
+            {state.telemetry.toolCalls === 1 ? "" : "s"}
+          </span>
+        )}
         {state.originality !== null && (
           <span
             className="font-semibold"
