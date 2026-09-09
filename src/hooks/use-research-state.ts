@@ -16,11 +16,20 @@ export interface ResearchClaim {
   evidence: string;
   falsification: string;
 }
+export interface ResearchReproduction {
+  name: string;
+  claimed: number;
+  reference: number;
+  relError: number;
+  match: boolean;
+  note: string;
+}
 
 export interface ResearchState {
   active: boolean;
   sources: ResearchSource[];
   claims: ResearchClaim[];
+  reproductions: ResearchReproduction[];
   originality: number | null;
   flaggedSpans: string[];
   /** Whether an integrity_report has been produced (final scorecard). */
@@ -31,6 +40,7 @@ const EMPTY: ResearchState = {
   active: false,
   sources: [],
   claims: [],
+  reproductions: [],
   originality: null,
   flaggedSpans: [],
   reported: false,
@@ -51,6 +61,7 @@ const RESEARCH_TOOL_PATTERNS = [
   "research_status",
   "read_document",
   "reset_research",
+  "score_reproduction",
 ];
 
 function isResearchTool(toolName: string): boolean {
@@ -86,7 +97,21 @@ export function useResearchState(): ResearchState {
       ...EMPTY,
       sources: [],
       claims: [],
+      reproductions: [],
       flaggedSpans: [],
+    };
+
+    const toReproduction = (r: unknown): ResearchReproduction | null => {
+      if (!r || typeof r !== "object") return null;
+      const x = r as Partial<ResearchReproduction>;
+      return {
+        name: (x.name ?? "result").toString(),
+        claimed: Number(x.claimed),
+        reference: Number(x.reference),
+        relError: Number(x.relError),
+        match: Boolean(x.match),
+        note: (x.note ?? "").toString(),
+      };
     };
     let sawAny = false;
     const seenUrls = new Set<string>();
@@ -145,6 +170,17 @@ export function useResearchState(): ResearchState {
           falsification: (c.falsification ?? "").toString(),
         }));
       }
+      // integrity_report — authoritative reproduction scorecard.
+      if (Array.isArray(payload.reproductions)) {
+        state.reproductions = (payload.reproductions as unknown[])
+          .map(toReproduction)
+          .filter((r): r is ResearchReproduction => r !== null);
+      }
+      // score_reproduction — single reproduction entry.
+      if (payload.reproduction && typeof payload.reproduction === "object") {
+        const rep = toReproduction(payload.reproduction);
+        if (rep) state.reproductions.push(rep);
+      }
 
       // record_source — single source object.
       if (payload.source && typeof payload.source === "object") {
@@ -174,6 +210,7 @@ export function useResearchState(): ResearchState {
     state.active =
       state.sources.length > 0 ||
       state.claims.length > 0 ||
+      state.reproductions.length > 0 ||
       state.originality !== null;
     if (!sawAny) return EMPTY;
     return state;

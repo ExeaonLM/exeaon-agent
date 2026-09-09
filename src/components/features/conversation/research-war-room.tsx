@@ -192,6 +192,45 @@ export function ResearchWarRoom() {
           </div>
         )}
 
+        {/* Reproduction scorecard — the "did we actually reproduce it?" proof */}
+        {state.reproductions.length > 0 && (
+          <div className="rounded-lg border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]/60 px-3 py-2">
+            <div className="mb-1.5 flex items-center justify-between text-[10px] uppercase tracking-wide text-[var(--oh-muted)]">
+              <span>Reproduction scorecard</span>
+              <span className="normal-case">
+                {state.reproductions.filter((r) => r.match).length}/
+                {state.reproductions.length} reproduced
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {state.reproductions.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-[11px]"
+                  title={r.note}
+                >
+                  <span
+                    className={`shrink-0 font-bold ${r.match ? "text-emerald-400" : "text-red-400"}`}
+                  >
+                    {r.match ? "✓" : "✗"}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[var(--oh-foreground)]">
+                    {r.name}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[var(--oh-muted)]">
+                    {r.claimed} vs {r.reference}
+                  </span>
+                  <span
+                    className={`shrink-0 tabular-nums ${r.match ? "text-emerald-400" : "text-red-400"}`}
+                  >
+                    {(r.relError * 100).toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Claims scorecard */}
         {state.claims.length > 0 && (
           <div className="rounded-lg border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]/60 px-3 py-2">

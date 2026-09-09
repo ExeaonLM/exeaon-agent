@@ -31,7 +31,7 @@ PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "exeaon-research"
 SERVER_VERSION = "0.1.0"
 
-_STATE = {"sources": [], "claims": [], "originality": None}
+_STATE = {"sources": [], "claims": [], "originality": None, "reproductions": []}
 
 _WORD_RE = re.compile(r"\w+")
 _SENT_RE = re.compile(r"[.!?]+")
@@ -188,18 +188,58 @@ def tool_humanize_review(args):
     }
 
 
+def tool_score_reproduction(args):
+    """Score a reproduced quantity against the paper's reported value — the core
+    'did we actually reproduce it?' check (Faraday/Replica-style). Records a
+    pass/fail by relative error so every run carries a reproduction scorecard."""
+    name = (args.get("name") or "").strip() or "result"
+    try:
+        claimed = float(args.get("claimed"))
+        reference = float(args.get("reference"))
+    except (TypeError, ValueError):
+        raise ResearchError(
+            "score_reproduction needs numeric `claimed` (your reproduced value) "
+            "and `reference` (the paper's reported value)."
+        )
+    try:
+        tol = float(args.get("tolerance", 0.05))
+    except (TypeError, ValueError):
+        tol = 0.05
+    tol = max(0.0, min(tol, 1.0))
+    denom = abs(reference) if abs(reference) > 1e-12 else 1e-12
+    rel_error = abs(claimed - reference) / denom
+    match = rel_error <= tol
+    entry = {
+        "name": name,
+        "claimed": claimed,
+        "reference": reference,
+        "tolerance": tol,
+        "relError": round(rel_error, 6),
+        "match": match,
+        "note": (args.get("note") or "").strip(),
+    }
+    _STATE["reproductions"].append(entry)
+    return {"ok": True, "reproduction": entry,
+            "reproductions": len(_STATE["reproductions"])}
+
+
 def tool_integrity_report(_args):
     claims = _STATE["claims"]
     with_evidence = sum(1 for c in claims if c["evidence"])
     with_falsification = sum(1 for c in claims if c["falsification"])
+    reps = _STATE["reproductions"]
+    reps_matched = sum(1 for r in reps if r["match"])
     return {
         "sources": _STATE["sources"],
         "claims": claims,
+        "reproductions": reps,
         "counts": {
             "sources": len(_STATE["sources"]),
             "claims": len(claims),
             "claimsWithEvidence": with_evidence,
             "claimsWithFalsification": with_falsification,
+            "reproductions": len(reps),
+            "reproductionsMatched": reps_matched,
         },
         "originality": _STATE["originality"],
     }
@@ -276,6 +316,7 @@ def tool_reset(_args):
     _STATE["sources"] = []
     _STATE["claims"] = []
     _STATE["originality"] = None
+    _STATE["reproductions"] = []
     return {"ok": True}
 
 
@@ -338,8 +379,24 @@ TOOLS = [
         "_fn": tool_humanize_review,
     },
     {
+        "name": "score_reproduction",
+        "description": "Score a value you REPRODUCED against the paper's reported value — the core 'did we actually reproduce it?' check. Args: `claimed` (your reproduced number, required), `reference` (the paper's reported number, required), `name` (what it is, e.g. 'AWQ 4-bit perplexity'), `tolerance` (relative, default 0.05), `note`. Records a pass/fail into the reproduction scorecard (integrity_report).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "claimed": {"type": "number"},
+                "reference": {"type": "number"},
+                "name": {"type": "string"},
+                "tolerance": {"type": "number"},
+                "note": {"type": "string"},
+            },
+            "required": ["claimed", "reference"],
+        },
+        "_fn": tool_score_reproduction,
+    },
+    {
         "name": "integrity_report",
-        "description": "Summarize the research session: sources, claims (with evidence + falsification), and last originality — the integrity scorecard.",
+        "description": "Summarize the research session: sources, claims (with evidence + falsification), reproduction scorecard (claimed vs reference, pass/fail), and last originality — the integrity scorecard.",
         "inputSchema": {"type": "object", "properties": {}},
         "_fn": tool_integrity_report,
     },
