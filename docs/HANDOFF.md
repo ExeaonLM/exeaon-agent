@@ -1,12 +1,32 @@
 # EXEAON — Handoff & Continuation Guide
 
-**Updated:** 2026-09-01 · Read this first if you are picking up the work.
+**Updated:** 2026-09-09 · Read this first if you are picking up the work.
 
 Two repos:
 - **Exeaon Claw** (Tauri desktop / OpenHands fork): `C:/Users/Kweku Elliot/Downloads/exeaon-agent`
 - **Exeaon Cloud** (Go ai-gateway): `C:/Users/Kweku Elliot/Downloads/SudoSpace/exeaon-cloud`, deployed to Fly as app `exeaon-claw` → https://exeaon-claw.fly.dev
 
-Companion docs: `docs/SESSION_STATUS_2026-09-01.md` (detailed), `docs/EXEAON_BACKLOG.md`.
+Companion docs: **`docs/SESSION_2026-09-09.md` (latest — read this)**,
+`docs/SESSION_STATUS_2026-09-01.md`, `docs/EXEAON_BACKLOG.md`.
+
+---
+
+## 0. Latest state (2026-09-09) — on branch `exeaon/setup`, all pushed
+- **Cloud + API models FIXED** — the session-key change had orphaned every stored
+  key (OH_SECRET_KEY is dual-use: request-auth AND at-rest encryption); reverted
+  to a stable secret + scoped the sovereign-key fallback + corrected cloud model
+  names. See `SESSION_2026-09-09.md §1` and `[[exeaon-cloud-connection-facts]]`.
+  **Do NOT rotate OH_SECRET_KEY without a re-encryption migration.**
+- **Research field made extensive** — default-on swarm + `research-operative`;
+  retrieval MCPs (`scholar` zero-dep + bundled `academic-research`/PRISMA);
+  reproduction scorecard; composite integrity grade + verification gate;
+  independent `research-judge` LLM-as-judge; hardened research MCP. See
+  `SESSION_2026-09-09.md §3/§5` and `[[exeaon-research-capability]]`.
+- **Authored MCP/subagent sources are now git-tracked** (gitignore negations);
+  the multi-GB runtimes stay ignored. Run `scripts/bundle-sim-deps.ps1` per build
+  machine for the Python deps (pypdf + academic-research, pinned bibtexparser<2).
+- **Activation:** `npm run tauri dev` (restart, not just reload — seeds subagents
+  + reconciles MCPs). NEXT: grow the reproduction scorecard into a benchmark set.
 
 ---
 
