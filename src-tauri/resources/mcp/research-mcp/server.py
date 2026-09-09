@@ -32,7 +32,7 @@ SERVER_NAME = "exeaon-research"
 SERVER_VERSION = "0.1.0"
 
 _STATE = {"sources": [], "claims": [], "originality": None,
-          "reproductions": [], "judgment": None}
+          "reproductions": [], "judgment": None, "benchmark": {}}
 
 _WORD_RE = re.compile(r"\w+")
 _SENT_RE = re.compile(r"[.!?]+")
@@ -301,67 +301,104 @@ def tool_integrity_report(_args):
 
 
 def _load_benchmarks():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmarks.json")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"name": "", "version": "", "note": "", "tasks": []}
+    """Merge the committed public sample (benchmarks.json) with the LOCAL,
+    gitignored full set (benchmarks.local.json, e.g. CORE-Bench via
+    scripts/build-benchmark.py). The local file holds the real reference answers
+    and is never committed; callers must not leak `reference` to the agent."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    merged = {"name": "", "version": "", "note": "", "tasks": []}
+    for fn in ("benchmarks.json", "benchmarks.local.json"):
+        try:
+            with open(os.path.join(here, fn), encoding="utf-8") as f:
+                data = json.load(f)
+            if not merged["name"]:
+                merged["name"] = data.get("name", "")
+                merged["version"] = data.get("version", "")
+                merged["note"] = data.get("note", "")
+            merged["tasks"].extend(data.get("tasks", []) or [])
+        except Exception:
+            continue
+    return merged
+
+
+def _benchmark_tasks():
+    return [t for t in _load_benchmarks().get("tasks", [])
+            if not str(t.get("id", "")).upper().startswith("EXAMPLE")]
 
 
 def tool_list_benchmark(_args):
-    """The fixed reproduction-benchmark task set: reproduce each `target` and
-    record it with score_reproduction(name=<task id>, ...); benchmark_report
-    then aggregates. Template rows (id starts 'EXAMPLE') are for extending."""
-    b = _load_benchmarks()
-    return {
-        "name": b.get("name", ""),
-        "version": b.get("version", ""),
-        "note": b.get("note", ""),
-        "tasks": b.get("tasks", []),
-    }
+    """The fixed reproduction-benchmark task set to attempt. Reproduce each
+    `target` end-to-end, then submit YOUR value with
+    benchmark_submit(task_id=<id>, claimed=<your value>). The reference answer is
+    HIDDEN on purpose — you are graded on reproducing it, not on reading it."""
+    tasks = _benchmark_tasks()
+    # Strip the reference (and split) — the agent must not see the answer.
+    public = [{
+        "id": t.get("id"),
+        "paper": t.get("paper"),
+        "target": t.get("target"),
+        "tolerance": t.get("tolerance"),
+        "hint": t.get("hint"),
+        "field": t.get("field", ""),
+    } for t in tasks]
+    return {"count": len(public), "tasks": public,
+            "note": "Reference answers are hidden. Submit via benchmark_submit(task_id, claimed)."}
+
+
+def tool_benchmark_submit(args):
+    """Submit a reproduced value for a benchmark task. Looks up the HIDDEN
+    reference for `task_id`, scores it, and records it — WITHOUT revealing the
+    reference (returns only pass/fail so the benchmark can't be gamed)."""
+    task_id = (args.get("task_id") or "").strip()
+    if not task_id:
+        raise ResearchError("benchmark_submit requires `task_id` (from list_benchmark).")
+    task = next((t for t in _benchmark_tasks() if str(t.get("id", "")) == task_id), None)
+    if task is None:
+        raise ResearchError(f"No benchmark task with id '{task_id}'. Call list_benchmark.")
+    try:
+        claimed = float(args.get("claimed"))
+    except (TypeError, ValueError):
+        raise ResearchError("benchmark_submit requires numeric `claimed` (your reproduced value).")
+    ref = float(task.get("reference"))
+    tol = float(task.get("tolerance", 0.05))
+    denom = abs(ref) if abs(ref) > 1e-12 else 1e-12
+    match = (abs(claimed - ref) / denom) <= tol
+    # Record for benchmark_report WITHOUT storing the reference in a way the
+    # agent reads back (score_reproduction entries carry reference, so keep
+    # benchmark submissions in their own list).
+    _STATE.setdefault("benchmark", {})[task_id] = bool(match)
+    return {"ok": True, "task_id": task_id, "match": bool(match)}
 
 
 def tool_benchmark_report(_args):
-    """Aggregate the recorded reproductions against the benchmark task set into a
-    single score — the run's standing on the fixed benchmark."""
-    b = _load_benchmarks()
-    reps = _STATE["reproductions"]
-
-    def find(task):
-        tid = str(task.get("id", "")).lower()
-        for r in reps:
-            n = str(r.get("name", "")).lower()
-            if n and (n == tid or tid in n or n in tid):
-                return r
-        return None
-
+    """Aggregate benchmark submissions into a single score — the run's standing
+    on the fixed benchmark. Never reveals reference answers."""
+    tasks = _benchmark_tasks()
+    submitted = _STATE.get("benchmark", {})
     results = []
     matched = attempted = 0
-    for t in b.get("tasks", []):
-        if str(t.get("id", "")).upper().startswith("EXAMPLE"):
-            continue  # skip template rows
-        r = find(t)
-        if r is not None:
+    for t in tasks:
+        tid = str(t.get("id", ""))
+        done = tid in submitted
+        if done:
             attempted += 1
-            if r["match"]:
+            if submitted[tid]:
                 matched += 1
         results.append({
-            "id": t.get("id"),
+            "id": tid,
             "target": t.get("target"),
-            "reference": t.get("reference"),
-            "attempted": r is not None,
-            "claimed": r["claimed"] if r else None,
-            "match": r["match"] if r else None,
+            "attempted": done,
+            "match": submitted.get(tid),
         })
-    total = len(results)
+    total = len(tasks)
     return {
-        "benchmark": b.get("name", ""),
+        "benchmark": _load_benchmarks().get("name", ""),
         "total": total,
         "attempted": attempted,
         "matched": matched,
-        "score": round(matched / total, 3) if total else None,
-        "results": results,
+        "score": round(matched / attempted, 3) if attempted else None,
+        "coverage": round(attempted / total, 3) if total else None,
+        "results": results[:200],
     }
 
 
@@ -438,6 +475,7 @@ def tool_reset(_args):
     _STATE["originality"] = None
     _STATE["reproductions"] = []
     _STATE["judgment"] = None
+    _STATE["benchmark"] = {}
     return {"ok": True}
 
 
@@ -532,13 +570,23 @@ TOOLS = [
     },
     {
         "name": "list_benchmark",
-        "description": "Return the fixed reproduction-benchmark task set (paper, target, reference value, tolerance, hint). Reproduce each target end-to-end, then record it with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>).",
+        "description": "Return the fixed reproduction-benchmark tasks to attempt (paper, target, tolerance, hint). The reference answer is HIDDEN — reproduce each target end-to-end, then submit your value with benchmark_submit(task_id, claimed).",
         "inputSchema": {"type": "object", "properties": {}},
         "_fn": tool_list_benchmark,
     },
     {
+        "name": "benchmark_submit",
+        "description": "Submit YOUR reproduced value for a benchmark task. Args: `task_id` (from list_benchmark, required), `claimed` (your value, required). Scores it against the hidden reference and returns only pass/fail (the reference stays hidden so the benchmark can't be gamed).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"task_id": {"type": "string"}, "claimed": {"type": "number"}},
+            "required": ["task_id", "claimed"],
+        },
+        "_fn": tool_benchmark_submit,
+    },
+    {
         "name": "benchmark_report",
-        "description": "Aggregate your recorded reproductions against the benchmark task set → matched/total + an overall benchmark score. Run after reproducing the benchmark's targets.",
+        "description": "Aggregate your benchmark submissions → matched/attempted + score + coverage (attempted/total). Run after submitting the benchmark's targets. Never reveals reference answers.",
         "inputSchema": {"type": "object", "properties": {}},
         "_fn": tool_benchmark_report,
     },

@@ -66,6 +66,9 @@ build-fresh/
 # Never track compiled Python or caches even inside the tracked source dirs.
 **/__pycache__/
 *.pyc
+# Generated benchmark set (contains reference answers — must NOT leak into git;
+# rebuild locally with scripts/build-benchmark.py).
+/src-tauri/resources/mcp/research-mcp/benchmarks.local.json
 
 # Build logs & incremental caches
 tauri-build.log
