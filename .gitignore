@@ -46,7 +46,24 @@ build-fresh/
 
 # Tauri bundled runtimes (python-runtime + llama, populated at build time; far
 # too large for git — mirrors the Electron /resources/ excludes above).
-/src-tauri/resources/
+# Ignore the direct children (so the multi-GB runtimes stay out of git)...
+/src-tauri/resources/*
+# ...but DO track the hand-authored MCP + subagent SOURCES: small, not
+# regenerable, and losing them on a fresh clone would mean rewriting them.
+# The heavy MCP payloads (bin/, cyber-unified/, iverilog/, the .exe) stay
+# ignored via the /mcp/* re-exclude below.
+!/src-tauri/resources/subagents/
+!/src-tauri/resources/mcp/
+/src-tauri/resources/mcp/*
+!/src-tauri/resources/mcp/research-mcp/
+!/src-tauri/resources/mcp/mujoco-sim/
+!/src-tauri/resources/mcp/rtl-sim/
+!/src-tauri/resources/mcp/cyborg-sim/
+!/src-tauri/resources/mcp/caldera-mcp/
+!/src-tauri/resources/mcp/cyber-tools.json
+# Never track compiled Python or caches even inside the tracked source dirs.
+**/__pycache__/
+*.pyc
 
 # Build logs & incremental caches
 tauri-build.log
