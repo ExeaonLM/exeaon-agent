@@ -1,0 +1,25 @@
+{
+  "name": "Exeaon Research Reproduction Benchmark (starter)",
+  "version": "0.1.0",
+  "note": "A fixed set of reproduction TASKS (Faraday/Replica-style): reproduce each `target` from its `paper` end-to-end and record the value with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>). benchmark_report then aggregates matched/total into a benchmark score. EXTEND THIS with real, citable targets — each `reference` MUST be a number a source actually states (or that Exeaon has independently measured, noted in `provenance`). Do not invent reference values.",
+  "tasks": [
+    {
+      "id": "rans-awq-int4-gain",
+      "paper": "arXiv:2606.15789 (Approaching Shannon Bound); EntroLLM arXiv:2505.02380",
+      "target": "Extra lossless (rANS/entropy) compression gain on REAL group-128 AWQ int4 LLM weights",
+      "reference": 1.095,
+      "tolerance": 0.05,
+      "hint": "Quantize a real model to per-group(128) zero-point int4 (or load an official AWQ checkpoint); measure the code histogram entropy H per tensor, parameter-weighted; gain = 4 / H (include scale/zero metadata for the end-to-end figure).",
+      "provenance": "Measured in Exeaon's own reproduction run (2026-09-09) on Qwen2.5-0.5B-Instruct-AWQ; brackets EntroLLM's ~1.05x and 2606.15789's 1.1-1.3x band. Replace with a paper-stated figure if reproducing a specific paper."
+    },
+    {
+      "id": "EXAMPLE-replace-me",
+      "paper": "<cite the paper, e.g. arXiv:XXXX.XXXXX or a DOI>",
+      "target": "<the exact reported metric to reproduce, e.g. 'GLUE avg for BERT-base'>",
+      "reference": 0.0,
+      "tolerance": 0.05,
+      "hint": "<how to reproduce it>",
+      "provenance": "<where the reference number comes from — a table/figure in the paper>"
+    }
+  ]
+}

@@ -300,6 +300,71 @@ def tool_integrity_report(_args):
     }
 
 
+def _load_benchmarks():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmarks.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"name": "", "version": "", "note": "", "tasks": []}
+
+
+def tool_list_benchmark(_args):
+    """The fixed reproduction-benchmark task set: reproduce each `target` and
+    record it with score_reproduction(name=<task id>, ...); benchmark_report
+    then aggregates. Template rows (id starts 'EXAMPLE') are for extending."""
+    b = _load_benchmarks()
+    return {
+        "name": b.get("name", ""),
+        "version": b.get("version", ""),
+        "note": b.get("note", ""),
+        "tasks": b.get("tasks", []),
+    }
+
+
+def tool_benchmark_report(_args):
+    """Aggregate the recorded reproductions against the benchmark task set into a
+    single score — the run's standing on the fixed benchmark."""
+    b = _load_benchmarks()
+    reps = _STATE["reproductions"]
+
+    def find(task):
+        tid = str(task.get("id", "")).lower()
+        for r in reps:
+            n = str(r.get("name", "")).lower()
+            if n and (n == tid or tid in n or n in tid):
+                return r
+        return None
+
+    results = []
+    matched = attempted = 0
+    for t in b.get("tasks", []):
+        if str(t.get("id", "")).upper().startswith("EXAMPLE"):
+            continue  # skip template rows
+        r = find(t)
+        if r is not None:
+            attempted += 1
+            if r["match"]:
+                matched += 1
+        results.append({
+            "id": t.get("id"),
+            "target": t.get("target"),
+            "reference": t.get("reference"),
+            "attempted": r is not None,
+            "claimed": r["claimed"] if r else None,
+            "match": r["match"] if r else None,
+        })
+    total = len(results)
+    return {
+        "benchmark": b.get("name", ""),
+        "total": total,
+        "attempted": attempted,
+        "matched": matched,
+        "score": round(matched / total, 3) if total else None,
+        "results": results,
+    }
+
+
 def _read_pdf(path):
     try:
         import pypdf  # type: ignore
@@ -464,6 +529,18 @@ TOOLS = [
             "required": ["groundedness"],
         },
         "_fn": tool_record_judgment,
+    },
+    {
+        "name": "list_benchmark",
+        "description": "Return the fixed reproduction-benchmark task set (paper, target, reference value, tolerance, hint). Reproduce each target end-to-end, then record it with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>).",
+        "inputSchema": {"type": "object", "properties": {}},
+        "_fn": tool_list_benchmark,
+    },
+    {
+        "name": "benchmark_report",
+        "description": "Aggregate your recorded reproductions against the benchmark task set → matched/total + an overall benchmark score. Run after reproducing the benchmark's targets.",
+        "inputSchema": {"type": "object", "properties": {}},
+        "_fn": tool_benchmark_report,
     },
     {
         "name": "integrity_report",
