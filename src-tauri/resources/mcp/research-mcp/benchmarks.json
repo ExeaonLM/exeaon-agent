@@ -1,7 +1,7 @@
 {
   "name": "Exeaon Research Reproduction Benchmark (starter)",
   "version": "0.1.0",
-  "note": "A fixed set of reproduction TASKS (reproduce each `target` from its `paper`, record it with score_reproduction(name=<task id>, claimed=<your value>, reference=<task reference>); benchmark_report aggregates matched/total). Populate from EXISTING open reproduction benchmarks — their format is target->number, identical to ours: CORE-Bench (270 tasks/90 papers, github.com/siegelz/core-bench + HF siegelz/core-bench, arXiv:2409.11363), PaperBench (arXiv:2504.01848), REPRO-Bench, SciReplicate-Bench. IMPORTANT: CORE-Bench's TEST answers are encrypted on purpose (anti-leakage) — do NOT commit protected answers into this file; keep a downloaded dataset LOCAL and convert (target=question, reference=answer). Every `reference` MUST be a number a source actually states (cite it in `provenance`) or one Exeaon independently measured. Never invent a reference.",
+  "note": "A fixed set of reproduction TASKS (reproduce each `target`, then benchmark_submit(task_id, claimed) — a NUMBER for `type`:numeric tasks, a STRING for `type`:exact; benchmark_report aggregates matched/total). This committed file is only a small PUBLIC sample — the FULL ~600-task bar is generated LOCALLY by scripts/build-benchmark.py into benchmarks.local.json (gitignored, holds the reference answers; the MCP merges both and HIDES `reference`). Sources: CORE-Bench (arXiv:2409.11363, numeric+categorical) and QRData (arXiv:2402.17644, quantitative reasoning over real CSVs; `dataUrl` points at the data file). IMPORTANT: CORE-Bench's TEST answers are encrypted on purpose (anti-leakage) — never commit protected answers here. Every committed `reference` MUST be a value a source actually states (cite it in `provenance`) or one Exeaon independently measured. Never invent a reference.",
   "tasks": [
     {
       "id": "corebench-hypereta-mape-nodtw",
@@ -40,13 +40,24 @@
       "provenance": "Measured in Exeaon's own reproduction run (2026-09-09) on Qwen2.5-0.5B-Instruct-AWQ; brackets EntroLLM's ~1.05x and 2606.15789's 1.1-1.3x band. Replace with a paper-stated figure if reproducing a specific paper."
     },
     {
-      "id": "EXAMPLE-replace-me",
+      "id": "EXAMPLE-numeric-replace-me",
       "paper": "<cite the paper, e.g. arXiv:XXXX.XXXXX or a DOI>",
       "target": "<the exact reported metric to reproduce, e.g. 'GLUE avg for BERT-base'>",
+      "type": "numeric",
       "reference": 0.0,
       "tolerance": 0.05,
       "hint": "<how to reproduce it>",
       "provenance": "<where the reference number comes from — a table/figure in the paper>"
+    },
+    {
+      "id": "EXAMPLE-exact-replace-me",
+      "paper": "<cite the source, e.g. QRData / a paper>",
+      "target": "<a question whose answer is categorical, e.g. 'Which regularizer minimizes test error: LASSO or Ridge?'>",
+      "type": "exact",
+      "reference": "<the exact answer string, e.g. 'LASSO' or 'A'>",
+      "hint": "<how to reproduce it>",
+      "dataUrl": "<optional: a URL to the data file the task runs on>",
+      "provenance": "<where the answer comes from>"
     }
   ]
 }
