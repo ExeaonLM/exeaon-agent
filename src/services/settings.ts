@@ -50,7 +50,10 @@ export const DEFAULT_SETTINGS: Settings = {
       critic_enabled: false,
       enable_iterative_refinement: false,
     },
-    enable_sub_agents: false,
+    // On by default: the engineering swarms (research is always-swarm, cyber
+    // opt-in) need the TaskToolSet to spawn operatives/judge subagents. With
+    // this off, the `task` tool isn't offered and the swarm silently can't run.
+    enable_sub_agents: true,
     mcp_config: {},
   },
   conversation_settings_schema: null,
