@@ -127,6 +127,21 @@ const RESEARCH_MCP: ManagedSpec = {
   }),
 };
 
+// Scholarly retrieval: arXiv / Semantic Scholar / OpenAlex / PubMed / Crossref
+// over their free no-key APIs (stdlib-only Python, no extra deps). Gives the
+// Research swarm real multi-source literature search instead of browser-only
+// scraping. Network errors/rate-limits are returned as data, never crash it.
+const SCHOLAR_MCP: ManagedSpec = {
+  key: "scholar",
+  build: (ctx) => ({
+    id: `${MANAGED_MCP_PREFIX}scholar`,
+    name: `${MANAGED_MCP_PREFIX}scholar`,
+    type: "stdio",
+    command: ctx.pythonPath,
+    args: [`${ctx.mcpRoot}/scholar-mcp/server.py`],
+  }),
+};
+
 // Computing / RTL Simulation: Verilog compile + simulate via Icarus Verilog,
 // returning parsed VCD waveforms. Pure Python protocol layer on the bundled
 // Python; the `iverilog` binary is found on PATH or in mcp/bin (installed on
@@ -177,6 +192,7 @@ function specsFor(field: EngineeringField, mode: ExecutionMode): ManagedSpec[] {
       // browser + compute + file tools.
       return [
         RESEARCH_MCP,
+        SCHOLAR_MCP,
         CYBER_UNIFIED,
         ROBOTICS_MUJOCO,
         RTL_SIM,
@@ -217,5 +233,6 @@ export function allManagedMcpNames(): string[] {
     ROBOTICS_MUJOCO,
     RTL_SIM,
     RESEARCH_MCP,
+    SCHOLAR_MCP,
   ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }
