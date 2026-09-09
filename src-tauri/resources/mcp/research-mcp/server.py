@@ -229,6 +229,20 @@ def tool_integrity_report(_args):
     with_falsification = sum(1 for c in claims if c["falsification"])
     reps = _STATE["reproductions"]
     reps_matched = sum(1 for r in reps if r["match"])
+
+    # Composite research-integrity grade (0-100): the mean of the quality
+    # dimensions that actually have data — so a run is GRADED, not just logged.
+    # Only-measured dimensions count (no data ≠ a zero). Honest, offline signal.
+    subscores = {}
+    if claims:
+        subscores["evidence"] = round(with_evidence / len(claims), 3)
+        subscores["falsification"] = round(with_falsification / len(claims), 3)
+    if reps:
+        subscores["reproduction"] = round(reps_matched / len(reps), 3)
+    if _STATE["originality"] is not None:
+        subscores["originality"] = round(float(_STATE["originality"]), 3)
+    grade = round(100 * sum(subscores.values()) / len(subscores), 1) if subscores else None
+
     return {
         "sources": _STATE["sources"],
         "claims": claims,
@@ -242,6 +256,8 @@ def tool_integrity_report(_args):
             "reproductionsMatched": reps_matched,
         },
         "originality": _STATE["originality"],
+        "grade": grade,
+        "subscores": subscores,
     }
 
 

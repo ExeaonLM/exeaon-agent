@@ -32,6 +32,8 @@ export interface ResearchState {
   reproductions: ResearchReproduction[];
   originality: number | null;
   flaggedSpans: string[];
+  /** Composite research-integrity grade 0-100 (from integrity_report), or null. */
+  grade: number | null;
   /** Whether an integrity_report has been produced (final scorecard). */
   reported: boolean;
 }
@@ -43,6 +45,7 @@ const EMPTY: ResearchState = {
   reproductions: [],
   originality: null,
   flaggedSpans: [],
+  grade: null,
   reported: false,
 };
 
@@ -199,6 +202,10 @@ export function useResearchState(): ResearchState {
       // check_originality (or integrity_report) — originality score.
       if (typeof payload.originality === "number") {
         state.originality = payload.originality;
+      }
+      // integrity_report — composite research-integrity grade (0-100).
+      if (typeof payload.grade === "number") {
+        state.grade = payload.grade;
       }
       if (Array.isArray(payload.flaggedSpans)) {
         state.flaggedSpans = (payload.flaggedSpans as unknown[]).map((s) =>

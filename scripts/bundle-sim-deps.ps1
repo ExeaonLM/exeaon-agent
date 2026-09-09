@@ -122,9 +122,11 @@ if ($SkipResearch) {
     "mcp>=1.8,<2" "scholarly>=1.7,<2" "httpx[socks]>=0.24,<1" `
     "pip-system-certs>=4.0" "defusedxml>=0.7.1" "bibtexparser<2" requests
   if ($LASTEXITCODE -eq 0) {
-    # Prove the vendored server actually imports (this is what crashed before).
-    $srv = Join-Path $McpRoot "academic-research\server.py"
-    $ok = (& $Python -c "import importlib.util,sys; sys.argv=['x']; spec=importlib.util.spec_from_file_location('ars','$($srv -replace '\\','\\')'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print('ok')" 2>$null)
+    # Prove the vendored server actually imports (this is what crashed before
+    # without the bibtexparser<2 pin). Import by putting its dir on sys.path —
+    # importing `server` does NOT run its stdio loop (guarded by __main__).
+    $dir = Join-Path $McpRoot "academic-research"
+    $ok = (& $Python -c "import sys; sys.path.insert(0, r'$dir'); import server; print('ok')" 2>$null)
     $results["Research(academic)"] = if ($ok -eq "ok") { "ok" } else { "installed (import unverified)" }
   } else {
     Write-Host "academic-research-mcp deps failed to bundle — the app falls back to the zero-dep scholar MCP." -ForegroundColor Yellow

@@ -96,6 +96,18 @@ export function ResearchWarRoom() {
             {Math.round(state.originality * 100)}% original
           </span>
         )}
+        {state.grade !== null && (
+          <span
+            className="ml-auto rounded-full px-2 py-0.5 font-bold tabular-nums"
+            style={{
+              color: originalityTone(state.grade / 100),
+              backgroundColor: "var(--oh-surface-raised)",
+            }}
+            title="Composite research-integrity grade: mean of the measured quality dimensions (reproduction, evidence, falsification, originality)."
+          >
+            Integrity {Math.round(state.grade)}/100
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 p-3">
