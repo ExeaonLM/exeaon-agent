@@ -96,6 +96,17 @@ export function ResearchWarRoom() {
             {Math.round(state.originality * 100)}% original
           </span>
         )}
+        {state.groundedness !== null && (
+          <span
+            className="font-semibold"
+            style={{ color: originalityTone(state.groundedness) }}
+            title="Independent research-judge verdict: groundedness (claims backed by cited evidence) / faithfulness (prose matches the evidence)."
+          >
+            Judge {Math.round(state.groundedness * 100)}%
+            {state.faithfulness !== null &&
+              ` · ${Math.round(state.faithfulness * 100)}% faithful`}
+          </span>
+        )}
         {state.grade !== null && (
           <span
             className="ml-auto rounded-full px-2 py-0.5 font-bold tabular-nums"
@@ -103,7 +114,7 @@ export function ResearchWarRoom() {
               color: originalityTone(state.grade / 100),
               backgroundColor: "var(--oh-surface-raised)",
             }}
-            title="Composite research-integrity grade: mean of the measured quality dimensions (reproduction, evidence, falsification, originality)."
+            title="Composite research-integrity grade: mean of the measured quality dimensions (reproduction, evidence, falsification, originality, judge groundedness/faithfulness)."
           >
             Integrity {Math.round(state.grade)}/100
           </span>

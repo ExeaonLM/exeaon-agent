@@ -32,6 +32,10 @@ export interface ResearchState {
   reproductions: ResearchReproduction[];
   originality: number | null;
   flaggedSpans: string[];
+  /** Independent judge's groundedness 0-1 (fraction of claims backed), or null. */
+  groundedness: number | null;
+  /** Independent judge's faithfulness 0-1 (prose matches evidence), or null. */
+  faithfulness: number | null;
   /** Composite research-integrity grade 0-100 (from integrity_report), or null. */
   grade: number | null;
   /** Whether an integrity_report has been produced (final scorecard). */
@@ -45,6 +49,8 @@ const EMPTY: ResearchState = {
   reproductions: [],
   originality: null,
   flaggedSpans: [],
+  groundedness: null,
+  faithfulness: null,
   grade: null,
   reported: false,
 };
@@ -65,6 +71,7 @@ const RESEARCH_TOOL_PATTERNS = [
   "read_document",
   "reset_research",
   "score_reproduction",
+  "record_judgment",
 ];
 
 function isResearchTool(toolName: string): boolean {
@@ -207,6 +214,19 @@ export function useResearchState(): ResearchState {
       if (typeof payload.grade === "number") {
         state.grade = payload.grade;
       }
+      // record_judgment / integrity_report — the judge's verdict.
+      if (payload.judgment && typeof payload.judgment === "object") {
+        const j = payload.judgment as {
+          groundedness?: unknown;
+          faithfulness?: unknown;
+        };
+        if (typeof j.groundedness === "number") {
+          state.groundedness = j.groundedness;
+        }
+        if (typeof j.faithfulness === "number") {
+          state.faithfulness = j.faithfulness;
+        }
+      }
       if (Array.isArray(payload.flaggedSpans)) {
         state.flaggedSpans = (payload.flaggedSpans as unknown[]).map((s) =>
           String(s),
@@ -218,7 +238,8 @@ export function useResearchState(): ResearchState {
       state.sources.length > 0 ||
       state.claims.length > 0 ||
       state.reproductions.length > 0 ||
-      state.originality !== null;
+      state.originality !== null ||
+      state.groundedness !== null;
     if (!sawAny) return EMPTY;
     return state;
   }, [events]);

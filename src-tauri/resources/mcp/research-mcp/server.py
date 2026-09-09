@@ -31,7 +31,8 @@ PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "exeaon-research"
 SERVER_VERSION = "0.1.0"
 
-_STATE = {"sources": [], "claims": [], "originality": None, "reproductions": []}
+_STATE = {"sources": [], "claims": [], "originality": None,
+          "reproductions": [], "judgment": None}
 
 _WORD_RE = re.compile(r"\w+")
 _SENT_RE = re.compile(r"[.!?]+")
@@ -223,6 +224,38 @@ def tool_score_reproduction(args):
             "reproductions": len(_STATE["reproductions"])}
 
 
+def _clamp01(v, default=None):
+    try:
+        return max(0.0, min(1.0, float(v)))
+    except (TypeError, ValueError):
+        return default
+
+
+def tool_record_judgment(args):
+    """Record the independent research-judge's verdict on the manuscript — the
+    LLM-as-judge groundedness/faithfulness scores. Feeds the integrity grade +
+    war-room. Args: `groundedness` 0-1 (required), `faithfulness` 0-1,
+    `unsupportedClaims` (list of strings), `note`."""
+    g = _clamp01(args.get("groundedness"))
+    if g is None:
+        raise ResearchError(
+            "record_judgment needs numeric `groundedness` (0-1) — the fraction "
+            "of claims the judge found actually backed by cited evidence."
+        )
+    f = _clamp01(args.get("faithfulness"))
+    unsup = args.get("unsupportedClaims")
+    if not isinstance(unsup, list):
+        unsup = []
+    entry = {
+        "groundedness": round(g, 3),
+        "faithfulness": round(f, 3) if f is not None else None,
+        "unsupportedClaims": [str(x) for x in unsup][:20],
+        "note": (args.get("note") or "").strip(),
+    }
+    _STATE["judgment"] = entry
+    return {"ok": True, "judgment": entry}
+
+
 def tool_integrity_report(_args):
     claims = _STATE["claims"]
     with_evidence = sum(1 for c in claims if c["evidence"])
@@ -241,12 +274,18 @@ def tool_integrity_report(_args):
         subscores["reproduction"] = round(reps_matched / len(reps), 3)
     if _STATE["originality"] is not None:
         subscores["originality"] = round(float(_STATE["originality"]), 3)
+    judgment = _STATE["judgment"]
+    if judgment is not None:
+        subscores["groundedness"] = judgment["groundedness"]
+        if judgment.get("faithfulness") is not None:
+            subscores["faithfulness"] = judgment["faithfulness"]
     grade = round(100 * sum(subscores.values()) / len(subscores), 1) if subscores else None
 
     return {
         "sources": _STATE["sources"],
         "claims": claims,
         "reproductions": reps,
+        "judgment": judgment,
         "counts": {
             "sources": len(_STATE["sources"]),
             "claims": len(claims),
@@ -333,6 +372,7 @@ def tool_reset(_args):
     _STATE["claims"] = []
     _STATE["originality"] = None
     _STATE["reproductions"] = []
+    _STATE["judgment"] = None
     return {"ok": True}
 
 
@@ -411,8 +451,23 @@ TOOLS = [
         "_fn": tool_score_reproduction,
     },
     {
+        "name": "record_judgment",
+        "description": "Record the independent research-judge subagent's verdict on the manuscript (LLM-as-judge). Args: `groundedness` 0-1 (required — fraction of claims backed by cited evidence), `faithfulness` 0-1 (prose matches the evidence), `unsupportedClaims` (list of strings), `note`. Feeds the integrity grade + war-room.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "groundedness": {"type": "number"},
+                "faithfulness": {"type": "number"},
+                "unsupportedClaims": {"type": "array", "items": {"type": "string"}},
+                "note": {"type": "string"},
+            },
+            "required": ["groundedness"],
+        },
+        "_fn": tool_record_judgment,
+    },
+    {
         "name": "integrity_report",
-        "description": "Summarize the research session: sources, claims (with evidence + falsification), reproduction scorecard (claimed vs reference, pass/fail), and last originality — the integrity scorecard.",
+        "description": "Summarize the research session: sources, claims (with evidence + falsification), reproduction scorecard, the judge's groundedness/faithfulness verdict, originality, and the composite grade — the integrity scorecard.",
         "inputSchema": {"type": "object", "properties": {}},
         "_fn": tool_integrity_report,
     },
