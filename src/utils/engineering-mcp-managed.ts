@@ -39,7 +39,7 @@ export interface ManagedMcpContext {
 }
 
 /** A managed server spec before path resolution. */
-interface ManagedSpec {
+export interface ManagedSpec {
   /** stable id/name (without the prefix). */
   key: string;
   build: (ctx: ManagedMcpContext) => MCPServerConfig;
@@ -240,17 +240,24 @@ export function buildManagedMcpConfig(
   return out;
 }
 
+/**
+ * Every managed spec this build knows about. Exported so the capability
+ * registry (src/capabilities) can treat them as the LOCAL discovery source and
+ * resolve them by task+environment instead of by a user-picked field.
+ */
+export const MANAGED_SPECS: readonly ManagedSpec[] = [
+  CYBER_UNIFIED,
+  DEVICE_WINDOWS,
+  CYBER_CALDERA,
+  CYBER_SIM,
+  ROBOTICS_MUJOCO,
+  RTL_SIM,
+  RESEARCH_MCP,
+  SCHOLAR_MCP,
+  ACADEMIC_MCP,
+];
+
 /** Names of every managed server this build knows about (for cleanup/reconcile). */
 export function allManagedMcpNames(): string[] {
-  return [
-    CYBER_UNIFIED,
-    DEVICE_WINDOWS,
-    CYBER_CALDERA,
-    CYBER_SIM,
-    ROBOTICS_MUJOCO,
-    RTL_SIM,
-    RESEARCH_MCP,
-    SCHOLAR_MCP,
-    ACADEMIC_MCP,
-  ].map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
+  return MANAGED_SPECS.map((s) => `${MANAGED_MCP_PREFIX}${s.key}`);
 }
