@@ -26,14 +26,16 @@ export function ActionTooltip({ type, onClick }: ActionTooltipProps) {
     : `${t(I18nKey.BUTTON$CANCEL)} ⇧⌘⌫`;
 
   return (
-    <StyledTooltip closeDelay={100} content={content}>
+    <StyledTooltip closeDelay={100} content={content} placement="top">
       <button
         data-testid={`action-${type}-button`}
         type="button"
         aria-label={ariaLabel}
         className={cn(
-          "rounded px-2 h-6.5 text-sm font-normal leading-5 cursor-pointer hover:opacity-80",
-          type === "confirm" ? "bg-tertiary text-white" : "bg-white text-base",
+          "rounded-md px-3 h-7 text-xs font-medium leading-none cursor-pointer transition-colors shadow-sm",
+          type === "confirm"
+            ? "bg-[#FFD026] text-black hover:bg-[#ffe066]"
+            : "bg-white/10 text-white hover:bg-white/20 border border-white/10",
         )}
         onClick={onClick}
       >

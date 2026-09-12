@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { cn } from "#/utils/utils";
 import { ChatInterfaceWrapper } from "./chat-interface-wrapper";
 import { ConversationTabContent } from "../conversation-tabs/conversation-tab-content/conversation-tab-content";
-import { ConversationNameWithStatus } from "../conversation-name-with-status";
 import { ConversationTabs } from "../conversation-tabs/conversation-tabs";
+import { ConversationNameWithStatus } from "../conversation-name-with-status";
 import { ResizeHandle } from "../../../ui/resize-handle";
 import { useResizablePanels } from "#/hooks/use-resizable-panels";
 import { useConversationStore } from "#/stores/conversation-store";
@@ -23,9 +24,21 @@ function getDesktopTabPanelClass(isRightPanelShown: boolean) {
 export function ConversationMain() {
   const isMobile = useBreakpoint();
   const isSidebarRailHidden = useBreakpoint(SIDEBAR_RAIL_COLLAPSE_MAX_WIDTH);
-  const { isRightPanelShown } = useConversationStore();
+  const { isRightPanelShown, isRightPanelExpanded, setIsRightPanelExpanded } =
+    useConversationStore();
   const overviewDrawer = useConversationOverviewDrawerOptional();
   const isSecondaryDrawerOpen = Boolean(overviewDrawer?.section);
+
+  useEffect(() => {
+    if (!isRightPanelExpanded) return undefined;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsRightPanelExpanded(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRightPanelExpanded, setIsRightPanelExpanded]);
 
   const { leftWidth, rightWidth, isDragging, containerRef, handleMouseDown } =
     useResizablePanels({
@@ -68,13 +81,21 @@ export function ConversationMain() {
                   "min-w-0",
                   !isSecondaryDrawerOpen &&
                     "transition-[width] duration-300 ease-in-out",
+                  !isMobile &&
+                    isRightPanelShown &&
+                    isRightPanelExpanded &&
+                    "hidden pointer-events-none",
                 ),
           )}
           // panel width computed at runtime by resize hook; transition toggled by drag state
           style={
             !isMobile
               ? {
-                  width: isRightPanelShown ? `${leftWidth}%` : "100%",
+                  width: isRightPanelShown
+                    ? isRightPanelExpanded
+                      ? "0%"
+                      : `${leftWidth}%`
+                    : "100%",
                   transitionProperty:
                     isDragging || isSecondaryDrawerOpen ? "none" : "width",
                 }
@@ -100,8 +121,8 @@ export function ConversationMain() {
           </div>
         </div>
 
-        {/* Resize Handle - only shown on desktop when right panel is visible */}
-        {!isMobile && isRightPanelShown && (
+        {/* Resize Handle - only shown on desktop when right panel is visible and not expanded */}
+        {!isMobile && isRightPanelShown && !isRightPanelExpanded && (
           <ResizeHandle onMouseDown={handleMouseDown} isDragging={isDragging} />
         )}
 
@@ -113,12 +134,25 @@ export function ConversationMain() {
               getDesktopTabPanelClass(isRightPanelShown),
             )}
             style={{
-              width: isRightPanelShown ? `${rightWidth}%` : "0%",
+              width: isRightPanelShown
+                ? isRightPanelExpanded
+                  ? "100%"
+                  : `${rightWidth}%`
+                : "0%",
               transitionProperty: isDragging ? "opacity, transform" : "all",
             }}
           >
-            <div className="flex h-full w-full flex-col">
-              <div className="flex flex-col flex-1 min-h-0 bg-[var(--oh-surface)] border-l border-[var(--oh-border)] overflow-hidden">
+            {/* Float the right panel as a card: a dark base gutter around it, a
+                distinctly LIGHTER raised surface for the card itself (so it
+                stands out against the near-black body instead of blending), a
+                full border, rounded corners and a strong shadow. */}
+            <div
+              className={cn(
+                "flex h-full w-full flex-col bg-[var(--oh-color-base)] p-2",
+                !isRightPanelExpanded && "pl-1",
+              )}
+            >
+              <div className="flex flex-col flex-1 min-h-0 bg-[var(--oh-surface-raised)] border border-[var(--oh-border)] rounded-2xl shadow-2xl overflow-hidden">
                 <div
                   data-testid="tabs-pane-header"
                   className="flex shrink-0 flex-col border-b border-[var(--oh-border)]"

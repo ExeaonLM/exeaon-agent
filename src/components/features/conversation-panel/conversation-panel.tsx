@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { useNavigation } from "#/context/navigation-context";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
+import type { BackendKind } from "#/api/backend-registry/types";
 import { useBackendScopedPath } from "#/hooks/use-backend-scoped-path";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { useResolvedWorkspaces } from "#/hooks/query/use-resolved-workspaces";
@@ -34,7 +36,6 @@ import { CompactConversationRow } from "./compact-conversation-row";
 import { useConversationPanelPreferencesStore } from "#/stores/conversation-panel-preferences-store";
 import { cn } from "#/utils/utils";
 import { ConversationPanelFilterMenu } from "./conversation-panel-filter-menu";
-import { ConversationPanelNewThreadPicker } from "./conversation-panel-new-thread-picker";
 import { ConversationGroupFolderList } from "./conversation-group-folder-list";
 import { ConversationPanelPinnedSection } from "./conversation-panel-pinned-section";
 import {
@@ -97,6 +98,12 @@ export function ConversationPanel({
   const { t } = useTranslation("openhands");
   const { conversationId: currentConversationId, navigate } = useNavigation();
   const { backend: activeBackend } = useActiveBackend();
+  // Group conversations by the RUNTIME (always local on Exeaon), not the active
+  // backend kind — which flips to "cloud" on sign-in and would group by repo and
+  // label the ungrouped bucket "No repository" instead of "No workspace".
+  const runtimeBackendKind: BackendKind = isCloudAppServerBackend()
+    ? "cloud"
+    : "local";
   const backendScopedPath = useBackendScopedPath();
   // Click-outside is only relevant in the legacy drawer mode where an
   // onClose handler is provided. When the panel is rendered inline (e.g.
@@ -351,7 +358,7 @@ export function ConversationPanel({
     if (
       compact ||
       organizeMode !== "grouped" ||
-      activeBackend.kind !== "local"
+      runtimeBackendKind !== "local"
     ) {
       return [];
     }
@@ -378,7 +385,7 @@ export function ConversationPanel({
     }
     return Array.from(byPath.values());
   }, [
-    activeBackend.kind,
+    runtimeBackendKind,
     compact,
     conversations,
     knownWorkspaces,
@@ -495,13 +502,13 @@ export function ConversationPanel({
     // rows for that same workspace/repo.
     return groupConversations(
       groupedSourceConversations,
-      activeBackend.kind,
+      runtimeBackendKind,
       conversationSort,
       groupLabels,
       allWorkspacesForGrouping,
     );
   }, [
-    activeBackend.kind,
+    runtimeBackendKind,
     conversationSort,
     groupLabels,
     groupedSourceConversations,
@@ -1041,9 +1048,9 @@ export function ConversationPanel({
               {t(I18nKey.SIDEBAR$CONVERSATIONS)}
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-0.5">
-              <ConversationPanelNewThreadPicker
-                backendKind={activeBackend.kind}
-              />
+              {/* New-thread "+" removed here: the sidebar's top-level "New Chat"
+                  is the single entry point, so this header button was redundant.
+                  The filter/organize control (now a config-style icon) stays. */}
               <ConversationPanelFilterMenu
                 filterMenuOpen={filterMenuOpen}
                 setFilterMenuOpen={setFilterMenuOpen}

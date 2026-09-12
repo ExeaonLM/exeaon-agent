@@ -223,7 +223,7 @@ export function startIngress(config) {
   });
   server.on("close", uninstallDiagnostics);
 
-  server.listen(config.port, () => {
+  server.listen(config.port, "0.0.0.0", () => {
     console.log("");
     console.log(
       "╔═══════════════════════════════════════════════════════════════╗",

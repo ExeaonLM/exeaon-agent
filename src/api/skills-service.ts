@@ -5,7 +5,7 @@ import {
 } from "@openhands/extensions/skills";
 import { SkillInfo } from "#/types/settings";
 import { getAgentServerWorkingDir } from "./agent-server-config";
-import { getActiveBackend } from "./backend-registry/active-store";
+import { isCloudAppServerBackend } from "./backend-registry/active-store";
 import { fetchCloudSkills } from "./cloud/skills-service.api";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
 
@@ -35,7 +35,7 @@ const PUBLIC_SKILLS: SkillInfo[] = SKILLS_CATALOG.map(catalogEntryToSkillInfo);
 
 class SkillsService {
   static async getSkills(projectDir?: string): Promise<SkillInfo[]> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       return fetchCloudSkills();
     }
 

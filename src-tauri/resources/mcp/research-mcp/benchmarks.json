@@ -1,0 +1,63 @@
+{
+  "name": "Exeaon Research Reproduction Benchmark (starter)",
+  "version": "0.1.0",
+  "note": "A fixed set of reproduction TASKS (reproduce each `target`, then benchmark_submit(task_id, claimed) — a NUMBER for `type`:numeric tasks, a STRING for `type`:exact; benchmark_report aggregates matched/total). This committed file is only a small PUBLIC sample — the FULL ~600-task bar is generated LOCALLY by scripts/build-benchmark.py into benchmarks.local.json (gitignored, holds the reference answers; the MCP merges both and HIDES `reference`). Sources: CORE-Bench (arXiv:2409.11363, numeric+categorical) and QRData (arXiv:2402.17644, quantitative reasoning over real CSVs; `dataUrl` points at the data file). IMPORTANT: CORE-Bench's TEST answers are encrypted on purpose (anti-leakage) — never commit protected answers here. Every committed `reference` MUST be a value a source actually states (cite it in `provenance`) or one Exeaon independently measured. Never invent a reference.",
+  "tasks": [
+    {
+      "id": "corebench-hypereta-mape-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA MAPE with no DTW",
+      "reference": 17.374344500709498,
+      "tolerance": 0.02,
+      "hint": "Run the paper's provided capsule/code+data; read the reported MAPE (no-DTW config) from its output.",
+      "provenance": "CORE-Bench README answer-schema example (report.json), arXiv:2409.11363 / github.com/siegelz/core-bench."
+    },
+    {
+      "id": "corebench-hypereta-rmse-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA RMSE with no DTW",
+      "reference": 459.7782074000463,
+      "tolerance": 0.02,
+      "hint": "Same capsule; read the reported RMSE (no-DTW).",
+      "provenance": "CORE-Bench README answer-schema example, arXiv:2409.11363."
+    },
+    {
+      "id": "corebench-hypereta-mae-nodtw",
+      "paper": "HyperETA (via CORE-Bench, arXiv:2409.11363)",
+      "target": "HyperETA MAE with no DTW",
+      "reference": 323.0,
+      "tolerance": 0.02,
+      "hint": "Same capsule; read the reported MAE (no-DTW).",
+      "provenance": "CORE-Bench README answer-schema example, arXiv:2409.11363."
+    },
+    {
+      "id": "rans-awq-int4-gain",
+      "paper": "arXiv:2606.15789 (Approaching Shannon Bound); EntroLLM arXiv:2505.02380",
+      "target": "Extra lossless (rANS/entropy) compression gain on REAL group-128 AWQ int4 LLM weights",
+      "reference": 1.095,
+      "tolerance": 0.05,
+      "hint": "Quantize a real model to per-group(128) zero-point int4 (or load an official AWQ checkpoint); measure the code histogram entropy H per tensor, parameter-weighted; gain = 4 / H (include scale/zero metadata for the end-to-end figure).",
+      "provenance": "Measured in Exeaon's own reproduction run (2026-09-09) on Qwen2.5-0.5B-Instruct-AWQ; brackets EntroLLM's ~1.05x and 2606.15789's 1.1-1.3x band. Replace with a paper-stated figure if reproducing a specific paper."
+    },
+    {
+      "id": "EXAMPLE-numeric-replace-me",
+      "paper": "<cite the paper, e.g. arXiv:XXXX.XXXXX or a DOI>",
+      "target": "<the exact reported metric to reproduce, e.g. 'GLUE avg for BERT-base'>",
+      "type": "numeric",
+      "reference": 0.0,
+      "tolerance": 0.05,
+      "hint": "<how to reproduce it>",
+      "provenance": "<where the reference number comes from — a table/figure in the paper>"
+    },
+    {
+      "id": "EXAMPLE-exact-replace-me",
+      "paper": "<cite the source, e.g. QRData / a paper>",
+      "target": "<a question whose answer is categorical, e.g. 'Which regularizer minimizes test error: LASSO or Ridge?'>",
+      "type": "exact",
+      "reference": "<the exact answer string, e.g. 'LASSO' or 'A'>",
+      "hint": "<how to reproduce it>",
+      "dataUrl": "<optional: a URL to the data file the task runs on>",
+      "provenance": "<where the answer comes from>"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { readCloudConversationFile } from "#/api/cloud/conversation-service.api";
-import { getActiveBackend } from "#/api/backend-registry/active-store";
+import { isCloudAppServerBackend } from "#/api/backend-registry/active-store";
 import { getGitPath } from "#/utils/get-git-path";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
@@ -159,7 +159,9 @@ export function useWorkspaceFileContent(relativePath: string | null) {
   const selectedRepository = conversation?.selected_repository;
   const workingDir = conversation?.workspace?.working_dir?.trim();
   const baseUrl = workspaceSession?.baseUrl;
-  const isCloud = getActiveBackend().backend.kind === "cloud";
+  // Runtime seam, not backend.kind: the Exeaon runtime is always local even
+  // when a cloud backend is active for identity (see use-workspace-files).
+  const isCloud = isCloudAppServerBackend();
 
   // The cloud `/file` endpoint downloads via the runtime's
   // `/api/file/download`, which rejects relative paths (400 → the cloud API

@@ -199,15 +199,7 @@ export function ManageBackendsModal({
                 />
               ) : null
             ) : (
-              <BrandButton
-                type="button"
-                variant={recoveryMode ? "primary" : "secondary"}
-                onClick={() => setShowAddForm(true)}
-                testId="manage-backends-add"
-                startContent={<Plus width={14} height={14} />}
-              >
-                {t(I18nKey.BACKEND$ADD)}
-              </BrandButton>
+              null
             )}
             {recoveryMode ? null : (
               <BrandButton

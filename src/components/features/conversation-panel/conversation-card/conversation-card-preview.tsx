@@ -137,15 +137,6 @@ export function ConversationCardPreview({
       className="flex w-[280px] max-w-[min(280px,90vw)] flex-col gap-3 overflow-visible p-3"
     >
       <div className="flex items-start gap-2">
-        {executionStatus !== undefined ? (
-          <span className="inline-flex h-5 w-2.5 shrink-0 items-center justify-center">
-            <ConversationStatusDot
-              executionStatus={executionStatus}
-              sandboxStatus={sandboxStatus}
-              showTooltip={false}
-            />
-          </span>
-        ) : null}
         <span className="break-words text-sm font-medium leading-5 text-white">
           {title}
         </span>

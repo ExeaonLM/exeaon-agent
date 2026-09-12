@@ -369,7 +369,7 @@ export function AgentSettingsScreen({
   // ``sdk-section-page``). The body is (re)assigned during render below.
   const buildFieldsRef = useRef<() => AgentProfileFieldsDraft>(() => ({
     agent_kind: "openhands",
-    enable_sub_agents: false,
+    enable_sub_agents: true,
   }));
   const stableBuildFields = useCallback(() => buildFieldsRef.current(), []);
   const credFormRef = useRef(acpCredentialForm);
@@ -594,9 +594,8 @@ export function AgentSettingsScreen({
         items={[
           {
             key: "openhands",
-            label: t(I18nKey.SETTINGS$AGENT_TYPE_OPENHANDS),
+            label: "Exeaon",
           },
-          { key: "acp", label: t(I18nKey.SETTINGS$AGENT_TYPE_ACP) },
         ]}
         selectedKey={agentType}
         onSelectionChange={(key) => {

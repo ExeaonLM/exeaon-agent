@@ -1,4 +1,5 @@
 import { cn } from "#/utils/utils";
+import { sanitizeConversationTitle } from "#/utils/sanitize-conversation-title";
 
 export type ConversationCardTitleMode = "view" | "edit";
 
@@ -53,7 +54,7 @@ export function ConversationCardTitle({
         isConversationArchived && "opacity-60",
       )}
     >
-      {title}
+      {sanitizeConversationTitle(title)}
     </p>
   );
 }

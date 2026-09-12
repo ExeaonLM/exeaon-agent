@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 import { MarkdownRenderer } from "../markdown/markdown-renderer";
+import { stripEngineeringDirective } from "#/components/conversation-events/chat/event-content-helpers/parse-message-from-event";
 
 const USER_MESSAGE_MAX_LINES = 5;
 const USER_MESSAGE_LENGTH_THRESHOLD = 360;
@@ -15,7 +16,7 @@ export const chatBubbleMarkdownComponents = {
 };
 
 export function UserMessageBody({
-  message,
+  message: rawMessage,
   isHovering,
   isExpanded,
   onTruncatableChange,
@@ -25,6 +26,10 @@ export function UserMessageBody({
   isExpanded: boolean;
   onTruncatableChange: (truncatable: boolean) => void;
 }) {
+  const message = React.useMemo(
+    () => stripEngineeringDirective(rawMessage),
+    [rawMessage],
+  );
   const { t } = useTranslation("openhands");
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [isTruncatable, setIsTruncatable] = React.useState(false);

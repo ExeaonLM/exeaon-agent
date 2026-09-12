@@ -138,10 +138,6 @@ const ACP_PROVIDER_UI: Record<
     icon: "codex",
     description_key: I18nKey.ONBOARDING$AGENT_CODEX_DESCRIPTION,
   },
-  "gemini-cli": {
-    icon: "gemini",
-    description_key: I18nKey.ONBOARDING$AGENT_GEMINI_CLI_DESCRIPTION,
-  },
 };
 
 // Built-in ACP providers Canvas surfaces, built by enriching each upstream

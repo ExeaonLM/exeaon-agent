@@ -21,12 +21,12 @@ export function RiskAlert({
     return (
       <div
         className={cn(
-          "flex items-center gap-3.5 bg-[#4A0709] border border-[#FF0006] text-red-400 rounded-xl px-3.5 h-13 text-sm text-white",
+          "flex items-center gap-3 bg-[#4A0709] border border-[#FF0006] text-red-200 rounded-xl px-3.5 py-2.5 min-h-[48px] text-xs leading-relaxed",
           className,
         )}
       >
-        {icon && <span className="">{icon}</span>}
-        <span className="font-bold">{title}</span>
+        {icon && <span className="shrink-0">{icon}</span>}
+        <span className="font-bold shrink-0 text-white">{title}</span>
         <span className="font-normal">{content}</span>
       </div>
     );

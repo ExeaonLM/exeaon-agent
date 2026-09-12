@@ -12,9 +12,32 @@ export type ConversationTab =
   | "terminal"
   | "planner"
   | "tasklist"
-  | "usage";
+  | "usage"
+  | "swarm"
+  | "robotics"
+  | "rtl";
 
 export type ConversationMode = "code" | "plan";
+
+/**
+ * Exeaon Engineering Labs field (ENGINEERING_LABS_PROVIDER_RESEARCH.md). "none"
+ * is the default general agent; the others gate which field backends / MCP tools
+ * the agent may use. v1 ships cyber/robotics/computing; device is last.
+ */
+export type EngineeringField =
+  | "none"
+  | "cyber"
+  | "robotics"
+  | "computing"
+  | "device"
+  | "research";
+
+/**
+ * How a field runs: simulation (safe/sandboxed), real (acts on real
+ * systems/tools, gated by Validation), or auto (agent chooses per step). Applies
+ * across fields — mirrors the Code/Plan mode switch.
+ */
+export type ExecutionMode = "simulation" | "real" | "auto";
 
 export type CommitsPaneSection = "uncommitted";
 
@@ -25,6 +48,7 @@ export interface IMessageToSend {
 
 interface ConversationState {
   isRightPanelShown: boolean;
+  isRightPanelExpanded: boolean;
   isOverviewPanelShown: boolean;
   isOverviewPanelPeeked: boolean;
   selectedTab: ConversationTab | null;
@@ -46,11 +70,22 @@ interface ConversationState {
   hasRightPanelToggled: boolean;
   planContent: string | null;
   conversationMode: ConversationMode;
+  engineeringField: EngineeringField;
+  executionMode: ExecutionMode;
+  /** Cyber SWARM: the lead agent summons parallel operatives per engagement. */
+  cyberSwarm: boolean;
   subConversationTaskId: string | null; // Task ID for sub-conversation creation
+  isSplitPanelOpen: boolean;
+  splitTab: ConversationTab | null;
 }
 
 interface ConversationActions {
   setIsRightPanelShown: (isRightPanelShown: boolean) => void;
+  setIsRightPanelExpanded: (isRightPanelExpanded: boolean) => void;
+  toggleRightPanelExpanded: () => void;
+  setIsSplitPanelOpen: (isSplitPanelOpen: boolean) => void;
+  toggleSplitPanel: () => void;
+  setSplitTab: (splitTab: ConversationTab | null) => void;
   setIsOverviewPanelShown: (isOverviewPanelShown: boolean) => void;
   setIsOverviewPanelPeeked: (isOverviewPanelPeeked: boolean) => void;
   setSelectedTab: (selectedTab: ConversationTab | null) => void;
@@ -81,6 +116,9 @@ interface ConversationActions {
   resetConversationState: () => void;
   setHasRightPanelToggled: (hasRightPanelToggled: boolean) => void;
   setConversationMode: (conversationMode: ConversationMode) => void;
+  setEngineeringField: (engineeringField: EngineeringField) => void;
+  setExecutionMode: (executionMode: ExecutionMode) => void;
+  setCyberSwarm: (cyberSwarm: boolean) => void;
   setSubConversationTaskId: (taskId: string | null) => void;
   setPlanContent: (planContent: string | null) => void;
 }
@@ -110,6 +148,39 @@ const getInitialConversationMode = (): ConversationMode => {
   return state.conversationMode;
 };
 
+const getInitialEngineeringField = (): EngineeringField => {
+  if (typeof window === "undefined") {
+    return "none";
+  }
+  const conversationId = getConversationIdFromLocation();
+  if (!conversationId) {
+    return "none";
+  }
+  return getConversationState(conversationId).engineeringField;
+};
+
+const getInitialExecutionMode = (): ExecutionMode => {
+  if (typeof window === "undefined") {
+    return "simulation";
+  }
+  const conversationId = getConversationIdFromLocation();
+  if (!conversationId) {
+    return "simulation";
+  }
+  return getConversationState(conversationId).executionMode;
+};
+
+const getInitialCyberSwarm = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const conversationId = getConversationIdFromLocation();
+  if (!conversationId) {
+    return false;
+  }
+  return getConversationState(conversationId).cyberSwarm;
+};
+
 export const useConversationStore = create<ConversationStore>()(
   devtools(
     (set) => ({
@@ -125,6 +196,7 @@ export const useConversationStore = create<ConversationStore>()(
       // when they come back to the app and only want the panel back when
       // they themselves opened it during the current session.
       isRightPanelShown: false,
+      isRightPanelExpanded: false,
       isOverviewPanelShown: false,
       isOverviewPanelPeeked: false,
       selectedTab: "files" as ConversationTab,
@@ -143,11 +215,61 @@ export const useConversationStore = create<ConversationStore>()(
       hasRightPanelToggled: false,
       planContent: null,
       conversationMode: getInitialConversationMode(),
+      engineeringField: getInitialEngineeringField(),
+      executionMode: getInitialExecutionMode(),
+      cyberSwarm: getInitialCyberSwarm(),
       subConversationTaskId: null,
+      isSplitPanelOpen: false,
+      splitTab: "terminal" as ConversationTab,
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
-        set({ isRightPanelShown }, false, "setIsRightPanelShown"),
+        set(
+          (state) => ({
+            isRightPanelShown,
+            isRightPanelExpanded: isRightPanelShown
+              ? state.isRightPanelExpanded
+              : false,
+          }),
+          false,
+          "setIsRightPanelShown",
+        ),
+
+      setIsRightPanelExpanded: (isRightPanelExpanded) =>
+        set({ isRightPanelExpanded }, false, "setIsRightPanelExpanded"),
+
+      toggleRightPanelExpanded: () =>
+        set(
+          (state) => ({ isRightPanelExpanded: !state.isRightPanelExpanded }),
+          false,
+          "toggleRightPanelExpanded",
+        ),
+
+      setIsSplitPanelOpen: (isSplitPanelOpen) =>
+        set({ isSplitPanelOpen }, false, "setIsSplitPanelOpen"),
+
+      toggleSplitPanel: () =>
+        set(
+          (state) => {
+            const nextOpen = !state.isSplitPanelOpen;
+            let nextSplitTab = state.splitTab;
+            if (
+              nextOpen &&
+              (!nextSplitTab || nextSplitTab === state.selectedTab)
+            ) {
+              nextSplitTab =
+                state.selectedTab === "files" ? "terminal" : "files";
+            }
+            return {
+              isSplitPanelOpen: nextOpen,
+              splitTab: nextSplitTab,
+            };
+          },
+          false,
+          "toggleSplitPanel",
+        ),
+
+      setSplitTab: (splitTab) => set({ splitTab }, false, "setSplitTab"),
 
       setIsOverviewPanelShown: (isOverviewPanelShown) =>
         set(
@@ -354,6 +476,8 @@ export const useConversationStore = create<ConversationStore>()(
           {
             shouldHideSuggestions: false,
             conversationMode: getInitialConversationMode(),
+            engineeringField: getInitialEngineeringField(),
+            executionMode: getInitialExecutionMode(),
             subConversationTaskId: null,
             planContent: null,
           },
@@ -370,6 +494,30 @@ export const useConversationStore = create<ConversationStore>()(
           setConversationState(conversationId, { conversationMode });
         }
         set({ conversationMode }, false, "setConversationMode");
+      },
+
+      setEngineeringField: (engineeringField) => {
+        const conversationId = getConversationIdFromLocation();
+        if (conversationId) {
+          setConversationState(conversationId, { engineeringField });
+        }
+        set({ engineeringField }, false, "setEngineeringField");
+      },
+
+      setExecutionMode: (executionMode) => {
+        const conversationId = getConversationIdFromLocation();
+        if (conversationId) {
+          setConversationState(conversationId, { executionMode });
+        }
+        set({ executionMode }, false, "setExecutionMode");
+      },
+
+      setCyberSwarm: (cyberSwarm) => {
+        const conversationId = getConversationIdFromLocation();
+        if (conversationId) {
+          setConversationState(conversationId, { cyberSwarm });
+        }
+        set({ cyberSwarm }, false, "setCyberSwarm");
       },
 
       setSubConversationTaskId: (subConversationTaskId) =>

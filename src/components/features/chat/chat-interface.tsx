@@ -4,6 +4,7 @@ import { useTracking } from "#/hooks/use-tracking";
 import { useTranslation } from "react-i18next";
 import { isAcpAuthErrorCode } from "#/utils/acp-error-codes";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { motion, AnimatePresence } from "framer-motion";
 import { createChatMessage } from "#/services/chat-service";
 import { BtwMessages } from "./btw-messages";
 import { GoalStatusBanner } from "./goal-status-banner";
@@ -51,6 +52,12 @@ import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { hasConversationStarted } from "./components/resolve-picker-kind";
+import { buildEngineeringDirective } from "#/utils/engineering-labs";
+import { useEngineeringMcpReconcile } from "#/hooks/use-engineering-mcp-reconcile";
+import { useSwarmAutoOpen } from "#/hooks/use-swarm-auto-open";
+import { useRoboticsAutoOpen } from "#/hooks/use-robotics-auto-open";
+import { useRtlAutoOpen } from "#/hooks/use-rtl-auto-open";
+import { useResearchAutoOpen } from "#/hooks/use-research-auto-open";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -63,8 +70,22 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { trackInitialQuerySubmitted, trackUserMessageSent } = useTracking();
-  const { setMessageToSend, conversationMode, planContent } =
-    useConversationStore();
+  const {
+    setMessageToSend,
+    conversationMode,
+    planContent,
+    engineeringField,
+    executionMode,
+    cyberSwarm,
+  } = useConversationStore();
+
+  // Keep the agent's managed field MCP servers in sync with field + mode.
+  useEngineeringMcpReconcile();
+  // Auto-open the Swarm war-room when a cyber swarm starts.
+  useSwarmAutoOpen();
+  useRoboticsAutoOpen();
+  useRtlAutoOpen();
+  useResearchAutoOpen();
   const {
     errorMessage,
     errorCode,
@@ -105,6 +126,13 @@ export function ChatInterface() {
     setAutoScroll,
     setHitBottom,
   } = useScrollToBottom(scrollRef);
+  // Mirror `autoScroll` into a ref so the open-time settle loop (a
+  // requestAnimationFrame closure) can read the live value without being
+  // recreated — it stops pinning the instant the user scrolls up.
+  const autoScrollRef = React.useRef(autoScroll);
+  React.useEffect(() => {
+    autoScrollRef.current = autoScroll;
+  }, [autoScroll]);
   const {
     mutate: newConversationCommand,
     isPending: isNewConversationPending,
@@ -214,10 +242,13 @@ export function ChatInterface() {
         return;
       }
 
+      // Do NOT load older events if the user is currently at the bottom or autoscrolling
+      if (autoScroll || hitBottom) {
+        return;
+      }
+
       const atTop = target.scrollTop <= SCROLL_TOP_THRESHOLD_PX;
-      const noOverflow =
-        target.scrollHeight <= target.clientHeight + SCROLL_TOP_THRESHOLD_PX;
-      if (!atTop && !noOverflow) return;
+      if (!atTop) return;
 
       preserveScrollPosition.current = {
         scrollHeight: target.scrollHeight,
@@ -233,6 +264,8 @@ export function ChatInterface() {
       });
     },
     [
+      autoScroll,
+      hitBottom,
       hasMoreOlderEvents,
       isLoadingOlderEvents,
       isProvisioningTask,
@@ -247,10 +280,12 @@ export function ChatInterface() {
       // Browsers don't dispatch a scroll event when scrollTop is already
       // 0 and the user wheels upward, so onScroll alone misses this case.
       if (e.deltaY < 0 && e.currentTarget.scrollTop <= 0) {
+        setAutoScroll(false);
+        setHitBottom(false);
         maybeLoadOlder(e.currentTarget);
       }
     },
-    [maybeLoadOlder],
+    [maybeLoadOlder, setAutoScroll, setHitBottom],
   );
 
   const hasPendingUserMessages = React.useMemo(
@@ -359,8 +394,20 @@ export function ChatInterface() {
     skippedFiles.forEach((f) => displayErrorToast(f.reason));
 
     const filePrompt = `${t(I18nKey.CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE)}: ${uploadedFiles.join("\n\n")}`;
-    const prompt =
+    const basePrompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
+    // Prepend the Exeaon Engineering Labs directive (field + execution mode +
+    // safety posture) to the SERVER content only — the visible `text` bubble is
+    // unchanged. Empty for the general (none) field, so ordinary chats are
+    // untouched. This is the Phase 0 context-injection scaffold.
+    const engineeringDirective = buildEngineeringDirective(
+      engineeringField,
+      executionMode,
+      cyberSwarm,
+    );
+    const prompt = engineeringDirective
+      ? `${engineeringDirective}\n\n${basePrompt}`
+      : basePrompt;
 
     // Enqueue the message into the local pending queue with status "sending"
     // so the user immediately sees it in the chat with a faded treatment. The
@@ -398,6 +445,50 @@ export function ChatInterface() {
     }
   };
 
+  const lastScrolledConversationIdRef = React.useRef<string | null>(null);
+
+  // When switching conversations, reset the ref so the new conversation
+  // immediately pins to the bottom on first render with messages.
+  React.useEffect(() => {
+    lastScrolledConversationIdRef.current = null;
+  }, [conversationId]);
+
+  // Open an old conversation pinned to the LATEST message — instantly, with no
+  // visible top-to-bottom scroll replay. Pinning once before paint isn't enough
+  // for a long chat: its markdown / code highlighting / tool visualizers /
+  // images grow the DOM height across many frames AFTER mount, and that late
+  // growth replays as the slow downward scroll the user sees. So pin before
+  // paint, then keep it glued each frame for a short settle window while the
+  // content renders in — bailing the moment the user scrolls up (which clears
+  // `autoScroll`). Runs once per conversation.
+  React.useLayoutEffect(() => {
+    if (!conversationId) return undefined;
+    const dom = scrollRef.current;
+    if (!dom) return undefined;
+    if (
+      lastScrolledConversationIdRef.current === conversationId ||
+      renderableEvents.length === 0
+    ) {
+      return undefined;
+    }
+    lastScrolledConversationIdRef.current = conversationId;
+    setAutoScroll(true);
+    setHitBottom(true);
+
+    let raf = 0;
+    const settleUntil = performance.now() + 1000;
+    const pin = () => {
+      const el = scrollRef.current;
+      if (!el || !autoScrollRef.current) return;
+      el.scrollTop = el.scrollHeight;
+      if (performance.now() < settleUntil) {
+        raf = requestAnimationFrame(pin);
+      }
+    };
+    pin();
+    return () => cancelAnimationFrame(raf);
+  }, [conversationId, renderableEvents.length, setAutoScroll, setHitBottom]);
+
   // Auto-scroll to bottom when new messages arrive — but only if the user is
   // already pinned to the bottom. Scrolling up to load older events also
   // grows `renderableEvents`, and we don't want to yank the user back to the
@@ -420,34 +511,13 @@ export function ChatInterface() {
     if (autoScroll) {
       scrollDomToBottom();
     }
-    // Note: We intentionally exclude autoScroll from deps because we only want
-    // to scroll when message content changes, not when autoScroll state changes.
   }, [
     renderableEvents.length,
     hasPendingUserMessages,
     activeGoalScrollKey,
     scrollDomToBottom,
+    autoScroll,
   ]);
-
-  // Auto-load older events when the chat content doesn't overflow the
-  // scroll area (no scrollbar to drag, no wheel events past 0). We
-  // re-run only when the rendered list grows or `hasMore` flips, NOT
-  // when `maybeLoadOlder` re-creates: the underlying hook's `loadOlder`
-  // ref changes whenever its internal `isLoading` toggles, so depending
-  // on `maybeLoadOlder` would re-fire the effect on every failed page
-  // and tight-loop until the server recovered. Driving off
-  // `renderableEvents.length` instead means a successful page (events
-  // grow) chains the next request, while a failed page (events
-  // unchanged) waits for the user to retry.
-  const maybeLoadOlderRef = React.useRef(maybeLoadOlder);
-  React.useEffect(() => {
-    maybeLoadOlderRef.current = maybeLoadOlder;
-  });
-  React.useEffect(() => {
-    const target = scrollRef.current;
-    if (!target) return;
-    maybeLoadOlderRef.current(target);
-  }, [renderableEvents.length, hasMoreOlderEvents]);
 
   // Create a ScrollProvider with the scroll hook values
   const scrollProviderValue = {
@@ -638,11 +708,20 @@ export function ChatInterface() {
                       <ScrollToBottomButton onClick={scrollDomToBottom} />
                     </div>
                   ) : (
-                    curAgentState === AgentState.RUNNING && (
-                      <div className="pointer-events-none absolute inset-x-9 bottom-0 flex justify-center">
-                        <TypingIndicator events={allConversationEvents} />
-                      </div>
-                    )
+                    <AnimatePresence>
+                      {curAgentState === AgentState.RUNNING && (
+                        <motion.div
+                          key="live-typing-indicator"
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="pointer-events-none absolute inset-x-9 bottom-0 flex justify-center z-30"
+                        >
+                          <TypingIndicator events={allConversationEvents} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   )}
                 </div>
               </div>

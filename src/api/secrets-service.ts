@@ -1,6 +1,6 @@
 import { SettingsClient } from "@openhands/typescript-client/clients";
 import { isSdkHttpStatusError } from "./agent-server-compatibility";
-import { getActiveBackend } from "./backend-registry/active-store";
+import { isCloudAppServerBackend } from "./backend-registry/active-store";
 import {
   deleteCloudSecret,
   fetchCloudSecrets,
@@ -11,7 +11,7 @@ import { CustomSecretWithoutValue } from "./secrets-service.types";
 import { withRetry } from "./with-retry";
 
 async function fetchSecrets(): Promise<CustomSecretWithoutValue[]> {
-  if (getActiveBackend().backend.kind === "cloud") {
+  if (isCloudAppServerBackend()) {
     return withRetry(() => fetchCloudSecrets());
   }
   const response = await withRetry(() =>
@@ -62,7 +62,7 @@ export class SecretsService {
     value: string,
     description?: string,
   ): Promise<void> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await saveCloudSecret({ name, value, description });
       return;
     }
@@ -93,7 +93,7 @@ export class SecretsService {
     description?: string,
     value?: string,
   ): Promise<void> {
-    if (getActiveBackend().backend.kind === "cloud") {
+    if (isCloudAppServerBackend()) {
       await saveCloudSecret({
         name,
         value,
@@ -129,7 +129,7 @@ export class SecretsService {
    */
   static async deleteSecret(name: string): Promise<void> {
     try {
-      if (getActiveBackend().backend.kind === "cloud") {
+      if (isCloudAppServerBackend()) {
         await withRetry(() => deleteCloudSecret(name));
         return;
       }

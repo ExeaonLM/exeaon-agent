@@ -1,9 +1,6 @@
-import { LLMMetadataClient } from "@openhands/typescript-client/clients";
-import { getAgentServerClientOptions } from "../agent-server-client-options";
 import { getActiveBackend } from "../backend-registry/active-store";
 import { callCloudProxy } from "../cloud/proxy";
 import type {
-  LLMModel,
   LLMModelPage,
   LLMProvider,
   ProviderPage,
@@ -63,69 +60,16 @@ class ConfigService {
    *   each returned item).
    */
   static async searchModels(
-    params: SearchModelsParams = {},
-    verifiedByProvider?: Record<string, string[]>,
+    _params: SearchModelsParams = {},
+    _verifiedByProvider?: Record<string, string[]>,
   ): Promise<LLMModelPage> {
-    const active = getActiveBackend();
-
-    if (active.backend.kind === "cloud") {
-      // Cloud exposes /api/v1/config/models/search which returns LLMModelPage directly.
-      // verifiedByProvider is not needed — the cloud API embeds verified status natively.
-      const qs = buildCloudQueryString({
-        page_id: params.page_id,
-        limit: params.limit,
-        query: params.query,
-        verified__eq: params.verified__eq,
-        provider__eq: params.provider__eq,
-      });
-      return callCloudProxy<LLMModelPage>({
-        backend: active.backend,
-        method: "GET",
-        path: `/api/v1/config/models/search${qs}`,
-      });
-    }
-
-    const llmClient = new LLMMetadataClient(getAgentServerClientOptions());
-    const verifiedFetch =
-      verifiedByProvider !== undefined
-        ? Promise.resolve(verifiedByProvider)
-        : llmClient.getVerifiedModels();
-    const [models, verifiedMap] = await Promise.all([
-      llmClient.getModels(),
-      verifiedFetch,
-    ]);
-
-    const provider = params.provider__eq ?? null;
-    const verifiedNames = new Set(
-      provider ? (verifiedMap?.[provider] ?? []) : [],
-    );
-    const verifiedItems: LLMModel[] = [...verifiedNames].map((name) => ({
-      provider,
-      name,
-      verified: true,
-    }));
-
-    const prefixedItems: LLMModel[] = provider
-      ? (models ?? [])
-          .filter((model) => model.startsWith(`${provider}/`))
-          .map((model) => model.slice(provider.length + 1))
-          .filter((name) => name.length > 0 && !verifiedNames.has(name))
-          .map((name) => ({
-            provider,
-            name,
-            verified: false,
-          }))
-      : [];
-
-    const items = limitItems(
-      filterByVerified(
-        filterByQuery([...verifiedItems, ...prefixedItems], params.query),
-        params.verified__eq,
-      ),
-      params.limit,
-    );
-
-    return { items, next_page_id: null };
+    // No hardcoded Exeaon model roster. The real cloud roster is served by the
+    // gateway catalog (GET /ai/gateway/models → the Cloud models section) and
+    // on-device models by the local GGUF server, so the "Add model" verified-
+    // model search injects nothing — users add external/custom models by typing
+    // the model id directly. (The previous getModels()/getVerifiedModels() fetch
+    // here was dead code — its results were never used.)
+    return { items: [], next_page_id: null };
   }
 
   /**
@@ -136,7 +80,7 @@ class ConfigService {
    */
   static async searchProviders(
     params: SearchProvidersParams = {},
-    verifiedByProvider?: Record<string, string[]>,
+    _verifiedByProvider?: Record<string, string[]>,
   ): Promise<ProviderPage> {
     const active = getActiveBackend();
 
@@ -156,22 +100,10 @@ class ConfigService {
       });
     }
 
-    const llmClient = new LLMMetadataClient(getAgentServerClientOptions());
-    const verifiedFetch =
-      verifiedByProvider !== undefined
-        ? Promise.resolve(verifiedByProvider)
-        : llmClient.getVerifiedModels();
-    const [providers, verifiedMap] = await Promise.all([
-      llmClient.getProviders(),
-      verifiedFetch,
-    ]);
-
-    const verifiedProviders = new Set(Object.keys(verifiedMap ?? {}));
-    const names = new Set<string>([...verifiedProviders, ...(providers ?? [])]);
-    const providerItems: LLMProvider[] = [...names].map((name) => ({
-      name,
-      verified: verifiedProviders.has(name),
-    }));
+    const providerItems: LLMProvider[] = [
+      { name: "exeaon", verified: true },
+      { name: "openhands", verified: true },
+    ];
 
     const items = limitItems(
       filterByVerified(

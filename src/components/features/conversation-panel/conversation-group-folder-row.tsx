@@ -63,6 +63,11 @@ export function ConversationGroupFolderRow({
   const sectionRef = useRef<HTMLElement>(null);
   const headingId = `thread-folder-${group.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
   const groupTestIdSuffix = group.id.replace(/[^a-zA-Z0-9_-]/g, "-");
+  // The ungrouped bucket ("No workspace"/"No repository") isn't a real workspace,
+  // so a "new chat here" launch is just a scratch conversation the top-level
+  // "New Chat" already covers — hide its launch "+" to avoid surprise creates.
+  const isUngroupedBucket =
+    group.id === "__none_workspace" || group.id === "__none_repo";
   const { visibleConversations, isPreviewTruncated, isShowingAll } =
     getGroupConversationPreview(group.conversations, {
       expanded: previewExpanded,
@@ -184,35 +189,37 @@ export function ConversationGroupFolderRow({
             />
             <span className="truncate">{group.label}</span>
           </button>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md",
-              "text-inherit transition-colors",
-              "hover:bg-white/10 hover:text-white",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oh-border)]",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            disabled={isCreatingConversationFlow}
-            aria-label={t(
-              I18nKey.CONVERSATION_PANEL$ADD_CONVERSATION_TO_GROUP,
-              {
-                label: group.label,
-              },
-            )}
-            data-testid={`add-conversation-to-group-${groupTestIdSuffix}`}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onLaunchFromGroup();
-            }}
-          >
-            <Plus
-              className="h-3.5 w-3.5 shrink-0"
-              aria-hidden
-              strokeWidth={2}
-            />
-          </button>
+          {!isUngroupedBucket && (
+            <button
+              type="button"
+              className={cn(
+                "inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md",
+                "text-inherit transition-colors",
+                "hover:bg-white/10 hover:text-white",
+                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oh-border)]",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+              disabled={isCreatingConversationFlow}
+              aria-label={t(
+                I18nKey.CONVERSATION_PANEL$ADD_CONVERSATION_TO_GROUP,
+                {
+                  label: group.label,
+                },
+              )}
+              data-testid={`add-conversation-to-group-${groupTestIdSuffix}`}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onLaunchFromGroup();
+              }}
+            >
+              <Plus
+                className="h-3.5 w-3.5 shrink-0"
+                aria-hidden
+                strokeWidth={2}
+              />
+            </button>
+          )}
         </div>
         {expanded ? (
           <div

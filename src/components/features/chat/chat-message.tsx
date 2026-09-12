@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { SpeakButton } from "#/components/shared/buttons/speak-button";
 import type { SourceType } from "#/types/agent-server/core/base/common";
 import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
 import { I18nKey } from "#/i18n/declaration";
@@ -196,6 +197,11 @@ export function ChatMessage({
           onClick={handleCopyToClipboard}
           mode={isCopy ? "copied" : "copy"}
         />
+
+        {/* Voice v1 — read an agent message aloud (browser TTS). */}
+        {type === "agent" && (
+          <SpeakButton text={message} isHidden={!isHovering} />
+        )}
       </div>
 
       {renderedMessageContent}

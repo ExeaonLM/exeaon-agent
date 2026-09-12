@@ -155,15 +155,25 @@ export interface InterfaceCopy {
 
 export function getInterfaceCopy(): InterfaceCopy {
   const manifest = requireInterface();
+  const formatFlows = (text: string) =>
+    text
+      .replace(/\bAutomations\b/g, "Flows")
+      .replace(/\bAutomation\b/g, "Flow")
+      .replace(/\bautomations\b/g, "flows")
+      .replace(/\bautomation\b/g, "flow");
+
   return {
-    sidebarLabel: manifest.navigation.sidebar.label,
-    commandMenuTitle: manifest.navigation.commandMenu.title,
-    commandMenuDescription: manifest.navigation.commandMenu.description,
+    // Exeaon brand: the feature is "Flows", not "Automations".
+    sidebarLabel: "Flows",
+    commandMenuTitle: "Flows",
+    commandMenuDescription: formatFlows(
+      manifest.navigation.commandMenu.description ?? "",
+    ),
     commandMenuKeywords: manifest.navigation.commandMenu.keywords,
-    listTitle: manifest.pages.list.title,
-    listSubtitle: manifest.pages.list.subtitle,
-    detailBackLabel: manifest.pages.detail.backLabel,
-    editTitle: manifest.pages.edit.title,
+    listTitle: formatFlows(manifest.pages.list.title),
+    listSubtitle: formatFlows(manifest.pages.list.subtitle),
+    detailBackLabel: formatFlows(manifest.pages.detail.backLabel),
+    editTitle: formatFlows(manifest.pages.edit.title),
   };
 }
 
@@ -259,10 +269,40 @@ export function getDashboardSpec(): DashboardSpec | null {
   if (!list?.overview || !list.filters || !list.sort || !list.insights) {
     return null;
   }
+  const sanitizeFlowCopy = (text: string) =>
+    text
+      .replace(/\bAutomations\b/g, "Flows")
+      .replace(/\bAutomation\b/g, "Flow")
+      .replace(/\bautomations\b/g, "flows")
+      .replace(/\bautomation\b/g, "flow");
+
   return {
-    overview: list.overview,
-    filters: list.filters,
-    sort: list.sort,
+    overview: {
+      ...list.overview,
+      label: sanitizeFlowCopy(list.overview.label),
+      tiles: list.overview.tiles.map((tile) => ({
+        ...tile,
+        label: sanitizeFlowCopy(tile.label),
+        detail: sanitizeFlowCopy(tile.detail),
+        zeroDetail: tile.zeroDetail
+          ? sanitizeFlowCopy(tile.zeroDetail)
+          : undefined,
+      })),
+    },
+    filters: list.filters.map((filter) => ({
+      ...filter,
+      options: filter.options.map((opt) => ({
+        ...opt,
+        label: sanitizeFlowCopy(opt.label),
+      })),
+    })) as InterfaceDashboardFilter[],
+    sort: {
+      ...list.sort,
+      options: list.sort.options.map((opt) => ({
+        ...opt,
+        label: sanitizeFlowCopy(opt.label),
+      })),
+    },
     insights: list.insights,
   };
 }

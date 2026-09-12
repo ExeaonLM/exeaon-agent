@@ -222,7 +222,7 @@ function AutomationCardGrid({
   translate,
 }: AutomationCardGridProps) {
   return (
-    <div className={cn("mt-3", extensionModuleCardGridClassName)}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-3.5">
       {automations.map((automation) => {
         const integrations = getIntegrationEntries(automation);
         // "N MCPs to connect" only counts entries the install flow can
@@ -235,43 +235,47 @@ function AutomationCardGrid({
             !findInstalledEntryMatch(entry, installedServers),
         ).length;
 
+        // Sanitize copy from @openhands -> @Exeaon
+        const name = automation.name
+          .replace(/@OpenHands/gi, "@Exeaon")
+          .replace(/OpenHands/gi, "Exeaon");
+        const description = automation.description
+          .replace(/@OpenHands/gi, "@Exeaon")
+          .replace(/OpenHands/gi, "Exeaon");
+
         return (
           <button
             key={automation.id}
             type="button"
             data-testid={`recommended-automation-card-${automation.id}`}
             onClick={() => onSelect(automation)}
-            className={cn(
-              "flex min-w-0 overflow-hidden p-4 text-left",
-              extensionModuleCardSurfaceClassName,
-              extensionModuleCardInteractiveClassName,
-            )}
+            className="group flex min-h-[170px] min-w-0 flex-col justify-between rounded-2xl border border-white/10 bg-[#12110D] hover:border-[#FFD026] hover:bg-[#181610] p-4 text-left transition-all duration-200 shadow-md hover:shadow-[0_0_20px_rgba(255,208,38,0.18)] cursor-pointer"
           >
-            <div className="flex min-w-0 flex-1 items-start gap-3">
-              <AutomationCardIcon
-                automation={automation}
-                integrations={integrations}
-                size="md"
-                testId={`recommended-automation-icon-${automation.id}`}
-              />
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
-                <header className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-semibold text-white">
-                      {automation.name}
-                    </h3>
-                    <p className="mt-0.5 truncate text-xs text-tertiary-alt">
-                      {automation.category}
-                    </p>
-                  </div>
-                  <CirclePlusBadge
-                    testId={`recommended-automation-plus-${automation.id}`}
-                  />
-                </header>
-                <p className="line-clamp-2 text-xs leading-relaxed text-tertiary-light">
-                  {automation.description}
-                </p>
+            <div className="flex w-full flex-col gap-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <AutomationCardIcon
+                  automation={automation}
+                  integrations={integrations}
+                  size="md"
+                  testId={`recommended-automation-icon-${automation.id}`}
+                />
+                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-[var(--oh-muted)]">
+                  {automation.category}
+                </span>
+              </div>
 
+              <div>
+                <h3 className="line-clamp-1 text-sm font-semibold text-white group-hover:text-[#FFD026] transition-colors">
+                  {name}
+                </h3>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--oh-text-secondary)]">
+                  {description}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-white/5 w-full flex items-center justify-between">
+              <div className="min-w-0 flex-1">
                 <SkillCardPillRow
                   pills={buildRecommendedAutomationPills(
                     integrations,
@@ -282,6 +286,9 @@ function AutomationCardGrid({
                   testId={`recommended-automation-pills-${automation.id}`}
                 />
               </div>
+              <CirclePlusBadge
+                testId={`recommended-automation-plus-${automation.id}`}
+              />
             </div>
           </button>
         );

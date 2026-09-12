@@ -7,7 +7,12 @@ import { I18nKey } from "#/i18n/declaration";
 import { EllipsisButton } from "#/components/features/conversation-panel/ellipsis-button";
 import { BrandBadge } from "#/components/shared/badge";
 import { cn } from "#/utils/utils";
-import { formatModelNameForDisplay } from "#/utils/format-model-name";
+import {
+  formatModelNameForDisplay,
+  getExeaonModelMeta,
+  getModelOrigin,
+  getModelOriginLabel,
+} from "#/utils/format-model-name";
 import {
   settingsListIconActionButtonClassName,
   settingsListRowClassName,
@@ -40,7 +45,22 @@ export function ProfileRow({
   const { t } = useTranslation("openhands");
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const displayModel = formatModelNameForDisplay(profile.model);
+  const meta =
+    getExeaonModelMeta(profile.model) || getExeaonModelMeta(profile.name);
+  const title = meta
+    ? meta.name
+    : formatModelNameForDisplay(profile.name) || profile.name;
+  const subtitle = meta
+    ? meta.subtitle
+    : profile.model
+      ? formatModelNameForDisplay(profile.model)
+      : null;
+  // Origin drives both the badge and the permissions: cloud models are
+  // provisioned server-side and are read-only in-app (no actions menu), while
+  // user-added API models and local GGUFs stay fully manageable.
+  const origin = getModelOrigin(profile.model);
+  const isCloud = origin === "cloud";
+  const canEdit = canManage && !isCloud;
 
   return (
     <div
@@ -50,18 +70,38 @@ export function ProfileRow({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           className="min-w-0 max-w-full truncate text-sm font-medium text-white"
-          title={profile.name}
+          title={title}
         >
-          {profile.name}
+          {title}
         </span>
-        {displayModel ? (
+        {subtitle ? (
           <span
-            className="min-w-0 max-w-full truncate text-sm text-[var(--oh-muted)]"
-            title={profile.model ?? undefined}
+            className="min-w-0 max-w-full truncate text-xs text-[var(--oh-muted)]"
+            title={subtitle}
           >
-            {displayModel}
+            {subtitle}
           </span>
         ) : null}
+        <span
+          className={cn(
+            "shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+            isCloud
+              ? "bg-[#FFD026]/10 text-[#FFD026] border border-[#FFD026]/30"
+              : origin === "api"
+                ? "bg-sky-500/10 text-sky-300 border border-sky-500/30"
+                : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
+          )}
+          data-testid="profile-origin-badge"
+          title={
+            isCloud
+              ? "Cloud model — served by Exeaon Cloud, read-only in the app"
+              : origin === "api"
+                ? "External API model — your key, fully editable"
+                : "Local model — runs on-device; remove its file from the models folder to delete it"
+          }
+        >
+          {getModelOriginLabel(origin)}
+        </span>
         {isActive && (
           <BrandBadge
             className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs"
@@ -84,7 +124,7 @@ export function ProfileRow({
           </span>
         )}
       </div>
-      {canManage && (
+      {canEdit && (
         <div className="relative shrink-0">
           <EllipsisButton
             ref={triggerRef}

@@ -3,40 +3,26 @@ import { describe, expect, it } from "vitest";
 import { OnboardingProgressBar } from "#/components/features/onboarding/onboarding-progress-bar";
 
 describe("OnboardingProgressBar", () => {
-  it("renders one segment per step and marks the current segment", () => {
+  it("renders progress percentage and fills the bar", () => {
     render(<OnboardingProgressBar currentStep={1} totalSteps={4} />);
 
     const bar = screen.getByTestId("onboarding-progress-bar");
-    expect(bar).toHaveAttribute("aria-valuenow", "2");
-    expect(bar).toHaveAttribute("aria-valuemin", "1");
-    expect(bar).toHaveAttribute("aria-valuemax", "4");
+    expect(bar).toHaveAttribute("aria-valuenow", "50");
+    expect(bar).toHaveAttribute("aria-valuemin", "0");
+    expect(bar).toHaveAttribute("aria-valuemax", "100");
 
-    // Segment states match the current step.
-    expect(
-      screen.getByTestId("onboarding-progress-step-0"),
-    ).toHaveAttribute("data-state", "completed");
-    expect(
-      screen.getByTestId("onboarding-progress-step-1"),
-    ).toHaveAttribute("data-state", "current");
-    expect(
-      screen.getByTestId("onboarding-progress-step-2"),
-    ).toHaveAttribute("data-state", "upcoming");
-    expect(
-      screen.getByTestId("onboarding-progress-step-3"),
-    ).toHaveAttribute("data-state", "upcoming");
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("STEP 2 OF 4")).toBeInTheDocument();
+
+    const fill = screen.getByTestId("onboarding-progress-fill");
+    expect(fill).toHaveStyle({ width: "50%" });
   });
 
-  it("treats the first step as current with no completed segments", () => {
+  it("treats the first step as 33% when there are 3 total steps", () => {
     render(<OnboardingProgressBar currentStep={0} totalSteps={3} />);
 
-    expect(
-      screen.getByTestId("onboarding-progress-step-0"),
-    ).toHaveAttribute("data-state", "current");
-    expect(
-      screen.getByTestId("onboarding-progress-step-1"),
-    ).toHaveAttribute("data-state", "upcoming");
-    expect(
-      screen.getByTestId("onboarding-progress-step-2"),
-    ).toHaveAttribute("data-state", "upcoming");
+    const bar = screen.getByTestId("onboarding-progress-bar");
+    expect(bar).toHaveAttribute("aria-valuenow", "33");
+    expect(screen.getByText("33%")).toBeInTheDocument();
   });
 });

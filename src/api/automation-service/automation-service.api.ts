@@ -100,8 +100,26 @@ localAutomationAxios.interceptors.request.use(async (config) => {
   // the 401 errors reported in issue #829.
   const backend = getEffectiveLocalBackend();
   if (!backend) throw new NoBackendAvailableError();
+  
+  let effectiveHost = backend.host;
+  // The automation backend runs on :18001; the raw agent-server on :18000 does
+  // not serve /api/automation (it 404s). Routing to the Vite origin (:3005)
+  // also 404s because there is no ingress proxy on it in this setup. So when
+  // the backend host is the raw agent-server, go straight to the automation
+  // service on :18001, which answers /api/automation/* directly.
+  if (effectiveHost.includes(":18000")) {
+    // Go through our own origin so the Vite dev proxy forwards /api/automation
+    // to the automation backend (:18001). A direct cross-origin call to :18001
+    // is blocked -- the automation backend sends no CORS header.
+    if (typeof window !== "undefined" && window.location?.origin) {
+      effectiveHost = window.location.origin;
+    } else {
+      effectiveHost = effectiveHost.replace(":18000", ":18001");
+    }
+  }
+
   // eslint-disable-next-line no-param-reassign
-  config.baseURL = backend.host;
+  config.baseURL = effectiveHost;
 
   const apiKey = backend.apiKey?.trim();
   if (apiKey) {

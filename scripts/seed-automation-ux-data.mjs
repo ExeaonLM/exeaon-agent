@@ -620,7 +620,11 @@ function sqlQuote(value) {
 }
 
 function sqlite(sql) {
-  return execFileSync("sqlite3", [DB_PATH, sql], { encoding: "utf8" }).trim();
+  return execFileSync(
+    "python",
+    ["-c", "import sqlite3, sys; conn = sqlite3.connect(sys.argv[1]); conn.executescript(sys.argv[2]); conn.commit(); conn.close()", DB_PATH, sql],
+    { encoding: "utf8" }
+  ).trim();
 }
 
 async function api(path, { method = "GET", body } = {}) {

@@ -41,6 +41,7 @@ export function useConversationNameContextMenu({
   const { mutate: stopConversation } = useUnifiedPauseConversation();
   const { mutate: updatePublicFlag } = useUpdateConversationPublicFlag();
   const { data: conversation } = useActiveConversation();
+  const [usageModalVisible, setUsageModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const [skillsModalVisible, setSkillsModalVisible] = React.useState(false);
   const [pluginsModalVisible, setPluginsModalVisible] = React.useState(false);
@@ -50,7 +51,6 @@ export function useConversationNameContextMenu({
   const [confirmStopModalVisible, setConfirmStopModalVisible] =
     React.useState(false);
   const { mutateAsync: downloadConversation } = useDownloadConversation();
-  const { navigateToTab } = useSelectConversationTab();
 
   const systemMessage: SystemMessageForModal | null =
     adaptSystemMessage(events);
@@ -112,7 +112,7 @@ export function useConversationNameContextMenu({
 
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    navigateToTab("usage");
+    setUsageModalVisible(true);
     onContextMenuToggle?.(false);
   };
 
@@ -193,6 +193,8 @@ export function useConversationNameContextMenu({
     handleConfirmStop,
 
     // Modal states
+    usageModalVisible,
+    setUsageModalVisible,
     systemModalVisible,
     setSystemModalVisible,
     skillsModalVisible,

@@ -7,7 +7,22 @@ import { useChatSubmission } from "#/hooks/chat/use-chat-submission";
 import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
+import { PlanUsageLimitsBar } from "./components/plan-usage-limits";
 import { HiddenFileInput } from "./components/hidden-file-input";
+import {
+  ArrowRight,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  Terminal as TerminalIcon,
+  Square,
+} from "lucide-react";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useOptionalConversationId } from "#/hooks/use-conversation-id";
+import { matchesPendingConversationId } from "#/utils/pending-task-message-link";
+import { useSendMessage } from "#/hooks/use-send-message";
+import { useCommandStore } from "#/stores/command-store";
+import { useUnifiedPauseConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 
@@ -163,6 +178,69 @@ export function CustomChatInput({
   useEffect(() => {
     syncCanSubmit();
   }, [syncCanSubmit, images.length, files.length]);
+
+  const { conversationId } = useOptionalConversationId();
+  const pendingMessages = useOptimisticUserMessageStore(
+    (state) => state.pendingMessages,
+  );
+  const removePendingMessage = useOptimisticUserMessageStore(
+    (state) => state.removePendingMessage,
+  );
+  const setMessageToSend = useConversationStore(
+    (state) => state.setMessageToSend,
+  );
+  const { send } = useSendMessage();
+
+  const activePending = React.useMemo(
+    () =>
+      conversationId
+        ? pendingMessages.filter((message) =>
+            matchesPendingConversationId(
+              conversationId,
+              message.conversationId,
+            ),
+          )
+        : [],
+    [pendingMessages, conversationId],
+  );
+
+  const commands = useCommandStore((state) => state.commands);
+  const [isTaskExpanded, setIsTaskExpanded] = React.useState(true);
+  const unifiedPauseMutation = useUnifiedPauseConversation();
+
+  // Show the task bar ONLY for an actual terminal/background command the agent
+  // is running — i.e. the last terminal event is an `input` (a command sent)
+  // with no `output` yet. This deliberately does NOT track the general agent
+  // "running" state (that's the send-button pill's job); the bar is for the
+  // long-running terminal task so the user can see and stop it.
+  const runningCommand = React.useMemo(() => {
+    if (!conversationId) return null;
+    const last = commands[commands.length - 1];
+    return last?.type === "input" ? last.content : null;
+  }, [commands, conversationId]);
+
+  const handleStopRunningTask = async () => {
+    if (conversationId) {
+      await unifiedPauseMutation.mutateAsync({ conversationId });
+    }
+  };
+
+  const handleEditPending = (msg: { id: string; text: string }) => {
+    removePendingMessage(msg.id);
+    setMessageToSend(msg.text);
+  };
+
+  const handleSendPendingNow = async (id: string) => {
+    const msg = activePending.find((m) => m.id === id);
+    if (msg && conversationId) {
+      removePendingMessage(id);
+      await send({
+        message: msg.text,
+        conversationId,
+      });
+    }
+  };
+
   return (
     <div className={cn("w-full", className)}>
       {/* Hidden file input */}
@@ -170,6 +248,107 @@ export function CustomChatInput({
         fileInputRef={fileInputRef}
         onChange={handleFileInputChange}
       />
+
+      {/* Terminal/background task bar — only while a command is actually running */}
+      {runningCommand && (
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-[var(--oh-border)] bg-[var(--oh-bg-editor-sidebar)]/95 backdrop-blur-md shadow-xl transition-all">
+          <div
+            onClick={() => setIsTaskExpanded((prev) => !prev)}
+            className="flex items-center justify-between px-3.5 py-2 cursor-pointer hover:bg-[var(--oh-surface-raised)] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <span className="text-xs font-medium text-[var(--cool-grey-100)]">
+                Terminal task running
+              </span>
+            </div>
+            <ChevronDown
+              className={cn(
+                "w-3.5 h-3.5 text-[var(--cool-grey-400)] transition-transform duration-200",
+                isTaskExpanded && "rotate-180",
+              )}
+            />
+          </div>
+
+          {isTaskExpanded && (
+            <div className="border-t border-[var(--oh-border)] px-3.5 py-2 bg-[var(--oh-surface-raised)]/30 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 font-mono text-xs text-[var(--cool-grey-200)]">
+                <TerminalIcon className="w-3.5 h-3.5 text-[var(--cool-grey-400)] shrink-0" />
+                <span className="truncate">{runningCommand}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleStopRunningTask}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 hover:text-red-300 text-[11px] font-medium transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
+                title="Stop running command and unlock terminal"
+              >
+                <Square className="w-3 h-3 fill-current text-red-400" />
+                <span>Stop Task</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Queued Messages Bar (Antigravity-Style) */}
+      {activePending.length > 0 && (
+        <div className="mb-2 w-full overflow-hidden rounded-xl border border-[var(--oh-border)] bg-[var(--oh-bg-editor-sidebar)]/95 backdrop-blur-md shadow-xl transition-all">
+          <div className="flex items-center justify-between px-3.5 py-2 border-b border-[var(--oh-border)] bg-white/[0.02]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-[var(--cool-grey-100)]">
+                Queued Messages
+              </span>
+              <span className="flex items-center justify-center rounded-full bg-[var(--cool-grey-800)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--cool-grey-200)]">
+                {activePending.length}
+              </span>
+              <span className="text-[11px] text-[var(--cool-grey-400)]">
+                · Sends after agent finishes working
+              </span>
+            </div>
+          </div>
+          <div className="divide-y divide-[var(--oh-border)] p-1">
+            {activePending.map((msg) => (
+              <div
+                key={msg.id}
+                className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-[var(--cool-grey-200)] hover:bg-[var(--oh-surface-raised)] group transition-colors"
+              >
+                <span className="truncate flex-1 mr-3 font-normal">
+                  {msg.text}
+                </span>
+                <div className="flex items-center gap-1 text-[var(--cool-grey-400)]">
+                  <button
+                    type="button"
+                    onClick={() => handleSendPendingNow(msg.id)}
+                    className="p-1 rounded hover:bg-[var(--oh-surface-raised)] hover:text-emerald-400 transition-colors cursor-pointer"
+                    title="Send now"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEditPending(msg)}
+                    className="p-1 rounded hover:bg-white/10 hover:text-amber-400 transition-colors cursor-pointer"
+                    title="Edit message"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removePendingMessage(msg.id)}
+                    className="p-1 rounded hover:bg-white/10 hover:text-red-400 transition-colors cursor-pointer"
+                    title="Delete from queue"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Container with grip */}
       <div className="relative w-full">
@@ -220,6 +399,9 @@ export function CustomChatInput({
           slashSelectedIndex={slashSelectedIndex}
           onSlashSelect={selectSlashItem}
         />
+
+        {/* Plan usage limits — under the input, below the send button. */}
+        <PlanUsageLimitsBar />
       </div>
     </div>
   );

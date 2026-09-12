@@ -59,7 +59,7 @@ export function AgentCanvasVersionTile({
           <span className="block truncate text-sm font-semibold leading-5 text-white">
             {updateAvailable
               ? t(I18nKey.SETTINGS$VERSION_TILE_NEW_VERSION)
-              : t(I18nKey.SETTINGS$VERSION_PRODUCT_NAME)}
+              : "Exeaon Claw"}
           </span>
           <span className="flex min-w-0 items-center gap-1.5 truncate text-xs leading-5">
             <span className="text-[var(--oh-muted)]">

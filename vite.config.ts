@@ -90,7 +90,7 @@ const appBuildConfig = {
 
 export default defineConfig(({ mode }) => {
   const {
-    VITE_BACKEND_HOST = "127.0.0.1:8000",
+    VITE_BACKEND_HOST = "127.0.0.1:18000",
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
     VITE_INSECURE_SKIP_VERIFY = "false",
@@ -112,6 +112,11 @@ export default defineConfig(({ mode }) => {
   const WS_PROTOCOL = USE_TLS ? "wss" : "ws";
 
   const API_URL = `${PROTOCOL}://${VITE_BACKEND_HOST}/`;
+  // The automation backend runs on its own port (18001 by default), separate
+  // from the agent-server. /api/automation must proxy there, not to the
+  // agent-server (which 404s it). Derive from the backend host by swapping the
+  // port so it follows whatever host the agent-server is on.
+  const AUTOMATION_URL = API_URL.replace(/:\d+\/?$/, ":18001/");
   const WS_URL = `${WS_PROTOCOL}://${VITE_BACKEND_HOST}/`;
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
   const base = normalizeBasePath(VITE_BASE_PATH);
@@ -190,7 +195,15 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
     ],
     resolve: {
+      // `tsconfigPaths` is a vite 8 (rolldown) native option; on vite 7 it's a
+      // no-op, so declare the `#/*` -> `src/*` alias (from tsconfig paths)
+      // explicitly here. This resolves the alias in every environment,
+      // including the SSR module runner that renders root.tsx (which otherwise
+      // 500s with "Cannot find module '#/...'"). Harmless on vite 8.
       tsconfigPaths: true,
+      alias: {
+        "#": fileURLToPath(new URL("./src", import.meta.url)),
+      },
     },
     css: {
       postcss: {
@@ -300,7 +313,6 @@ export default defineConfig(({ mode }) => {
         // Terminal dependencies - added to prevent runtime optimization
         "@xterm/addon-fit",
         "@xterm/xterm",
-        "@xterm/xterm/css/xterm.css",
         // OpenHands typescript client
         "@openhands/typescript-client",
         "@openhands/typescript-client/client/http-client",
@@ -388,11 +400,30 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
+      // Pre-transform the entry + root at startup so the FIRST dev render isn't
+      // a cold pull of the whole module graph through the SSR module-runner —
+      // that cold pull is what makes the first page take minutes on Windows.
+      // Purely a startup speed-up (a documented Vite feature); no behavior
+      // change, safe to leave on.
+      warmup: {
+        clientFiles: ["./src/entry.client.tsx", "./src/root.tsx"],
+        ssrFiles: ["./src/root.tsx"],
+      },
+      hmr: {
+        overlay: false,
+      },
       port: FE_PORT,
       strictPort: true, // Fail if port is busy (dynamic allocation handles fallback)
-      host: true,
+      host: "0.0.0.0",
       allowedHosts: true,
       proxy: {
+        // More specific than "/api" and declared first so /api/automation is
+        // routed to the automation backend, not the agent-server.
+        "/api/automation": {
+          target: AUTOMATION_URL,
+          changeOrigin: true,
+          secure: !INSECURE_SKIP_VERIFY,
+        },
         "/api": {
           target: API_URL,
           changeOrigin: true,
@@ -463,7 +494,21 @@ export default defineConfig(({ mode }) => {
           : {}),
       },
       watch: {
-        ignored: ["**/node_modules/**", "**/.git/**"],
+        // Ignore build output and live agent runtime workspaces so background
+        // task writes (.owner_lease.lock, trajectories, workspace files) don't
+        // trigger reload storms where react-router logs "Config changed" thousands
+        // of times and forces webview page reloads.
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/src-tauri/target/**",
+          "**/src-tauri/gen/**",
+          "**/src-tauri/workspace/**",
+          "**/workspace/**",
+          "**/.agents_tmp/**",
+          "**/vendor/**",
+          "**/*.lock",
+        ],
       },
     },
     ssr: {

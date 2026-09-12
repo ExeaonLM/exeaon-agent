@@ -13,6 +13,8 @@ import { resolvePickerKind } from "./resolve-picker-kind";
 import { ChatAddFileButton } from "../chat-add-file-button";
 import { ChatSendButton } from "../chat-send-button";
 import { ContextWindowMeter } from "./context-window-meter";
+import { EngineeringFieldControl } from "./engineering-field-control";
+import { MicButton } from "./mic-button";
 import CarretRightFillIcon from "#/icons/carret-right-fill.svg?react";
 import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 import ThreeDotsVerticalIcon from "#/icons/three-dots-vertical.svg?react";
@@ -21,10 +23,11 @@ import { useUnifiedPauseConversation } from "#/hooks/mutation/use-unified-stop-c
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { usePauseConversation } from "#/hooks/mutation/use-pause-conversation";
 import { useResumeConversation } from "#/hooks/mutation/use-resume-conversation";
-import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useChatInputModelState } from "#/hooks/use-chat-input-model-state";
 import { useConversationStore } from "#/stores/conversation-store";
+import { useConversationStateStore } from "#/stores/conversation-state-store";
+import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
 import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
@@ -48,6 +51,8 @@ interface ChatInputActionsProps {
   showButton?: boolean;
   buttonClassName?: string;
   handleSubmit?: () => void;
+  /** The composer's contentEditable, so the mic can dictate into it. */
+  chatInputRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatInputActions({
@@ -58,14 +63,13 @@ export function ChatInputActions({
   showButton = true,
   buttonClassName = "",
   handleSubmit = () => {},
+  chatInputRef,
 }: ChatInputActionsProps) {
   const { t } = useTranslation("openhands");
   const unifiedPauseMutation = useUnifiedPauseConversation();
   const pauseConversationMutation = usePauseConversation();
   const resumeConversationMutation = useResumeConversation();
   const { conversationId } = useOptionalConversationId();
-  const { backend } = useActiveBackend();
-  const isCloud = backend.kind === "cloud";
   const modelState = useChatInputModelState();
   // Agent-profile switching lives in the "+" tools menu while the conversation
   // hasn't started (OSS-5735) — the pill itself is always an LLM selector. The
@@ -79,11 +83,13 @@ export function ChatInputActions({
     isPreStart &&
     !(conversationId?.startsWith("task-") ?? false) &&
     (agentProfilesForStart.data?.profiles?.length ?? 0) > 0;
-  // Code/Plan mode switching is a cloud OpenHands feature — it doesn't apply
-  // to ACP conversations (which have no "plan" mode), so hide it when ACP.
-  const showChangeAgentButton = isCloud && !modelState.isAcpContext;
+  // Code/Plan mode switching applies to all agent conversations (not ACP).
+  const showChangeAgentButton = !modelState.isAcpContext;
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { curAgentState } = useAgentState();
+  const setLocalExecutionStatus = useConversationStateStore(
+    (state) => state.setExecutionStatus,
+  );
   const { conversationMode, setConversationMode } = useConversationStore();
   const { handlePlanClick, isCreatingConversation } = useHandlePlanClick();
 
@@ -92,6 +98,7 @@ export function ChatInputActions({
   const addFileRef = React.useRef<HTMLDivElement>(null);
   const codeRef = React.useRef<HTMLDivElement>(null);
   const modelRef = React.useRef<HTMLDivElement>(null);
+  const fieldRef = React.useRef<HTMLDivElement>(null);
   const overflowTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [actionsRowWidth, setActionsRowWidth] = React.useState<number>(
     Number.POSITIVE_INFINITY,
@@ -100,6 +107,7 @@ export function ChatInputActions({
   const [addFileWidth, setAddFileWidth] = React.useState(32);
   const [codeWidth, setCodeWidth] = React.useState(96);
   const [modelWidth, setModelWidth] = React.useState(120);
+  const [fieldWidth, setFieldWidth] = React.useState(110);
   const [isOverflowOpen, setIsOverflowOpen] = React.useState(false);
   const [activeSubmenu, setActiveSubmenu] = React.useState<
     "agent" | "model" | null
@@ -113,6 +121,7 @@ export function ChatInputActions({
     const addEl = addFileRef.current;
     const codeEl = codeRef.current;
     const modelEl = modelRef.current;
+    const fieldEl = fieldRef.current;
 
     if (
       !rowEl ||
@@ -140,6 +149,11 @@ export function ChatInputActions({
         const nextCodeWidth = codeEl.getBoundingClientRect().width;
         if (nextCodeWidth > 0) setCodeWidth(nextCodeWidth);
       }
+
+      if (fieldEl) {
+        const nextFieldWidth = fieldEl.getBoundingClientRect().width;
+        if (nextFieldWidth > 0) setFieldWidth(nextFieldWidth);
+      }
     };
 
     const observer = new ResizeObserver(() => {
@@ -153,6 +167,9 @@ export function ChatInputActions({
     if (codeEl) {
       observer.observe(codeEl);
     }
+    if (fieldEl) {
+      observer.observe(fieldEl);
+    }
 
     syncWidths();
 
@@ -161,7 +178,16 @@ export function ChatInputActions({
 
   const handlePauseAgent = () => {
     if (!conversationId) return;
-    pauseConversationMutation.mutate({ conversationId });
+    pauseConversationMutation.mutate(
+      { conversationId },
+      {
+        // If the stop can't reach the runtime (disconnected/dead sandbox), the
+        // WS-driven agent state stays stuck on RUNNING and the button does
+        // nothing. Force the local state to PAUSED so the composer unblocks; a
+        // later poll reconciles if the agent turns out to be alive.
+        onError: () => setLocalExecutionStatus(ExecutionStatus.PAUSED),
+      },
+    );
   };
 
   const handleResumeAgentClick = () => {
@@ -199,7 +225,12 @@ export function ChatInputActions({
   );
 
   const leftBaseWidth =
-    actionsRowWidth - rightSectionWidth - ROOT_GAP - addFileWidth - INLINE_GAP;
+    actionsRowWidth -
+    rightSectionWidth -
+    ROOT_GAP -
+    addFileWidth -
+    fieldWidth -
+    INLINE_GAP * 2;
 
   const fitWithoutOverflow = fitOptionalItems(leftBaseWidth);
   const allOptionalFit =
@@ -215,7 +246,7 @@ export function ChatInputActions({
     : fitWithOverflow.showCodeInline;
   const showModelInline = fitWithOverflow.showModelInline;
   const showAddFileInline = true;
-  const showAgentStatusInline = actionsRowWidth >= 360;
+  const showAgentStatusInline = actionsRowWidth >= 520 && leftBaseWidth >= 80;
 
   const hasOverflowItems =
     !showAddFileInline ||
@@ -453,6 +484,11 @@ export function ChatInputActions({
             )}
           </div>
 
+          {/* Exeaon Engineering Labs field + execution-mode selector. */}
+          <div ref={fieldRef} className="shrink-0">
+            <EngineeringFieldControl />
+          </div>
+
           {hasOverflowItems && (
             <div className="relative shrink-0">
               <button
@@ -498,12 +534,29 @@ export function ChatInputActions({
             isPausing={isPausing}
           />
         )}
+        {chatInputRef && (
+          <MicButton chatInputRef={chatInputRef} disabled={disabled} />
+        )}
         <ContextWindowMeter />
         {showButton && (
           <ChatSendButton
             buttonClassName={buttonClassName}
             handleSubmit={handleSubmit}
-            disabled={disabled || !canSubmit}
+            handleStop={handlePauseAgent}
+            isRunning={
+              Boolean(conversationId) &&
+              (curAgentState === AgentState.RUNNING ||
+                curAgentState === AgentState.LOADING ||
+                isPausing)
+            }
+            disabled={
+              disabled ||
+              (!canSubmit &&
+                (!conversationId ||
+                  (curAgentState !== AgentState.RUNNING &&
+                    curAgentState !== AgentState.LOADING &&
+                    !isPausing)))
+            }
           />
         )}
       </div>

@@ -174,63 +174,12 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<EditIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$RENAME)}
+            shortcut="R"
           />
         </ContextMenuListItem>
       )}
 
-      {hasTools && <Divider testId="separator-tools" inset="menu" />}
 
-      {onShowSkills && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-skills-button"
-            onClick={onShowSkills}
-            isDisabled={isArchivedConversation}
-          >
-            <ConversationNameContextMenuIconText
-              icon={
-                <SkillsIcon
-                  width={16}
-                  height={16}
-                  className="stroke-[1.75]"
-                  aria-hidden
-                />
-              }
-              text={t(I18nKey.CONVERSATION$SHOW_SKILLS)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
-
-      {onShowHooks && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-hooks-button"
-            onClick={onShowHooks}
-            isDisabled={isArchivedConversation}
-          >
-            <ConversationNameContextMenuIconText
-              icon={<FishingHookIcon width={16} height={16} aria-hidden />}
-              text={t(I18nKey.CONVERSATION$SHOW_HOOKS)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
-
-      {onShowAgentTools && (
-        <ArchivedDisabledTooltip isDisabled={isArchivedConversation}>
-          <ContextMenuListItem
-            testId="show-agent-tools-button"
-            onClick={onShowAgentTools}
-            isDisabled={isArchivedConversation}
-          >
-            <ConversationNameContextMenuIconText
-              icon={<ToolsIcon width={16} height={16} />}
-              text={t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
-            />
-          </ContextMenuListItem>
-        </ArchivedDisabledTooltip>
-      )}
 
       {onExportTranscript && (
         <ContextMenuListItem
@@ -333,10 +282,16 @@ export function ConversationNameContextMenu({
       )}
 
       {onDelete && (
-        <ContextMenuListItem testId="delete-button" onClick={onDelete}>
+        <ContextMenuListItem
+          testId="delete-button"
+          onClick={onDelete}
+          className="hover:!bg-red-500/10"
+        >
           <ConversationNameContextMenuIconText
             icon={<DeleteIcon width={16} height={16} />}
             text={t(I18nKey.COMMON$DELETE_CONVERSATION)}
+            shortcut="D"
+            variant="danger"
           />
         </ContextMenuListItem>
       )}

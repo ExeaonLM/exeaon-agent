@@ -1,6 +1,5 @@
-/** Shared card chrome for Skills / MCP / Automations tiles (border on hover only). */
 export const extensionModuleCardSurfaceClassName =
-  "rounded-xl bg-base-secondary";
+  "rounded-2xl border border-white/10 bg-[#12110D]";
 
 /** See `.extension-module-card-interactive` in `src/tailwind.css`. */
 export const EXTENSION_MODULE_CARD_INTERACTIVE_CLASS =

@@ -34,10 +34,10 @@ export function CommandMenuTrigger({ collapsed }: CommandMenuTriggerProps) {
         sidebarNavRowClassName({ collapsed }),
         collapsed
           ? "cursor-pointer"
-          : "group justify-between border border-[var(--oh-border-subtle)] bg-[var(--oh-surface)]/50 hover:border-[var(--oh-border)] hover:bg-[var(--oh-surface-raised)]",
+          : "group justify-between rounded-xl border border-[#2A241A] bg-[#14120D] px-3 py-2 text-[#EDE7D8] shadow-inner hover:border-[#FFD026]/40 hover:bg-[#1A1712] hover:text-[#FFF4B8] transition-all duration-150",
       )}
     >
-      <span className="flex min-w-0 items-center gap-2">
+      <span className="flex min-w-0 items-center gap-2.5">
         {collapsed ? (
           <SidebarCollapsedIconSlot active={false}>
             <Search
@@ -49,7 +49,7 @@ export function CommandMenuTrigger({ collapsed }: CommandMenuTriggerProps) {
           <span
             className={cn(
               SIDEBAR_ICON_SLOT_CLASS,
-              "text-[var(--oh-muted)] group-hover:text-white",
+              "text-[#A89F8D] group-hover:text-[#FFD026] transition-colors",
             )}
             aria-hidden="true"
           >
@@ -59,10 +59,12 @@ export function CommandMenuTrigger({ collapsed }: CommandMenuTriggerProps) {
             />
           </span>
         )}
-        <span className={sidebarNavLabelClassName(collapsed)}>{label}</span>
+        <span className={cn(sidebarNavLabelClassName(collapsed), "text-xs font-medium text-[#EDE7D8] group-hover:text-[#FFF4B8]")}>
+          {label}
+        </span>
       </span>
       {!collapsed ? (
-        <kbd className="rounded-md border border-[var(--oh-border)] bg-black/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--oh-text-dim)]">
+        <kbd className="flex items-center rounded border border-[#2E281F] bg-[#0E0C09] px-1.5 py-0.5 text-[10px] font-mono text-[#A89F8D] group-hover:border-[#FFD026]/30 group-hover:text-[#FFD026] transition-colors">
           {t(I18nKey.COMMAND_MENU$SHORTCUT)}
         </kbd>
       ) : null}

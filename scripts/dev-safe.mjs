@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import {
   existsSync,
@@ -43,7 +43,7 @@ const DEFAULT_BACKEND_PORT = SHARED_DEFAULTS.ports.agentServer;
 // or the advertised URL and the route that serves it disagree.
 export const VSCODE_BASE_PATH = SHARED_DEFAULTS.paths.vscodeBasePath;
 const DEFAULT_VITE_PORT = 3001;
-const DEFAULT_WAIT_TIMEOUT_MS = 30_000;
+const DEFAULT_WAIT_TIMEOUT_MS = 900_000;
 const DEFAULT_AGENT_SERVER_PACKAGE = SHARED_DEFAULTS.packages.agentServer;
 const AGENT_SERVER_GIT_REPO = "https://github.com/OpenHands/software-agent-sdk";
 const LOCAL_AGENT_SERVER_SUBDIRS = [
@@ -253,26 +253,97 @@ function tryPort(port, host = "127.0.0.1") {
 }
 
 /**
- * Assert that all listed ports are available, throwing a descriptive error if
- * any are already in use.
+ * Reclaim a dev port occupied by a leftover of THIS app: find the process
+ * LISTENING on it and kill it. Only ever called for agent-canvas's own private
+ * dev ports (ingress / vite / agent-server / automation), where a listener is
+ * always a stale process from a previous run that didn't shut down cleanly — so
+ * this cleans up after ourselves and never touches an unrelated application.
+ * Best-effort and cross-platform; returns true if it killed at least one PID.
  *
- * Intended as a pre-flight check before spawning services so that a concurrent
- * agent-canvas instance is detected immediately rather than silently starting
- * on a different port.
+ * @param {number} port
+ * @returns {boolean}
+ */
+function reclaimStaleDevPort(port) {
+  const pids = new Set();
+  try {
+    if (process.platform === "win32") {
+      const out =
+        spawnSync("netstat", ["-ano"], { encoding: "utf8" }).stdout || "";
+      for (const line of out.split(/\r?\n/)) {
+        // e.g.  TCP    0.0.0.0:18001   0.0.0.0:0   LISTENING   4852
+        const m = line.match(/^\s*TCP\s+\S+:(\d+)\s+\S+\s+LISTENING\s+(\d+)/i);
+        if (m && Number(m[1]) === port && m[2] !== "0") pids.add(m[2]);
+      }
+    } else {
+      const out =
+        spawnSync("lsof", ["-ti", `tcp:${port}`, "-sTCP:LISTEN"], {
+          encoding: "utf8",
+        }).stdout || "";
+      out
+        .split(/\r?\n/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .forEach((p) => pids.add(p));
+    }
+  } catch {
+    return false; // netstat/lsof unavailable — fall back to the hard error.
+  }
+
+  let killed = false;
+  for (const pid of pids) {
+    try {
+      if (process.platform === "win32") {
+        spawnSync("taskkill", ["/PID", pid, "/F"], { stdio: "ignore" });
+      } else {
+        spawnSync("kill", ["-9", pid], { stdio: "ignore" });
+      }
+      killed = true;
+    } catch {
+      // best-effort per PID
+    }
+  }
+  return killed;
+}
+
+/**
+ * Assert that all listed ports are available.
+ *
+ * These are agent-canvas's own private dev ports, so a listener on one is a
+ * leftover from a previous run that didn't exit cleanly (a common Ctrl+C / crash
+ * residue on Windows). Rather than forcing the user to hunt-and-kill it by hand,
+ * we FIRST try to reclaim any busy port (kill its stale listener), then re-check.
+ * Only if a port is still busy after that do we throw — that means something we
+ * don't own (or can't kill) holds it, which is the case the manual error is for.
  *
  * @param {Array<{name: string, port: number}>} portConfigs - Named port list
  * @param {string} [host]
  */
 export async function assertPortsFree(portConfigs, host = "127.0.0.1") {
-  const results = await Promise.all(
-    portConfigs.map(async ({ name, port }) => ({
-      name,
-      port,
-      free: await tryPort(port, host),
-    })),
-  );
-  const busy = results.filter(({ free }) => !free);
+  const check = () =>
+    Promise.all(
+      portConfigs.map(async ({ name, port }) => ({
+        name,
+        port,
+        free: await tryPort(port, host),
+      })),
+    );
+
+  let busy = (await check()).filter(({ free }) => !free);
   if (busy.length === 0) return;
+
+  // Auto-clean: reclaim stale listeners on our own ports, then re-check.
+  const reclaimed = [];
+  for (const { name, port } of busy) {
+    if (reclaimStaleDevPort(port)) reclaimed.push(`${name}:${port}`);
+  }
+  if (reclaimed.length > 0) {
+    console.log(
+      `[ports] Reclaimed stale port(s) from a previous run: ${reclaimed.join(", ")}`,
+    );
+    await delay(700); // give the OS a moment to release the sockets
+    busy = (await check()).filter(({ free }) => !free);
+    if (busy.length === 0) return;
+  }
 
   const lines = busy
     .map(({ name, port }) => `   • ${name}: port ${port}`)

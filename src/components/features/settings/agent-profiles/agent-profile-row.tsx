@@ -10,6 +10,10 @@ import {
   settingsListIconActionButtonClassName,
   settingsListRowClassName,
 } from "#/utils/settings-list-classes";
+import {
+  formatModelNameForDisplay,
+  getExeaonModelMeta,
+} from "#/utils/format-model-name";
 
 interface AgentProfileRowProps {
   profile: AgentProfileSummary;
@@ -36,9 +40,13 @@ export function AgentProfileRow({
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Secondary label: the referenced LLM profile (OpenHands) or the "ACP" kind.
+  const secondaryMeta =
+    profile.agent_kind === "openhands" && profile.llm_profile_ref
+      ? getExeaonModelMeta(profile.llm_profile_ref)
+      : null;
   const secondary =
     profile.agent_kind === "openhands"
-      ? profile.llm_profile_ref
+      ? (secondaryMeta?.name ?? (profile.llm_profile_ref ? formatModelNameForDisplay(profile.llm_profile_ref) : ""))
       : t(I18nKey.SETTINGS$AGENT_TYPE_ACP);
 
   return (

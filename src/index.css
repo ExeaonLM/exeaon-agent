@@ -25,25 +25,26 @@
   background-color: var(--oh-color-base) !important;
 
   /* ── Cool Grey Scale (13 shades + 2 pure anchors: white / black) ──────── */
-  --cool-grey-50:  #F7F9FC;
-  --cool-grey-100: #EEF2F7;
-  --cool-grey-200: #DCE3EE;
-  --cool-grey-300: #C3CDDC;
-  --cool-grey-400: #A3B0C4;
-  --cool-grey-500: #7E8A9E;
-  --cool-grey-600: #626D82;
-  --cool-grey-700: #4B5468;
-  --cool-grey-800: #383F50;
-  --cool-grey-900: #2C313F;
-  --cool-grey-925: #21252F;
-  --cool-grey-950: #0B0E14; /* intentional override: preserves original app-shell depth */
-  --cool-grey-975: #05070A;
+  --cool-grey-50:  #F8F4EA;
+  --cool-grey-100: #EDE7D8;
+  --cool-grey-200: #DED6C4;
+  --cool-grey-300: #BAB19C;
+  --cool-grey-400: #968D79;
+  --cool-grey-500: #746D5D;
+  --cool-grey-600: #565043;
+  --cool-grey-700: #3D392F;
+  --cool-grey-800: #2B2921;
+  --cool-grey-900: #1C1913;
+  --cool-grey-925: #131109;
+  --cool-grey-950: #0B0A08; /* intentional override: preserves original app-shell depth */
+  --cool-grey-975: #050403;
   /* ─────────────────────────────────────────────────────────────────────── */
 }
 
 body {
   margin: 0;
   background-color: var(--oh-color-base);
+  color: var(--cool-grey-100);
   font-family:
     -apple-system, "SF Pro", BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
@@ -52,26 +53,42 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Spotted dot grid texture for cream / light surfaces */
+[data-theme="light"],
+.theme-light,
+.dot-grid-pattern {
+  background-image: radial-gradient(circle, rgba(116, 109, 93, 0.18) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
 code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 .markdown-body code {
-  padding: 0.2em 0.4em;
+  padding: 0.2em 0.45em;
   margin: 0;
   font-size: 85%;
   white-space: break-spaces;
-  background-color: var(--cool-grey-900);
-  border-radius: 4px;
+  background-color: var(--oh-bg-neutral-muted);
+  border-radius: 6px;
   color: var(--cool-grey-100);
-  border: 1px solid var(--cool-grey-900);
+  border: 1px solid var(--oh-border);
   letter-spacing: -0.2px;
+}
+
+.markdown-body pre {
+  background-color: #121216 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 0.85em 1em !important;
 }
 
 .markdown-body pre code {
   padding: 0;
-  background-color: inherit;
+  background-color: transparent !important;
+  border: none !important;
 }
 
 .markdown-body {

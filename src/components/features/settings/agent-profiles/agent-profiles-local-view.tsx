@@ -24,6 +24,7 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
 import { isProfileNameValid } from "#/utils/derive-profile-name";
+import { formatModelNameForDisplay } from "#/utils/format-model-name";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { SettingsValue } from "#/types/settings";
 import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
@@ -315,10 +316,14 @@ export function AgentProfilesLocalView() {
             testId="agent-profile-llm-selector"
             name="agent-profile-llm"
             label={t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_LABEL)}
-            items={llmProfiles.map((p) => ({
-              key: p.name,
-              label: p.model ? `${p.name} (${p.model})` : p.name,
-            }))}
+            items={llmProfiles.map((p) => {
+              const modelLabel = formatModelNameForDisplay(p.model) || p.model;
+              const nameLabel = formatModelNameForDisplay(p.name) || p.name;
+              return {
+                key: p.name,
+                label: modelLabel && modelLabel !== nameLabel ? `${nameLabel} (${modelLabel})` : nameLabel,
+              };
+            })}
             selectedKey={llmProfileRef}
             onSelectionChange={(key) => key && setLlmProfileRef(String(key))}
           />

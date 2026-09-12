@@ -1,5 +1,5 @@
 import { PluginsClient } from "@openhands/typescript-client/clients";
-import { getActiveBackend } from "./backend-registry/active-store";
+import { isCloudAppServerBackend } from "./backend-registry/active-store";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
 import type { PluginBundledSkill } from "./plugins-service";
 
@@ -53,7 +53,7 @@ interface PluginsManagementClient {
 }
 
 function isCloudBackend(): boolean {
-  return getActiveBackend().backend.kind === "cloud";
+  return isCloudAppServerBackend();
 }
 
 function getManagementClient(): PluginsManagementClient {

@@ -21,6 +21,7 @@ import {
   ContextWindowRing,
   CONTEXT_WINDOW_TRACK_COLOR,
 } from "./context-window-ring";
+import { PlanUsageLimits } from "./plan-usage-limits";
 
 const TONE_BAR_CLASS = {
   neutral: "bg-foreground",
@@ -163,6 +164,9 @@ export function ContextWindowMeter() {
           </div>
 
           <Divider inset="menu" />
+
+          {/* Plan usage limits (hourly + weekly) — every plan is gated. */}
+          <PlanUsageLimits />
 
           <ContextMenuListItem
             testId="context-window-plan-usage"

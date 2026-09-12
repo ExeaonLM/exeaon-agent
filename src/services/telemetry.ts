@@ -651,8 +651,9 @@ function markFirstUseSent(): void {
 /**
  * Track the initial install of the library.
  *
- * IMPORTANT: This is sent immediately on first use, regardless of consent status.
- * This allows us to track library adoption even if users haven't made a consent choice yet.
+ * IMPORTANT: This is sent only after the user has accepted telemetry (consent
+ * === "granted") — nothing, not even this anonymous install ping, is sent
+ * before that choice. It still fires only once per installation.
  *
  * The event is:
  * - Completely anonymous (no PII, just a random PostHog distinct_id)
@@ -671,6 +672,14 @@ export async function trackInstall(): Promise<void> {
 
   // Already sent install event (persisted in localStorage - survives app relaunches)
   if (hasFirstUseSent()) {
+    return;
+  }
+
+  // Nothing is sent before the user accepts telemetry — not even the anonymous
+  // install ping. Once consent is granted it fires once (guarded by
+  // hasFirstUseSent) on the next trackInstall call; if consent is never granted
+  // it is never sent.
+  if (getTelemetryConsent() !== "granted") {
     return;
   }
 

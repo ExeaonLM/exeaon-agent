@@ -135,10 +135,10 @@ export function useAutoRefreshFilesOnEdit(): void {
     queryClient.invalidateQueries({ queryKey: ["file_changes"] });
     queryClient.invalidateQueries({ queryKey: ["file_diff"] });
     queryClient.invalidateQueries({ queryKey: ["git_commits"] });
+    queryClient.invalidateQueries({ queryKey: ["workspace-files"] });
+    queryClient.invalidateQueries({ queryKey: ["workspace-file-content"] });
 
     if (hasNewFileEdits) {
-      queryClient.invalidateQueries({ queryKey: ["workspace-files"] });
-      queryClient.invalidateQueries({ queryKey: ["workspace-file-content"] });
       // Force iframes / <img> tags pointing at the static workspace
       // fileserver to re-fetch. Without this they happily keep showing the
       // stale (browser-cached) bytes even after the agent has rewritten the
